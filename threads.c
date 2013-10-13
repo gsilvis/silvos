@@ -41,9 +41,9 @@ tcb *choose_task (void) {
    store the instruction pointer for any thread. */
 void __attribute__ ((noinline)) switch_task (volatile tcb *old_task, volatile tcb *new_task) {
   if (old_task) {
-    save_esp(old_task);
+    save_esp(&old_task->esp);
   } /* If not, we were switching from not-within-the-scheduler */
-  restore_esp(new_task); /* !!! CAN ONLY HAVE ONE CALL TO THIS !!! */
+  restore_esp(new_task->esp); /* !!! CAN ONLY HAVE ONE CALL TO THIS !!! */
   switch (new_task->state) {
   case TS_BEGUN:
     return;
