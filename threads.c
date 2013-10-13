@@ -35,13 +35,12 @@ tcb *choose_task (void) {
     }
   }
   panic("No possible threads to schedule.");
-  return 0; /* Quell the compiler */
 }
 
 /* This function cannot be inlined, because it must be ASSURED that there is
    EXACTLY ONE INSTRUCTION that switches context.  This is why I never need to
    store the instruction pointer for any thread. */
-void __attribute__ ((noinline)) switch_task (volatile tcb *old_task, volatile tcb *new_task) {
+void __attribute__ ((noinline, noclone)) switch_task (volatile tcb *old_task, volatile tcb *new_task) {
   if (old_task) {
     save_esp(&old_task->esp);
   } /* If not, we were switching from not-within-the-scheduler */
@@ -52,16 +51,11 @@ void __attribute__ ((noinline)) switch_task (volatile tcb *old_task, volatile tc
   case TS_CREATED:
     new_task->state = TS_BEGUN;
     new_task->task(new_task->userdata);
-    /* Task finished, so destroy it. */
-    new_task->state = TS_NONEXIST;
-    schedule(); /* Never returns */
-    break;
+    exit(); /* Task finished; does not return */
   case TS_NONEXIST:
     panic("Waking thread in non-existent state.");
-    break;
   default:
     panic("Waking thread with corrupted state.");
-    break;
   }
 }
 
@@ -71,12 +65,12 @@ void schedule (void) {
   tcb *old_tcb = current_tcb;
   current_tcb = choose_task();
   switch_task(old_tcb, current_tcb);
-  return;
 }
 
-void exit (void) {
+void __attribute__ ((noreturn)) exit (void) {
   current_tcb->state = TS_NONEXIST;
   schedule(); /* Does not return */
+  panic("Scheduler somehow returned into exited thread.");
 }
 
 void yield (void) {

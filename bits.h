@@ -17,8 +17,10 @@ static inline void pop_registers (void) {
   __asm__("popa");
 }
 
-static inline void halt (void) {
-  __asm__("hlt");
+static inline __attribute__ ((noreturn)) void halt (void) {
+  while (1) {
+    __asm__("hlt");
+  }
 }
 
 #endif
