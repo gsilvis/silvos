@@ -1,5 +1,6 @@
 #include "threads.h"
 #include "util.h"
+#include "bits.h"
 
 #define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
@@ -33,26 +34,6 @@ tcb *choose_task (void) {
   }
   panic("No possible threads to schedule.");
   return 0; /* Quell the compiler */
-}
-
-static inline void save_esp (volatile tcb* task) {
-  __asm__ __volatile__ ("movl %%esp,%0" : "=r"(task->esp) : : );
-  return;
-}
-
-static inline void restore_esp (volatile tcb *task) {
-  __asm__ __volatile__ ("movl %0,%%esp" : : "r"(task->esp) : "memory");
-  return;
-}
-
-static inline void push_registers (void) {
-  __asm__("pusha");
-  return;
-}
-
-static inline void pop_registers (void) {
-  __asm__("popa");
-  return;
 }
 
 /* This function cannot be inlined, because it must be ASSURED that there is
