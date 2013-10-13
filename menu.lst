@@ -1,0 +1,8 @@
+default 0
+timeout 0
+hiddenmenu
+
+title GeorgeOS
+root (hd0,0)
+kernel /boot/george.multiboot
+
