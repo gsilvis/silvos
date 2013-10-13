@@ -5,9 +5,7 @@
 #define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
 
-void switch_task (volatile tcb *old_task, volatile tcb *new_task);
-
-/* Takes a pointer to JUST ABOVE THE TOP of the stack and to the BEGINNING of the function */
+/* Takes a pointer to TOP USABLE WORD of the stack */
 tcb *thread_create (void *stack, void (*task)(void *), void *userdata) {
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
@@ -22,9 +20,9 @@ tcb *thread_create (void *stack, void (*task)(void *), void *userdata) {
   return 0; /* No thread available! */
 }
 
-/* Round-robin scheduling.  If no poassible task to choose, panic and halt. */
+/* Round-robin scheduling.  If no poassible task to choose, panic. */
 tcb *choose_task (void) {
-  static int rr = -1;
+  static int rr = -1; /* Start with thread 0 the first time we're called. */
   for (int i = 1; i <= NUMTHREADS; i++) {
     int index = (rr+i) % NUMTHREADS;
     if (tcbs[index].state == TS_CREATED || tcbs[index].state == TS_BEGUN) {
@@ -37,25 +35,30 @@ tcb *choose_task (void) {
   panic("No possible threads to schedule.");
 }
 
-/* This function cannot be inlined, because it must be ASSURED that there is
-   EXACTLY ONE INSTRUCTION that switches context.  This is why I never need to
-   store the instruction pointer for any thread. */
+/* This function cannot be inlined or cloned, because it must be ASSURED that
+ * there is EXACTLY ONE INSTRUCTION that switches context.  This is why I
+ * never need to store the instruction pointer for any thread.  Furthermore,
+ * %esp must be saved and restored in the same function, so again in only one
+ * place.
+ *
+ * There will be a stack frame for this function at the bottom and top of
+ * every thread stack (except the bottom of the currently active stack). */
 void __attribute__ ((noinline, noclone)) switch_task (volatile tcb *old_task, volatile tcb *new_task) {
   if (old_task) {
     save_esp(&old_task->esp);
-  } /* If not, we were switching from not-within-the-scheduler */
-  restore_esp(new_task->esp); /* !!! CAN ONLY HAVE ONE CALL TO THIS !!! */
+  } /* If not, we were switching from something that wasn't a thread. */
+  restore_esp(new_task->esp);
   switch (new_task->state) {
-  case TS_BEGUN:
+  case TS_BEGUN: /* Bottom of stack */
     return;
-  case TS_CREATED:
+  case TS_CREATED: /* Top of stack */
     new_task->state = TS_BEGUN;
     new_task->task(new_task->userdata);
-    exit(); /* Task finished; does not return */
+    exit();
   case TS_NONEXIST:
-    panic("Waking thread in non-existent state.");
+    panic("Waking uncreated or exited thread.");
   default:
-    panic("Waking thread with corrupted state.");
+    panic("Waking thread in corrupted state.");
   }
 }
 
