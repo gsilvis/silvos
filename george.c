@@ -15,10 +15,8 @@ void print_mem (void *mem) {
   yield();
   yield();
   yield();
-  yield();
-  yield();
-  yield();
-  yield();
+  exit();
+  __asm__("hlt"); /* not run */
   yield();
   yield();
 }
@@ -50,6 +48,7 @@ void dumb1 (int n) {
 }
 void dumb (void *i) {
   dumb1((int) i);
+  exit();
 }
 char dumbstack[4096];
 

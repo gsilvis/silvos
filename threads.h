@@ -18,14 +18,9 @@ typedef struct {
 
 /* Takes a pointer to JUST ABOVE THE TOP of the stack and to the BEGINNING of the function */
 tcb *thread_create (void *stack, void (*task)(void *), void *userdata);
-
-void switch_task (volatile tcb *old_task, volatile tcb *new_task);
-
 void schedule (void);
-
+void exit (void);
 void yield (void);
-
-
 
 #endif
 

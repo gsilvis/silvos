@@ -5,6 +5,8 @@
 #define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
 
+void switch_task (volatile tcb *old_task, volatile tcb *new_task);
+
 /* Takes a pointer to JUST ABOVE THE TOP of the stack and to the BEGINNING of the function */
 tcb *thread_create (void *stack, void (*task)(void *), void *userdata) {
   for (int i = 0; i < NUMTHREADS; i++) {
@@ -63,12 +65,18 @@ void __attribute__ ((noinline)) switch_task (volatile tcb *old_task, volatile tc
   }
 }
 
+tcb *current_tcb = 0;
+
 void schedule (void) {
-  static tcb *current_tcb = 0;
   tcb *old_tcb = current_tcb;
   current_tcb = choose_task();
   switch_task(old_tcb, current_tcb);
   return;
+}
+
+void exit (void) {
+  current_tcb->state = TS_NONEXIST;
+  schedule(); /* Does not return */
 }
 
 void yield (void) {
