@@ -78,5 +78,5 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   thread_create(&dumbstack[4088], dumb, (void *)20);
   thread_create(&moronstack[4088], moron, (void *)0);
   thread_create(&moronstack2[4088], moron, (void *)0);
-  schedule(); /* Initialize the thread system.  Does not return */
+  yield(); /* Initialize the thread system.  Does not return */
 }
