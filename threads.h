@@ -15,7 +15,6 @@ typedef struct {
   void *userdata;
 } tcb;
 
-
 /* Takes a pointer to JUST ABOVE THE TOP of the stack and to the BEGINNING of the function */
 tcb *thread_create (void *stack, void (*task)(void *), void *userdata);
 void __attribute__ ((noreturn)) exit (void);
