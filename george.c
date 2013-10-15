@@ -1,8 +1,9 @@
 #include "vga.h"
 #include "threads.h"
-#include "isr.h"
+#include "idt.h"
 #include "util.h"
 #include "bits.h"
+#include "isr.h"
 
 void print_mem (void *mem) {
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
@@ -61,6 +62,11 @@ void moron (void __attribute__ ((unused)) *a) {
 }
 
 int stacks[5][1024];
+
+void initialize_idt (void) {
+  register_isr(0x35, dumb_isr);
+  register_isr(0x36, yield_isr);
+}
 
 void kernel_main (int magic, unsigned int *mboot_struct) {
   clear_screen();
