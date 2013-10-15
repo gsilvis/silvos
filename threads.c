@@ -2,6 +2,19 @@
 #include "util.h"
 #include "bits.h"
 
+enum thread_state {
+  TS_NONEXIST, /* Nothing here */
+  TS_CREATED,  /* NOTUSING: No execution performed yet */
+  TS_BEGUN,    /* Yielded or preempted */
+};
+
+typedef struct {
+  enum thread_state state;
+  void *esp;
+  void (*task)(void *);
+  void *userdata;
+} tcb;
+
 #define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
 
@@ -13,7 +26,11 @@ void stack_top (tcb *t) {
 }
 
 /* Takes a pointer to JUST BEYOND END of the stack */
-tcb *thread_create (int *stack, void (*task)(void *), void *userdata) {
+/* Currently it is UNSAFE to call this while threading is active.  Doing so
+   may be race-y.  However, the obvious fix of cli() and sti() makes it unsafe
+   to call OUTSIDE of threading, which is worse. */
+/* Returns 0 on success, -1 on failure */
+int thread_create (int *stack, void (*task)(void *), void *userdata) {
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
       /* Initialize tcb struct */
@@ -28,10 +45,10 @@ tcb *thread_create (int *stack, void (*task)(void *), void *userdata) {
       stack[-5] = (int) &stack_top; /* Return address from ISR */
       /* Eight 4-byte registers for POPA */
       tcbs[i].esp = stack - 13;
-      return &tcbs[i];
+      return 0;
     }
   }
-  return 0; /* No thread available! */
+  return -1; /* No thread available! */
 }
 
 /* Round-robin scheduling.  If no poassible task to choose, panic. */
