@@ -18,12 +18,11 @@ void print_mem (void *mem) {
   yield();
   yield();
   yield();
-  exit();
-  __asm__("hlt"); /* not run */
   yield();
   yield();
+  //  panic("wefwef");
+
 }
-char memstack[4096];
 
 void welcome (void __attribute__ ((unused)) *a) {
   puts("YOOOOOOOOOOOOOOO!\r\n");
@@ -32,10 +31,9 @@ void welcome (void __attribute__ ((unused)) *a) {
   yield();
   while (1) {
     puts("Have a nice day!\r\n");
-    __asm__("int $0x35");
+    __asm__("int $0x36");
   }
 }
-char welstack[4096];
 
 void dumb1 (int n) {
   if (n == 0) {
@@ -51,9 +49,7 @@ void dumb1 (int n) {
 }
 void dumb (void *i) {
   dumb1((int) i);
-  exit();
 }
-char dumbstack[4096];
 
 void moron (void __attribute__ ((unused)) *a) {
   for (int i = 0; i < 90000; i++) {
@@ -63,8 +59,8 @@ void moron (void __attribute__ ((unused)) *a) {
     yield();
   }
 }
-char moronstack[4096];
-char moronstack2[4096];
+
+int stacks[5][1024];
 
 void kernel_main (int magic, unsigned int *mboot_struct) {
   clear_screen();
@@ -74,11 +70,11 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   }
 
   int mem = (mboot_struct[1] + mboot_struct[2])/1024; /* Low mem + High mem */
-  thread_create(&memstack[4088], print_mem, (void *)mem);
-  thread_create(&welstack[4088], welcome, (void *)0);
-  thread_create(&dumbstack[4088], dumb, (void *)20);
-  thread_create(&moronstack[4088], moron, (void *)0);
-  thread_create(&moronstack2[4088], moron, (void *)0);
+  thread_create(&stacks[0][1020], print_mem, (void *)mem);
+  //  thread_create(&stacks[1][1020], welcome, (void *)0xdeadbeef);
+  //  thread_create(&stacks[2][1020], dumb, (void *)20);
+  thread_create(&stacks[3][1020], moron, (void *)0);
+  //  thread_create(&stacks[4][1020], moron, (void *)0);
 
   puts("Initializing IDT");
   initialize_idt();

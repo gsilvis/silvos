@@ -1,10 +1,13 @@
 
 all: george.multiboot
 
-george.multiboot: george.o start.o threads.o vga.o util.o isr.o
+george.multiboot: george.o start.o threads.o vga.o util.o isr.o isr-stub.o
 	ld -melf_i386 -no-stdlib -N -Ttext 100000 $^ -o $@
 
 start.o: start.s
+	as --32 -o $@ $^
+
+isr-stub.o: isr-stub.s
 	as --32 -o $@ $^
 
 %.o: %.c

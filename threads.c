@@ -5,15 +5,29 @@
 #define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
 
-/* Takes a pointer to TOP USABLE WORD of the stack */
-tcb *thread_create (void *stack, void (*task)(void *), void *userdata) {
+void stack_top (tcb *t) {
+  t->task(t->userdata);
+  t->state = TS_NONEXIST;
+  yield(); /* Does not return */
+  panic("Yield returned to dead thread!");
+}
+
+/* Takes a pointer to JUST BEYOND END of the stack */
+tcb *thread_create (int *stack, void (*task)(void *), void *userdata) {
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
-      /* Found an avilable thread */
+      /* Initialize tcb struct */
       tcbs[i].state = TS_CREATED;
-      tcbs[i].esp = stack;
       tcbs[i].task = task;
       tcbs[i].userdata = userdata;
+      /* Initialize stack */
+      stack[-1] = (int) &tcbs[i]; /* Argument to stack_top */
+      /* Return address from stack_top is irrelevant */
+      stack[-3] = 0x200; /* EFLAGS:  allow interrupts, but that's it */
+      stack[-4] = 0x08; /* Segment */
+      stack[-5] = (int) &stack_top; /* Return address from ISR */
+      /* Eight 4-byte registers for POPA */
+      tcbs[i].esp = stack - 13;
       return &tcbs[i];
     }
   }
@@ -35,49 +49,17 @@ tcb *choose_task (void) {
   panic("No possible threads to schedule.");
 }
 
-/* This function cannot be inlined or cloned, because it must be ASSURED that
- * there is EXACTLY ONE INSTRUCTION that switches context.  This is why I
- * never need to store the instruction pointer for any thread.  Furthermore,
- * %esp must be saved and restored in the same function, so again in only one
- * place.
- *
- * There will be a stack frame for this function at the bottom and top of
- * every thread stack (except the bottom of the currently active stack). */
-void __attribute__ ((noinline, noclone)) switch_task (volatile tcb *old_task, volatile tcb *new_task) {
-  if (old_task) {
-    save_esp(&old_task->esp);
-  } /* If not, we were switching from something that wasn't a thread. */
-  restore_esp(new_task->esp);
-  switch (new_task->state) {
-  case TS_BEGUN: /* Bottom of stack */
-    return;
-  case TS_CREATED: /* Top of stack */
-    new_task->state = TS_BEGUN;
-    new_task->task(new_task->userdata);
-    exit();
-  case TS_NONEXIST:
-    panic("Waking uncreated or exited thread.");
-  default:
-    panic("Waking thread in corrupted state.");
+
+/* Takes in and returns an esp pointer */
+void *schedule (void *esp) {
+  static tcb *running_tcb = 0;
+  if (running_tcb) {
+    running_tcb->esp = esp;
   }
-}
-
-tcb *current_tcb = 0;
-
-void schedule (void) {
-  tcb *old_tcb = current_tcb;
-  current_tcb = choose_task();
-  switch_task(old_tcb, current_tcb);
-}
-
-void __attribute__ ((noreturn)) exit (void) {
-  current_tcb->state = TS_NONEXIST;
-  schedule(); /* Does not return */
-  panic("Scheduler somehow returned into exited thread.");
+  running_tcb = choose_task();
+  return running_tcb->esp;
 }
 
 void yield (void) {
-  push_registers();
-  schedule();
-  pop_registers();
+  __asm__("int $0x36");
 }
