@@ -1,5 +1,8 @@
 #include "vga.h"
 #include "threads.h"
+#include "isr.h"
+#include "util.h"
+#include "bits.h"
 
 void print_mem (void *mem) {
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
@@ -29,7 +32,7 @@ void welcome (void __attribute__ ((unused)) *a) {
   yield();
   while (1) {
     puts("Have a nice day!\r\n");
-    yield();
+    __asm__("int $0x35");
   }
 }
 char welstack[4096];
@@ -69,14 +72,19 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
     puts("OOF!  Multiboot fail!\r\n");
     return;
   }
-  //  puts("Welcome to GeorgeOS, Multiboot Edition!\r\nTotal Available Ram: ");
+
   int mem = (mboot_struct[1] + mboot_struct[2])/1024; /* Low mem + High mem */
-//  puti((mboot_struct[1] + mboot_struct[2])/1024); /* Low mem + High mem */
-//  puts(" MB\r\n");
   thread_create(&memstack[4088], print_mem, (void *)mem);
   thread_create(&welstack[4088], welcome, (void *)0);
   thread_create(&dumbstack[4088], dumb, (void *)20);
   thread_create(&moronstack[4088], moron, (void *)0);
   thread_create(&moronstack2[4088], moron, (void *)0);
+
+  puts("Initializing IDT");
+  initialize_idt();
+  puts("Inserting IDT");
+  insert_idt();
+  sti();
+
   yield(); /* Initialize the thread system.  Does not return */
 }
