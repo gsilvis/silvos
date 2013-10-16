@@ -4,7 +4,7 @@
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
-  TS_CREATED,  /* NOTUSING: No execution performed yet */
+  TS_CREATED,  /* No execution performed yet */
   TS_BEGUN,    /* Yielded or preempted */
 };
 

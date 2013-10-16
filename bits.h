@@ -13,4 +13,16 @@ static inline void sti (void) {
   __asm__("sti");
 }
 
+static inline void outb (unsigned char port, unsigned char data) {
+  __asm__("mov %1, %%al;\n\t"
+          "out %%al, %0" : : "i"(port), "r"(data) : "%eax");
+}
+
+static inline unsigned char inb (unsigned char port) {
+  unsigned char data;
+  __asm__("in %1, %%al\n\t"
+          "mov %%al, %0" : "=r"(data) : "i"(port) : "%eax", "%edx");
+  return data;
+}
+
 #endif

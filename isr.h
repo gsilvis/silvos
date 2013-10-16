@@ -3,5 +3,9 @@
 
 void dumb_isr (void);
 void yield_isr (void);
+void doublefault_isr (void);
+void isr_other (void);
+void isr_20 (void);
+void isr_21 (void);
 
 #endif
