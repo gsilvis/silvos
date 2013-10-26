@@ -1,9 +1,19 @@
 .GLOBAL yield_isr
 yield_isr:
         pusha
+L1:
         push %esp
         call schedule
-        add $4,%esp
         mov %eax,%esp /* Switch stacks here! */
+        popa
+        iret
+
+.GLOBAL kbd_isr
+kbd_isr:
+        pusha
+        call eoi
+        call read_key
+        test %eax,%eax
+        jnz L1
         popa
         iret

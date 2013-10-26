@@ -10,8 +10,18 @@
 void remap_pic (void) {
   outb(0x20, 0x11); /* Initialize and require 4th byte. */
   outb(0x21, 0x20); /* Offset ISRs 0 - 7 to interrupt lines 0x20 - 0x27. */
-  outb(0x21, 0);    /* Do not cascade. */
-  outb(0x21, 0x01); /* Enter 8086 mode. */
+  outb(0x21, 0x04); /*  */
+  outb(0x21, 0x01); /* Enter 8086 mode */
+
+  outb(0xA0, 0x11);
+  outb(0xA1, 0x40); /* Offset to 0x48-0x4F, I think */
+  outb(0xA1, 0x02);
+  outb(0xA1, 0x01); /* 8086 mode */
+
   outb(0x21, 0xFD); /* Block non-keyboard lines */
-  return;
+  outb(0xA1, 0xFF); /* block everything */
+}
+
+void eoi (void) {
+  outb(0x20, 0x20); /* End of interrupt for master PIC */
 }

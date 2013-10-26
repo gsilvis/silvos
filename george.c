@@ -31,9 +31,12 @@ void welcome (void __attribute__ ((unused)) *a) {
   yield();
   puts("How AAAAAAAARE you!\r\n");
   yield();
-  while (1) {
+  while (0) {
     puts("Have a nice day!\r\n");
     __asm__("int $0x36");
+  }
+  while (1) {
+    yield();
   }
 }
 
@@ -54,11 +57,19 @@ void dumb (void *i) {
 }
 
 void moron (void __attribute__ ((unused)) *a) {
-  for (int i = 0; i < 90000; i++) {
+  for (int i = 0; i >= 0; i++) {
     //    puts("nooooo me fiiiiiirst!\r\n");
+    for (int j = 0; j < 1000; j++) {
+      yield();
+    }
     putc('B');
-    yield();
-    yield();
+  }
+}
+
+void forever (void *a) {
+  char c = (char)(unsigned int) a;
+  while (1) {
+    putc(c);
   }
 }
 
@@ -70,10 +81,10 @@ void initialize_idt (void) {
   }
   register_isr(0x35, dumb_isr);
   register_isr(0x36, yield_isr);
+  register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
-
   register_isr(0x20, isr_20);
-  register_isr(0x21, isr_21);
+  register_isr(0x21, kbd_isr);
 }
 
 void kernel_main (int magic, unsigned int *mboot_struct) {
@@ -85,10 +96,13 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
 
   int mem = (mboot_struct[1] + mboot_struct[2])/1024; /* Low mem + High mem */
   thread_create(&stacks[0][1020], print_mem, (void *)mem);
-  thread_create(&stacks[1][1020], welcome, (void *)0xdeadbeef);
-  thread_create(&stacks[2][1020], dumb, (void *)20);
-  thread_create(&stacks[3][1020], moron, (void *)0);
-  thread_create(&stacks[4][1020], moron, (void *)0);
+  //  thread_create(&stacks[1][1020], welcome, (void *)0xdeadbeef);
+  //  thread_create(&stacks[2][1020], dumb, (void *)15);
+  //  thread_create(&stacks[3][1020], moron, (void *)0);
+  //  thread_create(&stacks[4][1020], moron, (void *)0);
+
+  thread_create(&stacks[1][1020], forever, (void *)'A');
+  thread_create(&stacks[2][1020], forever, (void *)'B');
 
   puts("Initializing IDT");
   initialize_idt();

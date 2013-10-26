@@ -2,5 +2,7 @@
 #define __SILVOS_UTIL_H
 
 void __attribute__ ((noreturn)) panic (const char *s);
+void blab (void);
+int read_key (void);
 
 #endif

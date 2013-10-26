@@ -8,6 +8,10 @@ void doublefault_isr (void) {
   panic("DOUBLE FAULT");
 }
 
+void spurious_isr (void) {
+  panic("SPURIOUS ISR");
+}
+
 void isr_other (void) {
   panic("SOME ISR");
 }
