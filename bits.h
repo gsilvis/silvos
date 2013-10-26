@@ -20,8 +20,8 @@ static inline void outb (unsigned char port, unsigned char data) {
 
 static inline unsigned char inb (unsigned char port) {
   unsigned char data;
-  __asm__("in %1, %%al\n\t"
-          "mov %%al, %0" : "=r"(data) : "i"(port) : "%eax", "%edx");
+  __asm__ volatile("in %1, %%al\n\t"
+                   "mov %%al, %0" : "=r"(data) : "i"(port) : "%eax", "%edx");
   return data;
 }
 
