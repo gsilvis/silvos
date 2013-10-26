@@ -1,6 +1,7 @@
 #include "threads.h"
 #include "util.h"
 #include "bits.h"
+#include "pit.h"
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
@@ -74,6 +75,7 @@ void *schedule (void *esp) {
     running_tcb->esp = esp;
   }
   running_tcb = choose_task();
+  set_timeout(); /* Reset pre-emption timer */
   return running_tcb->esp;
 }
 

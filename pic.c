@@ -18,7 +18,7 @@ void remap_pic (void) {
   outb(0xA1, 0x02);
   outb(0xA1, 0x01); /* 8086 mode */
 
-  outb(0x21, 0xFD); /* Block non-keyboard lines */
+  outb(0x21, 0xFC); /* Block non-keyboard, non-timer lines */
   outb(0xA1, 0xFF); /* block everything */
 }
 

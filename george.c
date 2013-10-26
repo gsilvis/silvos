@@ -83,7 +83,7 @@ void initialize_idt (void) {
   register_isr(0x36, yield_isr);
   register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
-  register_isr(0x20, isr_20);
+  register_isr(0x20, timer_isr);
   register_isr(0x21, kbd_isr);
 }
 

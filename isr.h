@@ -9,5 +9,6 @@ void isr_other (void);
 void isr_20 (void);
 void isr_21 (void);
 void kbd_isr (void);
+void timer_isr (void);
 
 #endif

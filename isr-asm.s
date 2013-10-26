@@ -17,3 +17,9 @@ kbd_isr:
         jnz L1
         popa
         iret
+
+.GLOBAL timer_isr
+timer_isr:
+        pusha
+        call eoi
+        jmp L1
