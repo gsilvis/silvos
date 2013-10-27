@@ -6,67 +6,15 @@
 #include "isr.h"
 #include "pic.h"
 
-void print_mem (void *mem) {
-  puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
-  yield();
-  puts("Total Available Ram: ");
-  puti((int) mem);
-  puts(" MB\r\n");
-  yield();
-  yield();
-  yield();
-  yield();
-  yield();
-  yield();
-  yield();
-  yield();
-  yield();
-  yield();
-  //  panic("wefwef");
-
-}
-
-void welcome (void __attribute__ ((unused)) *a) {
-  puts("YOOOOOOOOOOOOOOO!\r\n");
-  yield();
-  puts("How AAAAAAAARE you!\r\n");
-  yield();
-  while (0) {
-    puts("Have a nice day!\r\n");
-    __asm__("int $0x36");
-  }
+void forever_yielding (void *a) {
+  char c = (char)(unsigned int) a;
   while (1) {
+    putc(c);
     yield();
   }
 }
 
-void dumb1 (int n) {
-  if (n == 0) {
-    //    yield();
-    putc('A');
-    yield();
-  } else {
-    dumb1(n-1);
-    putc('a');
-    yield();
-    dumb1(n-1);
-  }
-}
-void dumb (void *i) {
-  dumb1((int) i);
-}
-
-void moron (void __attribute__ ((unused)) *a) {
-  for (int i = 0; i >= 0; i++) {
-    //    puts("nooooo me fiiiiiirst!\r\n");
-    for (int j = 0; j < 1000; j++) {
-      yield();
-    }
-    putc('B');
-  }
-}
-
-void forever (void *a) {
+void forever_unyielding (void *a) {
   char c = (char)(unsigned int) a;
   while (1) {
     putc(c);
@@ -94,22 +42,23 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
     return;
   }
 
-  int mem = (mboot_struct[1] + mboot_struct[2])/1024; /* Low mem + High mem */
-  thread_create(&stacks[0][1020], print_mem, (void *)mem);
-  //  thread_create(&stacks[1][1020], welcome, (void *)0xdeadbeef);
-  //  thread_create(&stacks[2][1020], dumb, (void *)15);
-  //  thread_create(&stacks[3][1020], moron, (void *)0);
-  //  thread_create(&stacks[4][1020], moron, (void *)0);
+  thread_create(&stacks[4][1024], forever_yielding, (void *)' ');
+  thread_create(&stacks[1][1024], forever_unyielding, (void *)'A');
+  thread_create(&stacks[2][1024], forever_unyielding, (void *)'B');
 
-  thread_create(&stacks[1][1020], forever, (void *)'A');
-  thread_create(&stacks[2][1020], forever, (void *)'B');
+  puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
+  puts("Total Available Ram: ");
+  puti((mboot_struct[1] + mboot_struct[2])/1024); /* Low mem + High mem */
+  puts(" MB\r\n");
 
-  puts("Initializing IDT");
+  puts("Initializing IDT\r\n");
   initialize_idt();
-  puts("Inserting IDT");
+  puts("Inserting IDT\r\n");
   insert_idt();
+  puts("Remapping PIC\r\n");
   remap_pic();
+  puts("Enabling hardware interrupts");
   sti();
-
-  yield(); /* Initialize the thread system.  Does not return */
+  puts("Initializing thread subsystem");
+  yield(); /* Does not return */
 }
