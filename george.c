@@ -18,6 +18,7 @@ void forever_unyielding (void *a) {
   char c = (char)(unsigned int) a;
   while (1) {
     putc(c);
+    delay(4000000);
   }
 }
 
@@ -42,9 +43,10 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
     return;
   }
 
-  thread_create(&stacks[4][1024], forever_yielding, (void *)' ');
-  thread_create(&stacks[1][1024], forever_unyielding, (void *)'A');
-  thread_create(&stacks[2][1024], forever_unyielding, (void *)'B');
+  thread_create(&stacks[0][1024], forever_yielding, (void *)'u');
+  thread_create(&stacks[1][1024], forever_yielding, (void *)'v');
+  thread_create(&stacks[2][1024], forever_unyielding, (void *)'A');
+  thread_create(&stacks[3][1024], forever_unyielding, (void *)'B');
 
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
   puts("Total Available Ram: ");
@@ -57,8 +59,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   insert_idt();
   puts("Remapping PIC\r\n");
   remap_pic();
-  puts("Enabling hardware interrupts");
+  puts("Enabling hardware interrupts\r\n");
   sti();
-  puts("Initializing thread subsystem");
+  puts("Initializing thread subsystem\r\n");
   yield(); /* Does not return */
 }
