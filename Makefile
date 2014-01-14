@@ -1,7 +1,7 @@
 
 all: george.multiboot
 
-george.multiboot: george.o start.o threads.o vga.o util.o idt.o isr.o isr-asm.o pic.o pit.o util-asm.o gdt.o gdt-asm.o page.o
+george.multiboot: george.o start.o threads.o vga.o util.o idt.o isr.o isr-asm.o pic.o pit.o util-asm.o gdt.o gdt-asm.o page.o alloc.o
 	ld -melf_i386 -no-stdlib -N -Ttext 100000 $^ -o $@
 
 start.o: start.s

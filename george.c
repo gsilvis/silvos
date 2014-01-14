@@ -55,6 +55,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   puti((mboot_struct[1] + mboot_struct[2])/1024); /* Low mem + High mem */
   puts(" MB\r\n");
 
+  puts("Initializing memory allocator\r\n");
+  initialize_allocator();
   puts("Initializing IDT\r\n");
   initialize_idt();
   puts("Inserting IDT\r\n");
