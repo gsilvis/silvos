@@ -18,7 +18,7 @@ void initialize_allocator (unsigned int highmem) {
   to_alloc = (void *) tmp;
 }
 
-void *allocate_page (void) {
+void *allocate_phys_page (void) {
   if (to_alloc == memtop) {
     return 0x00000000;
   }

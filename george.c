@@ -40,7 +40,7 @@ void initialize_idt (void) {
 void create_test_threads (void) {
   int *(stacks[4]);
   for (int i = 0; i < 4; i++) {
-    stacks[i] = allocate_page();
+    stacks[i] = allocate_phys_page();
   }
   thread_create(&stacks[0][1024], forever_yielding, (void *)'u');
   thread_create(&stacks[1][1024], forever_yielding, (void *)'v');
