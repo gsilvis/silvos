@@ -1,3 +1,6 @@
+#include "page.h"
+#include "alloc.h"
+
 #define PAGE_MASK_PRESENT 0x00000001
 #define PAGE_MASK_WRITE   0x00000002
 #define PAGE_MASK_PRIV    0x00000004
@@ -11,19 +14,19 @@
 
 typedef unsigned int pagetable[1024] __attribute__((aligned (4096)));
 
-pagetable pt_upper;
-pagetable pt_lower;
-
 void enable_paging (void) {
+  pagetable *pt_upper = (pagetable *)allocate_phys_page();
+  pagetable *pt_lower = (pagetable *)allocate_phys_page();
+
   /* Set up page table */
-  pt_upper[0] = ((unsigned int) &pt_lower) | PAGE_MASK_DEFAULT_REAL;
+  (*pt_upper)[0] = ((unsigned int) pt_lower) | PAGE_MASK_DEFAULT_REAL;
   for (int i = 1; i < 1023; i++) {
-    pt_upper[i] = PAGE_MASK_DEFAULT_FAKE;
+    (*pt_upper)[i] = PAGE_MASK_DEFAULT_FAKE;
   }
-  pt_upper[1023] = ((unsigned int) &pt_upper) | PAGE_MASK_DEFAULT_REAL;
+  (*pt_upper)[1023] = ((unsigned int) pt_upper) | PAGE_MASK_DEFAULT_REAL;
   /* Set up page entry directory */
   for (int j = 0; j < 1024; j++) {
-    pt_lower[j] = (j * 4096) | PAGE_MASK_DEFAULT_REAL;
+    (*pt_lower)[j] = (j * 4096) | PAGE_MASK_DEFAULT_REAL;
   }
   /* Turn on paging */
   __asm__("mov %0,%%cr3" : : "r"(pt_upper) : );
