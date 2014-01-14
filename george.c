@@ -1,6 +1,7 @@
 #include "vga.h"
 #include "threads.h"
 #include "idt.h"
+#include "gdt.h"
 #include "util.h"
 #include "bits.h"
 #include "isr.h"
@@ -57,6 +58,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   initialize_idt();
   puts("Inserting IDT\r\n");
   insert_idt();
+  puts("Inserting GDT\r\n");
+  insert_gdt();
   puts("Remapping PIC\r\n");
   remap_pic();
   puts("Enabling hardware interrupts\r\n");
