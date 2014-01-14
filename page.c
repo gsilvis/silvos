@@ -33,3 +33,19 @@ void enable_paging (void) {
   __asm__("mov %0,%%cr0" : : "r"(cr0) : );
 }
 
+int map_page (unsigned int phys, unsigned int virt) {
+  if (phys & 0xFFF) {
+    return -1;
+  }
+  if (virt & 0xFFF) {
+    return -1;
+  }
+
+  pagetable *outer = (pagetable *) (0xFFFFF000);
+  if (!((*outer)[(0xFFC00000 & virt) >> 22] & PAGE_MASK_PRESENT)) {
+    return -2;
+  }
+  pagetable *inner = (pagetable *) ((0xFFC00000 | (virt >> 10)) & 0xFFFFF000);
+  (*inner)[(0x003FF000 & virt) >> 12] = phys | PAGE_MASK_DEFAULT_REAL;
+  return 0;
+}
