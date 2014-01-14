@@ -26,6 +26,7 @@ void forever_unyielding (void *a) {
 }
 
 void initialize_idt (void) {
+  create_idt();
   for (int i = 0; i < 256; i++) {
     register_isr(i, isr_other);
   }

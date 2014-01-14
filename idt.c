@@ -1,5 +1,6 @@
 #include "isr.h"
 #include "util.h"
+#include "alloc.h"
 
 struct IDT_entry {
   unsigned short offset_low;
@@ -14,7 +15,11 @@ struct IDT_addr {
   unsigned int base;
 } __attribute__ ((packed));
 
-struct IDT_entry idt[256];
+struct IDT_entry *idt;
+
+void create_idt () {
+  idt = (struct IDT_entry *)allocate_phys_page();
+}
 
 void register_isr (unsigned char num, void (*handler)(void)) {
   idt[num].type_attr = 0x8E; /* present 32-bit interrupt gate in ring 3 */
