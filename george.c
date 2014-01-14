@@ -6,6 +6,7 @@
 #include "bits.h"
 #include "isr.h"
 #include "pic.h"
+#include "page.h"
 
 void forever_yielding (void *a) {
   char c = (char)(unsigned int) a;
@@ -62,6 +63,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   insert_gdt();
   puts("Remapping PIC\r\n");
   remap_pic();
+  puts("Enabling paging\r\n");
+  enable_paging();
   puts("Enabling hardware interrupts\r\n");
   sti();
   puts("Initializing thread subsystem\r\n");
