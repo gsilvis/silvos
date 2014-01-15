@@ -22,7 +22,8 @@ void create_idt () {
 }
 
 void register_isr (unsigned char num, void (*handler)(void)) {
-  idt[num].type_attr = 0x8E; /* present 32-bit interrupt gate in ring 3 */
+  idt[num].type_attr = 0xEE; /* present 32-bit interrupt gate in ring 3 */
+  /* 0x8E for ring0 only, EE for ring3 */
   idt[num].offset_high = 0xFFFF & ((unsigned int) handler >> 16);
   idt[num].offset_low = 0xFFFF & ((unsigned int) handler);
   idt[num].zero = 0;

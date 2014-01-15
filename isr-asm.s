@@ -1,10 +1,20 @@
 .GLOBAL yield_isr
+.GLOBAL thread_start
 yield_isr:
         pusha
 L1:
-        push %esp
+        mov $0x10,%ax
+        mov %ax,%ds
+        mov %ax,%es
+        mov %ax,%fs
+        mov %ax,%gs
         call schedule
-        mov %eax,%esp /* Switch stacks here! */
+thread_start:
+        mov $0x23,%ax
+        mov %ax,%ds
+        mov %ax,%es
+        mov %ax,%fs
+        mov %ax,%gs
         popa
         iret
 

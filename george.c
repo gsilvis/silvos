@@ -9,18 +9,31 @@
 #include "page.h"
 #include "alloc.h"
 
-void forever_yielding (void *a) {
-  char c = (char)(unsigned int) a;
+#include "userland.h"
+
+void forever_yielding (void) {
   while (1) {
-    putc(c);
+    putc('a');
     yield();
   }
 }
 
-void forever_unyielding (void *a) {
-  char c = (char)(unsigned int) a;
+void forever_yielding2 (void) {
   while (1) {
-    putc(c);
+    putc('b');
+    yield();
+  }
+}
+void forever_yielding3 (void) {
+  while (1) {
+    putc('c');
+    yield();
+  }
+}
+
+void forever_unyielding (void) {
+  while (1) {
+    putc('T');
     delay(4000000);
   }
 }
@@ -73,14 +86,10 @@ void initialize_idt (void) {
 }
 
 void create_test_threads (void) {
-  int *(stacks[4]);
-  for (int i = 0; i < 4; i++) {
-    stacks[i] = allocate_phys_page();
-  }
-  thread_create(&stacks[0][1024], forever_yielding, (void *)'u');
-  thread_create(&stacks[1][1024], forever_yielding, (void *)'v');
-  thread_create(&stacks[2][1024], forever_unyielding, (void *)'A');
-  thread_create(&stacks[3][1024], forever_unyielding, (void *)'B');
+  user_thread_create(forever_yielding);
+  user_thread_create(forever_yielding2);
+  user_thread_create(forever_yielding3);
+  user_thread_create(forever_unyielding);
 }
 
 void kernel_main (int magic, unsigned int *mboot_struct) {
@@ -102,6 +111,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   initialize_idt();
   puts("Inserting IDT\r\n");
   insert_idt();
+  puts("Initializing GDT\r\n");
+  initialize_gdt();
   puts("Inserting GDT\r\n");
   insert_gdt();
   puts("Remapping PIC\r\n");
@@ -113,5 +124,5 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   puts("Enabling hardware interrupts\r\n");
   sti();
   puts("Initializing thread subsystem\r\n");
-  yield(); /* Does not return */
+  schedule(); /* Does not return */
 }
