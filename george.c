@@ -34,6 +34,40 @@ void initialize_idt (void) {
   register_isr(0x36, yield_isr);
   register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
+
+  register_isr(0x00, isr_00);
+  register_isr(0x01, isr_01);
+  register_isr(0x02, isr_02);
+  register_isr(0x03, isr_03);
+  register_isr(0x04, isr_04);
+  register_isr(0x05, isr_05);
+  register_isr(0x06, isr_06);
+  register_isr(0x07, isr_07);
+  register_isr(0x08, isr_08);
+  register_isr(0x09, isr_09);
+  register_isr(0x0A, isr_0A);
+  register_isr(0x0B, isr_0B);
+  register_isr(0x0C, isr_0C);
+  register_isr(0x0D, isr_0D);
+  register_isr(0x0E, isr_0E);
+  register_isr(0x0F, isr_0F);
+  register_isr(0x10, isr_10);
+  register_isr(0x11, isr_11);
+  register_isr(0x12, isr_12);
+  register_isr(0x13, isr_13);
+  register_isr(0x14, isr_14);
+  register_isr(0x15, isr_15);
+  register_isr(0x16, isr_16);
+  register_isr(0x17, isr_17);
+  register_isr(0x18, isr_18);
+  register_isr(0x19, isr_19);
+  register_isr(0x1A, isr_1A);
+  register_isr(0x1B, isr_1B);
+  register_isr(0x1C, isr_1C);
+  register_isr(0x1D, isr_1D);
+  register_isr(0x1E, isr_1E);
+  register_isr(0x1F, isr_1F);
+
   register_isr(0x20, timer_isr);
   register_isr(0x21, kbd_isr);
 }
