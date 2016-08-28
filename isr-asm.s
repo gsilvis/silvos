@@ -33,3 +33,12 @@ timer_isr:
         pusha
         call eoi
         jmp L1
+
+.GLOBAL putch_isr
+putch_isr:
+        pusha
+        push %eax
+        call putc
+        pop %eax
+        popa
+        iret

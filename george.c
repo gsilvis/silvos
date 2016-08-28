@@ -13,27 +13,27 @@
 
 void forever_yielding (void) {
   while (1) {
-    putc('a');
+    putch('a');
     yield();
   }
 }
 
 void forever_yielding2 (void) {
   while (1) {
-    putc('b');
+    putch('b');
     yield();
   }
 }
 void forever_yielding3 (void) {
   while (1) {
-    putc('c');
+    putch('c');
     yield();
   }
 }
 
 void forever_unyielding (void) {
   while (1) {
-    putc('T');
+    putch('T');
     delay(40000000);
   }
 }
@@ -45,6 +45,7 @@ void initialize_idt (void) {
   }
   register_isr(0x35, dumb_isr);
   register_isr(0x36, yield_isr);
+  register_isr(0x37, putch_isr);
   register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
 
