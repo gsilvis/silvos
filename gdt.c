@@ -44,7 +44,7 @@ struct {
   unsigned short iomap;
 } __attribute__((packed)) tss;
 
-/* Six entries: Null descriptor, ring 0 code, ring 0 data, ring 3 code, ring 4
+/* Six entries: Null descriptor, ring 0 code, ring 0 data, ring 3 code, ring 3
    data, TSS */
 
 char gdt[][8] = {

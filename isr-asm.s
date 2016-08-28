@@ -3,18 +3,18 @@
 yield_isr:
         pusha
 L1:
-        mov $0x10,%ax
-        mov %ax,%ds
-        mov %ax,%es
-        mov %ax,%fs
-        mov %ax,%gs
+;        mov $0x10,%ax
+;        mov %ax,%ds
+;        mov %ax,%es
+;        mov %ax,%fs
+;        mov %ax,%gs
         call schedule
 thread_start:
-        mov $0x23,%ax
-        mov %ax,%ds
-        mov %ax,%es
-        mov %ax,%fs
-        mov %ax,%gs
+;        mov $0x23,%ax
+;        mov %ax,%ds
+;        mov %ax,%es
+;        mov %ax,%fs
+;        mov %ax,%gs
         popa
         iret
 

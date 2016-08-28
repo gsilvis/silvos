@@ -21,7 +21,6 @@ typedef struct {
 #define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
 
-/* Takes a pointer to JUST BEYOND END of the stack */
 /* Returns 0 on success, -1 on failure */
 int user_thread_create (void (*task)(void)) {
   int *kernel_stack = &((int *)allocate_phys_page())[1024];
@@ -45,7 +44,7 @@ int user_thread_create (void (*task)(void)) {
   return -1; /* No thread available! */
 }
 
-/* Round-robin scheduling.  If no poassible task to choose, panic. */
+/* Round-robin scheduling.  If no possible task to choose, panic. */
 tcb *choose_task (void) {
   static int rr = -1; /* Start with thread 0 the first time we're called. */
   for (int i = 1; i <= NUMTHREADS; i++) {
@@ -65,7 +64,7 @@ void schedule (void) {
   }
   running_tcb->state = TS_INACTIVE;
   running_tcb = choose_task();
-  /*  set_timeout();  Reset pre-emption timer */
+  set_timeout(); /* Reset pre-emption timer */
   __asm__("mov %0,%%esp" : : "r"(running_tcb->esp)); /* Switch stacks here */
   set_new_esp(running_tcb->stack_top);
   if (running_tcb->state == TS_UNSTARTED) {

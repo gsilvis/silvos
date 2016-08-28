@@ -34,7 +34,7 @@ void forever_yielding3 (void) {
 void forever_unyielding (void) {
   while (1) {
     putc('T');
-    delay(4000000);
+    delay(40000000);
   }
 }
 
@@ -106,7 +106,7 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   puts(" MB\r\n");
 
   puts("Initializing memory allocator\r\n");
-  initialize_allocator(mboot_struct[2]);
+  initialize_allocator(mboot_struct[2] * 1024);
   puts("Initializing IDT\r\n");
   initialize_idt();
   puts("Inserting IDT\r\n");
@@ -121,8 +121,6 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   enable_paging();
   puts("Creating test threads\r\n");
   create_test_threads();
-  puts("Enabling hardware interrupts\r\n");
-  sti();
   puts("Initializing thread subsystem\r\n");
   schedule(); /* Does not return */
 }
