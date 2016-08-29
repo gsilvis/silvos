@@ -7,6 +7,12 @@ void memset (char *ptr, char byte, unsigned int count) {
   }
 }
 
+void memcpy (unsigned char *src, unsigned char *dest, unsigned int count) {
+  for (unsigned int i = 0; i < count; i++) {
+    dest[i] = src[i];
+  }
+}
+
 void __attribute__ ((noreturn)) panic (const char *s) {
   cli();
   puts("\r\nKERNEL PANIC: ");

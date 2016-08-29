@@ -24,7 +24,8 @@ typedef struct {
 tcb tcbs[NUMTHREADS];
 
 /* Returns 0 on success, -1 on failure */
-int user_thread_create (void (*task)(void)) {
+int user_thread_create (unsigned char *text, unsigned int length) {
+#define TEXT 0x40000000
 #define KERNEL_STACK 0x40001000
 #define USER_STACK 0x40002000
   for (int i = 0; i < NUMTHREADS; i++) {
@@ -33,8 +34,10 @@ int user_thread_create (void (*task)(void)) {
       pagetable old_pt = get_current_pt();
       tcbs[i].pt = new_pt();
       insert_pt(tcbs[i].pt);
+      map_page((unsigned int)allocate_phys_page(), TEXT);
       map_page((unsigned int)allocate_phys_page(), KERNEL_STACK);
       map_page((unsigned int)allocate_phys_page(), USER_STACK);
+      memcpy(text, (unsigned char *)TEXT, length);
       /* Set up stacks */
       int *kernel_stack = &((int *)KERNEL_STACK)[1024];
       int *user_stack = &((int *)USER_STACK)[1024];
@@ -46,7 +49,7 @@ int user_thread_create (void (*task)(void)) {
       kernel_stack[-2] = (int) &user_stack[-4];
       kernel_stack[-3] = 0x200;
       kernel_stack[-4] = 0x1B;
-      kernel_stack[-5] = (int) task;
+      kernel_stack[-5] = (int) TEXT;
       user_stack[-1] = 0x9090;
       /* eight registers */
       tcbs[i].esp = &kernel_stack[-13];

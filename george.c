@@ -9,34 +9,8 @@
 #include "page.h"
 #include "alloc.h"
 
-#include "userland.h"
-
-void forever_yielding (void) {
-  while (1) {
-    putch('a');
-    yield();
-  }
-}
-
-void forever_yielding2 (void) {
-  while (1) {
-    putch('b');
-    yield();
-  }
-}
-void forever_yielding3 (void) {
-  while (1) {
-    putch('c');
-    yield();
-  }
-}
-
-void forever_unyielding (void) {
-  while (1) {
-    putch('T');
-    delay(40000000);
-  }
-}
+#include "userland/print-a-include.h"
+#include "userland/print-b-include.h"
 
 void initialize_idt (void) {
   create_idt();
@@ -87,10 +61,8 @@ void initialize_idt (void) {
 }
 
 void create_test_threads (void) {
-  user_thread_create(forever_yielding);
-  user_thread_create(forever_yielding2);
-  user_thread_create(forever_yielding3);
-  user_thread_create(forever_unyielding);
+  user_thread_create(&userland_print_a_bin[0], userland_print_a_bin_len);
+  user_thread_create(&userland_print_b_bin[0], userland_print_b_bin_len);
 }
 
 void kernel_main (int magic, unsigned int *mboot_struct) {

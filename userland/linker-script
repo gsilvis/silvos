@@ -1,0 +1,10 @@
+OUTPUT_ARCH(i386)
+OUTPUT_FORMAT(binary)
+STARTUP(userland/startup.o)
+SECTIONS
+{
+  . = 0x400000000;
+  .text : { *(.text) }
+  .data : { *(.data) }
+  .bss : { *(.bss) }
+}
