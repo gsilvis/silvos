@@ -73,6 +73,7 @@ void isr_0D (void) {
 }
 
 void isr_0E (void) {
+  __asm__ volatile("mov %cr2,%eax");
   panic("ISR 0E!");
 }
 

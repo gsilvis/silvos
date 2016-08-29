@@ -3,18 +3,11 @@
 yield_isr:
         pusha
 L1:
-;        mov $0x10,%ax
-;        mov %ax,%ds
-;        mov %ax,%es
-;        mov %ax,%fs
-;        mov %ax,%gs
+        mov %esp,(schedule_esp)
         call schedule
-thread_start:
-;        mov $0x23,%ax
-;        mov %ax,%ds
-;        mov %ax,%es
-;        mov %ax,%fs
-;        mov %ax,%gs
+        mov (schedule_esp),%esp
+        mov (schedule_pt),%eax
+        mov %eax,%cr3
         popa
         iret
 

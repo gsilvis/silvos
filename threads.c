@@ -4,6 +4,7 @@
 #include "pit.h"
 #include "alloc.h"
 #include "gdt.h"
+#include "page.h"
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
@@ -16,6 +17,7 @@ typedef struct {
   enum thread_state state;
   void *esp;        /* Kernel stack pointer, when yielded */
   void *stack_top;  /* For TSS usage */
+  pagetable pt;
 } tcb;
 
 #define NUMTHREADS 16
@@ -23,21 +25,32 @@ tcb tcbs[NUMTHREADS];
 
 /* Returns 0 on success, -1 on failure */
 int user_thread_create (void (*task)(void)) {
-  int *kernel_stack = &((int *)allocate_phys_page())[1024];
-  int *user_stack = &((int *)allocate_phys_page())[1024];
+#define KERNEL_STACK 0x40001000
+#define USER_STACK 0x40002000
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
+      /* Make new page table */
+      pagetable old_pt = get_current_pt();
+      tcbs[i].pt = new_pt();
+      insert_pt(tcbs[i].pt);
+      map_page((unsigned int)allocate_phys_page(), KERNEL_STACK);
+      map_page((unsigned int)allocate_phys_page(), USER_STACK);
+      /* Set up stacks */
+      int *kernel_stack = &((int *)KERNEL_STACK)[1024];
+      int *user_stack = &((int *)USER_STACK)[1024];
       /* Initialize tcb struct */
       tcbs[i].state = TS_UNSTARTED;
       tcbs[i].stack_top = &kernel_stack[-1];
       /* Initialize stack */
       kernel_stack[-1] = 0x23;
-      kernel_stack[-2] = (int) &user_stack[-1];
+      kernel_stack[-2] = (int) &user_stack[-4];
       kernel_stack[-3] = 0x200;
       kernel_stack[-4] = 0x1B;
       kernel_stack[-5] = (int) task;
+      user_stack[-1] = 0x9090;
       /* eight registers */
       tcbs[i].esp = &kernel_stack[-13];
+      insert_pt(old_pt);
       return 0;
     }
   }
@@ -57,20 +70,22 @@ tcb *choose_task (void) {
   panic("No possible threads to schedule.");
 }
 
+tcb *running_tcb = 0;
+
+void *schedule_esp;
+pagetable schedule_pt;
+
 void schedule (void) {
-  static tcb *running_tcb = 0;
   if (running_tcb) {
-    __asm__("mov %%esp,%0" : "=r"(running_tcb->esp));
+    running_tcb->esp = schedule_esp;
   }
   running_tcb->state = TS_INACTIVE;
   running_tcb = choose_task();
   set_timeout(); /* Reset pre-emption timer */
-  __asm__("mov %0,%%esp" : : "r"(running_tcb->esp)); /* Switch stacks here */
   set_new_esp(running_tcb->stack_top);
   if (running_tcb->state == TS_UNSTARTED) {
     running_tcb->state = TS_ACTIVE;
-    __asm__("jmp thread_start");
-  } else {
-    running_tcb->state = TS_ACTIVE;
   }
+  schedule_esp = running_tcb->esp;
+  schedule_pt = running_tcb->pt;
 }
