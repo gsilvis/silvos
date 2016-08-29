@@ -1,13 +1,7 @@
 .GLOBAL yield_isr
-.GLOBAL thread_start
 yield_isr:
         pusha
-L1:
-        mov %esp,(schedule_esp)
         call schedule
-        mov (schedule_esp),%esp
-        mov (schedule_pt),%eax
-        mov %eax,%cr3
         popa
         iret
 
@@ -17,7 +11,9 @@ kbd_isr:
         call eoi
         call read_key
         test %eax,%eax
-        jnz L1
+        jz L1
+        call schedule
+L1:
         popa
         iret
 
@@ -25,7 +21,9 @@ kbd_isr:
 timer_isr:
         pusha
         call eoi
-        jmp L1
+        call schedule
+        popa
+        iret
 
 .GLOBAL putch_isr
 putch_isr:
@@ -40,4 +38,4 @@ putch_isr:
 exit_isr:
         pusha
         call thread_exit
-        jmp L1
+        call schedule

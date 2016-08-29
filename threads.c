@@ -44,14 +44,15 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       tcbs[i].state = TS_INACTIVE;
       tcbs[i].stack_top = &kernel_stack[-1];
       /* Initialize stack */
-      kernel_stack[-1] = 0x23;
-      kernel_stack[-2] = (int) &user_stack[-4];
-      kernel_stack[-3] = 0x200;
-      kernel_stack[-4] = 0x1B;
-      kernel_stack[-5] = (int) TEXT;
-      user_stack[-1] = 0x9090;
-      /* eight registers */
-      tcbs[i].esp = &kernel_stack[-13];
+      /* Stack frame one:  thread_start */
+      kernel_stack[-1] = 0x23;                  /* %ss */
+      kernel_stack[-2] = (int) &user_stack[-1]; /* %esp */
+      kernel_stack[-3] = 0x200;                 /* EFLAGS */
+      kernel_stack[-4] = 0x1B;                  /* %cs */
+      kernel_stack[-5] = (int) TEXT;            /* %eip */
+      /* Stack frame two:  schedule */
+      kernel_stack[-6] = (int) thread_start;    /* %eip */
+      tcbs[i].esp = &kernel_stack[-6];
       insert_pt(old_pt);
       return 0;
     }
@@ -77,7 +78,7 @@ tcb *running_tcb = 0;
 void *schedule_esp;
 pagetable schedule_pt;
 
-void schedule (void) {
+void schedule_helper (void) {
   if (running_tcb) {
     running_tcb->esp = schedule_esp;
   }

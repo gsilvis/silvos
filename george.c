@@ -96,5 +96,5 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   puts("Creating test threads\r\n");
   create_test_threads();
   puts("Initializing thread subsystem\r\n");
-  yield_isr(); /* Does not return */
+  schedule(); /* Does not return */
 }
