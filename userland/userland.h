@@ -11,4 +11,8 @@ inline void putch (char c) {
                    :: [input] "m" (c): "%eax");
 }
 
+inline void exit (void) {
+  __asm__ volatile("int $0x38" :: "r"(0x36));
+}
+
 #endif

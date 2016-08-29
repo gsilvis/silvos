@@ -6,6 +6,7 @@ void yield_isr (void);
 void doublefault_isr (void);
 void spurious_isr (void);
 void putch_isr (void);
+void exit_isr (void);
 void isr_other (void);
 
 void isr_00 (void);

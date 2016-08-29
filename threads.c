@@ -8,9 +8,8 @@
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
-  TS_UNSTARTED, /* Nothing's happened yet */
-  TS_ACTIVE,   /* Executing, right now */
   TS_INACTIVE, /* Exists, but is not executing */
+  TS_ACTIVE,   /* Executing, right now */
 };
 
 typedef struct {
@@ -42,7 +41,7 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       int *kernel_stack = &((int *)KERNEL_STACK)[1024];
       int *user_stack = &((int *)USER_STACK)[1024];
       /* Initialize tcb struct */
-      tcbs[i].state = TS_UNSTARTED;
+      tcbs[i].state = TS_INACTIVE;
       tcbs[i].stack_top = &kernel_stack[-1];
       /* Initialize stack */
       kernel_stack[-1] = 0x23;
@@ -65,7 +64,7 @@ tcb *choose_task (void) {
   static int rr = -1; /* Start with thread 0 the first time we're called. */
   for (int i = 1; i <= NUMTHREADS; i++) {
     int index = (rr+i) % NUMTHREADS;
-    if (tcbs[index].state == TS_UNSTARTED || tcbs[index].state == TS_INACTIVE) {
+    if (tcbs[index].state == TS_INACTIVE) {
       rr = index;
       return &tcbs[index];
     }
@@ -82,13 +81,17 @@ void schedule (void) {
   if (running_tcb) {
     running_tcb->esp = schedule_esp;
   }
-  running_tcb->state = TS_INACTIVE;
+  if (running_tcb->state == TS_ACTIVE) {
+    running_tcb->state = TS_INACTIVE;
+  }
   running_tcb = choose_task();
   set_timeout(); /* Reset pre-emption timer */
   set_new_esp(running_tcb->stack_top);
-  if (running_tcb->state == TS_UNSTARTED) {
-    running_tcb->state = TS_ACTIVE;
-  }
+  running_tcb->state = TS_ACTIVE;
   schedule_esp = running_tcb->esp;
   schedule_pt = running_tcb->pt;
+}
+
+void thread_exit(void) {
+  running_tcb->state = TS_NONEXIST;
 }

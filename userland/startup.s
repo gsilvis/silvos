@@ -1,1 +1,2 @@
-        jmp main
+        call main
+        int $0x38

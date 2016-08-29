@@ -20,6 +20,7 @@ void initialize_idt (void) {
   register_isr(0x35, dumb_isr);
   register_isr(0x36, yield_isr);
   register_isr(0x37, putch_isr);
+  register_isr(0x38, exit_isr);
   register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
 

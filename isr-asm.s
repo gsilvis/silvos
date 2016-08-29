@@ -35,3 +35,9 @@ putch_isr:
         pop %eax
         popa
         iret
+
+.GLOBAL exit_isr
+exit_isr:
+        pusha
+        call thread_exit
+        jmp L1
