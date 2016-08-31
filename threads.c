@@ -61,7 +61,33 @@ int user_thread_create (unsigned char *text, unsigned int length) {
   return -1; /* No thread available! */
 }
 
-/* Round-robin scheduling.  If no possible task to choose, panic. */
+tcb idle_tcb;
+
+void idle () {
+  while (1) {
+    hlt();
+  }
+}
+
+int idle_thread_create () {
+#define IDLE_STACK 0xC0000000
+  idle_tcb.state = TS_INACTIVE;
+  idle_tcb.pt = get_current_pt();
+  map_page((unsigned int)allocate_phys_page(), IDLE_STACK);
+  /* Set up stack */
+  int *idle_stack = &((int *)IDLE_STACK)[1024];
+  idle_tcb.stack_top = &idle_stack[1023]; /* Not used??? */
+  /* Stack frame one: thread_start */
+  idle_stack[-1] = 0x200;              /* EFLAGS */
+  idle_stack[-2] = 0x08;               /* %cs */
+  idle_stack[-3] = (int) idle;         /* %eip */
+  /* Stack frame two: schedule */
+  idle_stack[-4] = (int) thread_start; /* %eip */
+  idle_tcb.esp = &idle_stack[-4];
+  return 0;
+}
+
+/* Round-robin scheduling. */
 tcb *choose_task (void) {
   static int rr = -1; /* Start with thread 0 the first time we're called. */
   for (int i = 1; i <= NUMTHREADS; i++) {
@@ -71,7 +97,8 @@ tcb *choose_task (void) {
       return &tcbs[index];
     }
   }
-  panic("No possible threads to schedule.");
+  /* Nothing to do; idle. */
+  return &idle_tcb;
 }
 
 tcb *running_tcb = 0;

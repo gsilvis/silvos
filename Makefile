@@ -14,8 +14,10 @@ george.o: george.c userland/print-a-include.h userland/print-b-include.h
 	gcc -m32 -c -o $@ $< -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
 
 %.o: %.c
-#	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g -fgcse-after-reload -finline-functions -fipa-cp-clone -fpredictive-commoning -ftree-loop-distribute-patterns -ftree-vectorize -funswitch-loops
 	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
+
+#userland/%.o: userland/%.c
+#	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
 
 userland/startup.o: userland/startup.s
 	as --32 -o $@ $^

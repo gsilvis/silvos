@@ -8,5 +8,6 @@ void thread_start (void);
 void schedule (void);
 void wake_a_thread (void);
 void block_current_thread (void);
+int idle_thread_create (void);
 
 #endif

@@ -97,6 +97,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   enable_paging();
   puts("Creating test threads\r\n");
   create_test_threads();
+  puts("Creating idle thread\r\n");
+  idle_thread_create();
   puts("Initializing keyboard driver\r\n");
   init_kbd();
   puts("Initializing thread subsystem\r\n");
