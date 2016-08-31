@@ -1,20 +1,12 @@
 #include "page.h"
+
 #include "alloc.h"
 
-#define PAGE_MASK_PRESENT 0x00000001
-#define PAGE_MASK_WRITE   0x00000002
-#define PAGE_MASK_PRIV    0x00000004
-#define PAGE_MASK_WTCACHE 0x00000008
-#define PAGE_MASK_NOCACHE 0x00000010
-#define PAGE_MASK_ACCESS  0x00000020
-#define PAGE_MASK_SIZE    0x00000080
-
-#define PAGE_MASK_DEFAULT_REAL (PAGE_MASK_PRESENT | PAGE_MASK_WRITE | PAGE_MASK_PRIV)
-#define PAGE_MASK_DEFAULT_FAKE 0x00000000
+pagetable kernel_page;
 
 void enable_paging (void) {
   /* Put in a provisional pagetable */
-  insert_pt(new_pt());
+  insert_pt(initial_pt());
   /* Turn on paging */
   unsigned int cr0;
   __asm__("mov %%cr0,%0" : "=r"(cr0) : : );
@@ -32,26 +24,63 @@ pagetable get_current_pt (void) {
   return pt;
 }
 
-/* Return a pagetable that contains enough information to set it as your
- * pagetable. */
-pagetable new_pt (void) {
-  pagetable pt_upper = (pagetable)allocate_phys_page();
-  pagetable pt_lower = (pagetable)allocate_phys_page();
+extern int _end;
 
-  /* Set up page table */
-  pt_upper[0] = ((unsigned int) pt_lower) | PAGE_MASK_DEFAULT_REAL;
+/* This should be called before paging is set up */
+pagetable initial_pt (void) {
+  /* Set up the shared kernel page. */
+  kernel_page = (pagetable)allocate_phys_page();
+
+  unsigned int first_blank_page = (unsigned int)&_end;
+  if (first_blank_page & 0xFFF) {
+    first_blank_page &= 0xFFFFF000;
+    first_blank_page += 0x1000;
+  }
+  first_blank_page = first_blank_page >> 12;
+
+  for (unsigned int j = 0x000; j < 0x100; j++) {
+    kernel_page[j] = PAGE_MASK__FAKE;
+  }
+  for (unsigned int j = 0x100; j < first_blank_page + 25; j++) {
+    kernel_page[j] = (j * 4096) | PAGE_MASK__KERNEL;
+  }
+  for (unsigned int j = first_blank_page + 25; j < 0x400; j++) {
+    kernel_page[j] = PAGE_MASK__FAKE;
+  }
+  kernel_page[0xB8] = 0xB8000 | PAGE_MASK__KERNEL; /* VGA */
+  /* Set up root of page table. */
+  pagetable pt_upper = (pagetable)allocate_phys_page();
+
+  pt_upper[0] = ((unsigned int) kernel_page) | PAGE_MASK__USER;
   for (int i = 1; i < 1023; i++) {
-    pt_upper[i] = PAGE_MASK_DEFAULT_FAKE;
+    pt_upper[i] = PAGE_MASK__FAKE;
   }
-  pt_upper[1023] = ((unsigned int) pt_upper) | PAGE_MASK_DEFAULT_REAL;
-  /* Set up page entry directory */
-  for (int j = 0; j < 1024; j++) {
-    pt_lower[j] = (j * 4096) | PAGE_MASK_DEFAULT_REAL;
-  }
+  pt_upper[1023] = ((unsigned int) pt_upper) | PAGE_MASK__KERNEL;
+
   return pt_upper;
 }
 
-int map_page (unsigned int phys, unsigned int virt) {
+/* Return a pagetable that contains enough information to set it as your
+ * pagetable. */
+pagetable new_pt (void) {
+  pagetable pt_phys = (pagetable)allocate_phys_page();
+
+  pagetable pt_virt = (pagetable)0x00001000;
+
+  map_page((unsigned int)pt_phys, (unsigned int)pt_virt, PAGE_MASK__KERNEL);
+
+  pt_virt[0] = ((unsigned int) kernel_page) | PAGE_MASK__KERNEL;
+  for (int i = 1; i < 1023; i++) {
+    pt_virt[i] = PAGE_MASK__FAKE;
+  }
+  pt_virt[1023] = ((unsigned int) pt_phys) | PAGE_MASK__KERNEL;
+
+  unmap_page((unsigned int)pt_virt);
+
+  return pt_phys;
+}
+
+int map_page (unsigned int phys, unsigned int virt, unsigned int mode) {
   if (phys & 0xFFF) {
     return -1;
   }
@@ -61,13 +90,27 @@ int map_page (unsigned int phys, unsigned int virt) {
 
   pagetable outer = (pagetable) 0xFFFFF000;
   if (!(outer[(0xFFC00000 & virt) >> 22] & PAGE_MASK_PRESENT)) {
-    outer[(0xFFC00000 & virt) >> 22] = ((unsigned int) allocate_phys_page()) | PAGE_MASK_DEFAULT_REAL;
+    outer[(0xFFC00000 & virt) >> 22] = ((unsigned int) allocate_phys_page()) | PAGE_MASK__USER;
     pagetable inner = (pagetable) ((0xFFC00000 | (virt >> 10)) & 0xFFFFF000);
     for (int i = 0; i < 1024; i++) {
-      inner[i] = PAGE_MASK_DEFAULT_FAKE;
+      inner[i] = PAGE_MASK__FAKE;
     }
   }
   pagetable inner = (pagetable) ((0xFFC00000 | (virt >> 10)) & 0xFFFFF000);
-  inner[(0x003FF000 & virt) >> 12] = phys | PAGE_MASK_DEFAULT_REAL;
+  inner[(0x003FF000 & virt) >> 12] = phys | mode;
+  return 0;
+}
+
+int unmap_page (unsigned int virt) {
+  if (virt & 0xFFF) {
+    return -1;
+  }
+
+  pagetable outer = (pagetable) 0xFFFFF000;
+  if (!(outer[(0xFFC00000 & virt) >> 22] & PAGE_MASK_PRESENT)) {
+    return 0;
+  }
+  pagetable inner = (pagetable) ((0xFFC00000 | (virt >> 10)) & 0xFFFFF000);
+  inner[(0x003FF000 & virt) >> 12] = PAGE_MASK__FAKE;
   return 0;
 }

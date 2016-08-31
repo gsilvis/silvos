@@ -34,9 +34,9 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       pagetable old_pt = get_current_pt();
       tcbs[i].pt = new_pt();
       insert_pt(tcbs[i].pt);
-      map_page((unsigned int)allocate_phys_page(), TEXT);
-      map_page((unsigned int)allocate_phys_page(), KERNEL_STACK);
-      map_page((unsigned int)allocate_phys_page(), USER_STACK);
+      map_page((unsigned int)allocate_phys_page(), TEXT, PAGE_MASK__USER);
+      map_page((unsigned int)allocate_phys_page(), KERNEL_STACK, PAGE_MASK__KERNEL);
+      map_page((unsigned int)allocate_phys_page(), USER_STACK, PAGE_MASK__USER);
       memcpy(text, (unsigned char *)TEXT, length);
       /* Set up stacks */
       int *kernel_stack = &((int *)KERNEL_STACK)[1024];
@@ -73,7 +73,7 @@ int idle_thread_create () {
 #define IDLE_STACK 0xC0000000
   idle_tcb.state = TS_INACTIVE;
   idle_tcb.pt = get_current_pt();
-  map_page((unsigned int)allocate_phys_page(), IDLE_STACK);
+  map_page((unsigned int)allocate_phys_page(), IDLE_STACK, PAGE_MASK__USER);
   /* Set up stack */
   int *idle_stack = &((int *)IDLE_STACK)[1024];
   idle_tcb.stack_top = &idle_stack[1023]; /* Not used??? */
@@ -109,9 +109,9 @@ pagetable schedule_pt;
 void schedule_helper (void) {
   if (running_tcb) {
     running_tcb->esp = schedule_esp;
-  }
-  if (running_tcb->state == TS_ACTIVE) {
-    running_tcb->state = TS_INACTIVE;
+    if (running_tcb->state == TS_ACTIVE) {
+      running_tcb->state = TS_INACTIVE;
+    }
   }
   running_tcb = choose_task();
   set_timeout(); /* Reset pre-emption timer */
