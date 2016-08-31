@@ -10,6 +10,7 @@ enum thread_state {
   TS_NONEXIST, /* Nothing here */
   TS_INACTIVE, /* Exists, but is not executing */
   TS_ACTIVE,   /* Executing, right now */
+  TS_BLOCKED,  /* Blocked on IO */
 };
 
 typedef struct {
@@ -93,6 +94,20 @@ void schedule_helper (void) {
   schedule_pt = running_tcb->pt;
 }
 
-void thread_exit(void) {
+void thread_exit (void) {
   running_tcb->state = TS_NONEXIST;
+}
+
+void wake_a_thread (void) {
+  for (int i = 0; i < NUMTHREADS; i++) {
+    if (tcbs[i].state == TS_BLOCKED) {
+      tcbs[i].state = TS_INACTIVE;
+      break;
+    }
+  }
+}
+
+void block_current_thread (void) {
+  running_tcb->state = TS_BLOCKED;
+  schedule();
 }

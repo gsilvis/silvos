@@ -6,5 +6,7 @@ void schedule_helper (void);
 void thread_exit (void);
 void thread_start (void);
 void schedule (void);
+void wake_a_thread (void);
+void block_current_thread (void);
 
 #endif

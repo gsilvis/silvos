@@ -10,10 +10,6 @@ kbd_isr:
         pusha
         call eoi
         call read_key
-        test %eax,%eax
-        jz L1
-        call schedule
-L1:
         popa
         iret
 
@@ -39,3 +35,11 @@ exit_isr:
         pusha
         call thread_exit
         call schedule
+
+.GLOBAL getch_isr
+getch_isr:
+        pusha
+        call getch
+        mov %eax,28(%esp)
+        popa
+        iret

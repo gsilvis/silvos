@@ -25,7 +25,3 @@ void __attribute__ ((noreturn)) panic (const char *s) {
 void blab (void) {
   puts("\r\n HEYYYYYYYYY!!!!!!!!!!!!!!!!!!\r\n");
 }
-
-int read_key (void) {
-  return !(0x80 & inb(0x60));
-}

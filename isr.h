@@ -7,7 +7,9 @@ void doublefault_isr (void);
 void spurious_isr (void);
 void putch_isr (void);
 void exit_isr (void);
+void getch_isr (void);
 void isr_other (void);
+
 
 void isr_00 (void);
 void isr_01 (void);

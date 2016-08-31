@@ -8,6 +8,7 @@
 #include "pic.h"
 #include "page.h"
 #include "alloc.h"
+#include "kbd.h"
 
 #include "userland/print-a-include.h"
 #include "userland/print-b-include.h"
@@ -21,6 +22,7 @@ void initialize_idt (void) {
   register_isr(0x36, yield_isr);
   register_isr(0x37, putch_isr);
   register_isr(0x38, exit_isr);
+  register_isr(0x39, getch_isr);
   register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
 
@@ -95,6 +97,8 @@ void kernel_main (int magic, unsigned int *mboot_struct) {
   enable_paging();
   puts("Creating test threads\r\n");
   create_test_threads();
+  puts("Initializing keyboard driver\r\n");
+  init_kbd();
   puts("Initializing thread subsystem\r\n");
   schedule(); /* Does not return */
 }
