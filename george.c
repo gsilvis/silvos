@@ -26,21 +26,21 @@ void initialize_idt (void) {
   register_isr(0x07, spurious_isr);
   register_isr(0x08, doublefault_isr);
 
-  register_isr(0x00, isr_00);
+  /* A list of syscalls I'm not handling from userspace */
+  register_isr(0x00, exit_isr);
+  register_isr(0x04, exit_isr);
+  register_isr(0x05, exit_isr);
+  register_isr(0x06, exit_isr);
+  register_isr(0x0D, exit_isr);
+  register_isr(0x0E, exit_isr);
+
   register_isr(0x01, isr_01);
   register_isr(0x02, isr_02);
   register_isr(0x03, isr_03);
-  register_isr(0x04, isr_04);
-  register_isr(0x05, isr_05);
-  register_isr(0x06, isr_06);
-  register_isr(0x07, isr_07);
-  register_isr(0x08, isr_08);
   register_isr(0x09, isr_09);
   register_isr(0x0A, isr_0A);
   register_isr(0x0B, isr_0B);
   register_isr(0x0C, isr_0C);
-  register_isr(0x0D, isr_0D);
-  register_isr(0x0E, isr_0E);
   register_isr(0x0F, isr_0F);
   register_isr(0x10, isr_10);
   register_isr(0x11, isr_11);
