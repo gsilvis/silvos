@@ -10,14 +10,14 @@ start.o: start.s
 %-asm.o: %-asm.s
 	as --32 -o $@ $^
 
-george.o: george.c userland/print-a-include.h userland/print-b-include.h
+george.o: george.c userland/print-a-include.h userland/print-b-include.h userland/calc-include.h
 	gcc -m32 -c -o $@ $< -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
 
 %.o: %.c
 	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
 
-#userland/%.o: userland/%.c
-#	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
+userland/%.o: userland/%.c
+	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2
 
 userland/startup.o: userland/startup.s
 	as --32 -o $@ $^

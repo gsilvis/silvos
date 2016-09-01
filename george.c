@@ -12,6 +12,7 @@
 
 #include "userland/print-a-include.h"
 #include "userland/print-b-include.h"
+#include "userland/calc-include.h"
 
 void initialize_idt (void) {
   create_idt();
@@ -64,8 +65,8 @@ void initialize_idt (void) {
 }
 
 void create_test_threads (void) {
-  user_thread_create(&userland_print_a_bin[0], userland_print_a_bin_len);
   user_thread_create(&userland_print_b_bin[0], userland_print_b_bin_len);
+  user_thread_create(&userland_calc_bin[0], userland_calc_bin_len);
 }
 
 void kernel_main (int magic, unsigned int *mboot_struct) {
