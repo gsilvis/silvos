@@ -19,6 +19,19 @@ void putc (char c) {
   case '\n':
     y++;
     break;
+  case '\177':
+    if (x > 0) {
+      x--;
+    } else {
+      x = 79; /* Go to end of previous line */
+      if (y > 0) {
+        y--;
+      } else {
+        y = 24; /* Go back to bottom of screen. */
+      }
+    }
+    (*myvga)[y][x].c = ' ';
+    break;
   default:
     (*myvga)[y][x].c = c;
     x++;
