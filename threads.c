@@ -43,7 +43,7 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       int *user_stack = &((int *)USER_STACK)[1024];
       /* Initialize tcb struct */
       tcbs[i].state = TS_INACTIVE;
-      tcbs[i].stack_top = &kernel_stack[-1];
+      tcbs[i].stack_top = &kernel_stack[0];
       /* Initialize stack */
       /* Stack frame one:  thread_start */
       kernel_stack[-1] = 0x23;                  /* %ss */
@@ -76,7 +76,7 @@ int idle_thread_create () {
   map_page((unsigned int)allocate_phys_page(), IDLE_STACK, PAGE_MASK__USER);
   /* Set up stack */
   int *idle_stack = &((int *)IDLE_STACK)[1024];
-  idle_tcb.stack_top = &idle_stack[1023]; /* Not used??? */
+  idle_tcb.stack_top = &idle_stack[0]; /* Not used??? */
   /* Stack frame one: thread_start */
   idle_stack[-1] = 0x200;              /* EFLAGS */
   idle_stack[-2] = 0x08;               /* %cs */
