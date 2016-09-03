@@ -17,7 +17,7 @@ george.o: george.c userland/print-a-include.h userland/print-b-include.h userlan
 	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2 -g
 
 userland/%.o: userland/%.c
-	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -std=c99 -O2
+	gcc -m32 -c -o $@ $^ -fno-builtin -nostdinc -Wall -Wextra -Wno-main -std=c99 -O2
 
 userland/startup.o: userland/startup.s
 	as --32 -o $@ $^
