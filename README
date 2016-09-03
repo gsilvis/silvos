@@ -1,1 +1,1 @@
-To build, you must have a minimal cross-compiler for i686-elf.
+To build, you must have a minimal cross-compiler for x86_64-elf.

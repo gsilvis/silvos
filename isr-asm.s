@@ -1,45 +1,180 @@
 .GLOBAL yield_isr
 yield_isr:
-        pusha
+        push %rax
+        push %rbx
+        push %rcx
+        push %rdx
+        push %rbp
+        push %rsi
+        push %rdi
+        push %r8
+        push %r9
+        push %r10
+        push %r11
+        push %r12
+        push %r13
+        push %r14
+        push %r15
         call schedule
-        popa
-        iret
+        pop %r15
+        pop %r14
+        pop %r13
+        pop %r12
+        pop %r11
+        pop %r10
+        pop %r9
+        pop %r8
+        pop %rdi
+        pop %rsi
+        pop %rbp
+        pop %rdx
+        pop %rcx
+        pop %rbx
+        pop %rax
+        iretq
 
 .GLOBAL kbd_isr
 kbd_isr:
-        pusha
+        push %rax
+        push %rbx
+        push %rcx
+        push %rdx
+        push %rbp
+        push %rsi
+        push %rdi
+        push %r8
+        push %r9
+        push %r10
+        push %r11
+        push %r12
+        push %r13
+        push %r14
+        push %r15
         call eoi
         call read_key
-        popa
-        iret
+        pop %r15
+        pop %r14
+        pop %r13
+        pop %r12
+        pop %r11
+        pop %r10
+        pop %r9
+        pop %r8
+        pop %rdi
+        pop %rsi
+        pop %rbp
+        pop %rdx
+        pop %rcx
+        pop %rbx
+        pop %rax
+        iretq
 
 .GLOBAL timer_isr
 timer_isr:
-        pusha
+        push %rax
+        push %rbx
+        push %rcx
+        push %rdx
+        push %rbp
+        push %rsi
+        push %rdi
+        push %r8
+        push %r9
+        push %r10
+        push %r11
+        push %r12
+        push %r13
+        push %r14
+        push %r15
         call eoi
         call schedule
-        popa
-        iret
+        pop %r15
+        pop %r14
+        pop %r13
+        pop %r12
+        pop %r11
+        pop %r10
+        pop %r9
+        pop %r8
+        pop %rdi
+        pop %rsi
+        pop %rbp
+        pop %rdx
+        pop %rcx
+        pop %rbx
+        pop %rax
+        iretq
 
 .GLOBAL putch_isr
 putch_isr:
-        pusha
-        push %eax
+        push %rax
+        push %rbx
+        push %rcx
+        push %rdx
+        push %rbp
+        push %rsi
+        push %rdi
+        push %r8
+        push %r9
+        push %r10
+        push %r11
+        push %r12
+        push %r13
+        push %r14
+        push %r15
+        mov %rax,%rdi
         call putc
-        pop %eax
-        popa
-        iret
+        pop %r15
+        pop %r14
+        pop %r13
+        pop %r12
+        pop %r11
+        pop %r10
+        pop %r9
+        pop %r8
+        pop %rdi
+        pop %rsi
+        pop %rbp
+        pop %rdx
+        pop %rcx
+        pop %rbx
+        pop %rax
+        iretq
 
 .GLOBAL exit_isr
 exit_isr:
-        pusha
         call thread_exit
         call schedule
 
 .GLOBAL getch_isr
 getch_isr:
-        pusha
+        push %rbx
+        push %rcx
+        push %rdx
+        push %rbp
+        push %rsi
+        push %rdi
+        push %r8
+        push %r9
+        push %r10
+        push %r11
+        push %r12
+        push %r13
+        push %r14
+        push %r15
         call getch
-        mov %eax,28(%esp)
-        popa
-        iret
+        pop %r15
+        pop %r14
+        pop %r13
+        pop %r12
+        pop %r11
+        pop %r10
+        pop %r9
+        pop %r8
+        pop %rdi
+        pop %rsi
+        pop %rbp
+        pop %rdx
+        pop %rcx
+        pop %rbx
+        iretq

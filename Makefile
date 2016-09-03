@@ -1,26 +1,32 @@
 
 all: george.multiboot
 
-george.multiboot: george.o start-asm.o threads.o vga.o util.o idt.o isr.o isr-asm.o pic.o pit.o util-asm.o gdt.o gdt-asm.o page.o alloc.o threads-asm.o kbd.o
-	i686-elf-gcc -T kernel.ld $^ -o $@ -nostdlib -lgcc
+george.multiboot: start32-asm.o start32.o george.o threads.o threads-asm.o vga.o util.o idt.o isr.o isr-asm.o pic.o pit.o util-asm.o gdt.o page.o alloc.o kbd.o
+	x86_64-elf-gcc -T kernel.ld $^ -o $@ -nostdlib -lgcc -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
+
+start32-asm.o: start32-asm.s
+	x86_64-elf-as --32 $^ -o $@
+
+start32.o: start32.c
+	x86_64-elf-gcc -m32 -c $^ -o $@ -ffreestanding -Wall -Wextra -std=c99 -O2 -g
 
 %-asm.o: %-asm.s
-	i686-elf-as $^ -o $@
+	x86_64-elf-as $^ -o $@
 
 george.o: george.c userland/print-a-include.h userland/print-b-include.h userland/calc-include.h
-	i686-elf-gcc -c $< -o $@ -ffreestanding -Wall -Wextra -std=c99 -O2 -g
+	x86_64-elf-gcc -c $< -o $@ -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 
 %.o: %.c
-	i686-elf-gcc -c $< -o $@ -ffreestanding -Wall -Wextra -std=c99 -O2 -g
+	x86_64-elf-gcc -c $^ -o $@ -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 
 userland/%.o: userland/%.c
-	i686-elf-gcc -c $^ -o $@ -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2
+	x86_64-elf-gcc -c $^ -o $@ -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2
 
 userland/startup.o: userland/startup.s
-	i686-elf-as $^ -o $@
+	x86_64-elf-as $^ -o $@
 
 userland/%.bin: userland/%.o userland/startup.o
-	i686-elf-gcc -T userland/linker-script $< -o $@ -nostdlib -lgcc
+	x86_64-elf-gcc -T userland/linker-script $< -o $@ -nostdlib -lgcc
 
 userland/%-include.h: userland/%.bin
 	xxd -i $^ > $@

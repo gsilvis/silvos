@@ -69,39 +69,18 @@ void create_test_threads (void) {
   user_thread_create(&userland_calc_bin[0], userland_calc_bin_len);
 }
 
-void kernel_main (int magic, unsigned int *mboot_struct) {
+void kernel_main (void) {
   clear_screen();
-  if (magic != 0x2BADB002) {
-    puts("OOF!  Multiboot fail!\r\n");
-    return;
-  }
-
-
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
-  puts("Total Available Ram: ");
-  puti((mboot_struct[1] + mboot_struct[2])/1024); /* Low mem + High mem */
-  puts(" MB\r\n");
-
-  puts("Initializing memory allocator\r\n");
-  initialize_allocator(mboot_struct[2] * 1024);
-  puts("Initializing IDT\r\n");
+  initialize_allocator();
+  insert_pt(initial_pt());
   initialize_idt();
-  puts("Inserting IDT\r\n");
   insert_idt();
-  puts("Initializing GDT\r\n");
   initialize_gdt();
-  puts("Inserting GDT\r\n");
-  insert_gdt();
-  puts("Remapping PIC\r\n");
   remap_pic();
-  puts("Enabling paging\r\n");
-  enable_paging();
-  puts("Creating test threads\r\n");
   create_test_threads();
-  puts("Creating idle thread\r\n");
   idle_thread_create();
-  puts("Initializing keyboard driver\r\n");
   init_kbd();
-  puts("Initializing thread subsystem\r\n");
+  puts("Launching userspace.\r\n");
   schedule(); /* Does not return */
 }

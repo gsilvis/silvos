@@ -1,9 +1,9 @@
 #include "vga.h"
 #include "bits.h"
 
-void memset (char *ptr, char byte, unsigned int count) {
+void memset (void *ptr, char byte, unsigned int count) {
   for (unsigned int i = 0; i < count; i++) {
-    ptr[i] = byte;
+    ((char *)ptr)[i] = byte;
   }
 }
 

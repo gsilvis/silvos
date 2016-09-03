@@ -8,9 +8,8 @@ void *memtop;
 
 extern int _end;
 
-void initialize_allocator (unsigned int highmem) {
-  memtop = (void *)((0x100000 + highmem) & 0xFFF);
-  unsigned int tmp = (unsigned int) &_end;
+void initialize_allocator (void) {
+  unsigned long long tmp = (unsigned long long) &_end;
   if (tmp & 0xFFF) {
     tmp &= 0xFFFFF000;
     tmp += 0x1000;
@@ -20,7 +19,7 @@ void initialize_allocator (unsigned int highmem) {
 
 void *allocate_phys_page (void) {
   if (to_alloc == memtop) {
-    return 0x00000000;
+    return 0x0000000000000000;
   }
   void *returnee = to_alloc;
   to_alloc += 0x1000;
