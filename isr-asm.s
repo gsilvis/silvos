@@ -1,144 +1,40 @@
+
+/* Hardware interrupts must push all caller-save registers.  Syscall handlers
+ * don't need to do anything. */
+
+.macro push_caller_save_reg
+        push %rax
+        push %rcx
+        push %rdx
+        push %rsi
+        push %rdi
+        push %r8
+        push %r9
+        push %r10
+        push %r11
+.endm
+
+.macro pop_caller_save_reg
+        pop %r11
+        pop %r10
+        pop %r9
+        pop %r8
+        pop %rdi
+        pop %rsi
+        pop %rdx
+        pop %rcx
+        pop %rax
+.endm
+
 .GLOBAL yield_isr
 yield_isr:
-        push %rax
-        push %rbx
-        push %rcx
-        push %rdx
-        push %rbp
-        push %rsi
-        push %rdi
-        push %r8
-        push %r9
-        push %r10
-        push %r11
-        push %r12
-        push %r13
-        push %r14
-        push %r15
         call schedule
-        pop %r15
-        pop %r14
-        pop %r13
-        pop %r12
-        pop %r11
-        pop %r10
-        pop %r9
-        pop %r8
-        pop %rdi
-        pop %rsi
-        pop %rbp
-        pop %rdx
-        pop %rcx
-        pop %rbx
-        pop %rax
-        iretq
-
-.GLOBAL kbd_isr
-kbd_isr:
-        push %rax
-        push %rbx
-        push %rcx
-        push %rdx
-        push %rbp
-        push %rsi
-        push %rdi
-        push %r8
-        push %r9
-        push %r10
-        push %r11
-        push %r12
-        push %r13
-        push %r14
-        push %r15
-        call eoi
-        call read_key
-        pop %r15
-        pop %r14
-        pop %r13
-        pop %r12
-        pop %r11
-        pop %r10
-        pop %r9
-        pop %r8
-        pop %rdi
-        pop %rsi
-        pop %rbp
-        pop %rdx
-        pop %rcx
-        pop %rbx
-        pop %rax
-        iretq
-
-.GLOBAL timer_isr
-timer_isr:
-        push %rax
-        push %rbx
-        push %rcx
-        push %rdx
-        push %rbp
-        push %rsi
-        push %rdi
-        push %r8
-        push %r9
-        push %r10
-        push %r11
-        push %r12
-        push %r13
-        push %r14
-        push %r15
-        call eoi
-        call schedule
-        pop %r15
-        pop %r14
-        pop %r13
-        pop %r12
-        pop %r11
-        pop %r10
-        pop %r9
-        pop %r8
-        pop %rdi
-        pop %rsi
-        pop %rbp
-        pop %rdx
-        pop %rcx
-        pop %rbx
-        pop %rax
         iretq
 
 .GLOBAL putch_isr
 putch_isr:
-        push %rax
-        push %rbx
-        push %rcx
-        push %rdx
-        push %rbp
-        push %rsi
-        push %rdi
-        push %r8
-        push %r9
-        push %r10
-        push %r11
-        push %r12
-        push %r13
-        push %r14
-        push %r15
         mov %rax,%rdi
         call putc
-        pop %r15
-        pop %r14
-        pop %r13
-        pop %r12
-        pop %r11
-        pop %r10
-        pop %r9
-        pop %r8
-        pop %rdi
-        pop %rsi
-        pop %rbp
-        pop %rdx
-        pop %rcx
-        pop %rbx
-        pop %rax
         iretq
 
 .GLOBAL exit_isr
@@ -148,33 +44,21 @@ exit_isr:
 
 .GLOBAL getch_isr
 getch_isr:
-        push %rbx
-        push %rcx
-        push %rdx
-        push %rbp
-        push %rsi
-        push %rdi
-        push %r8
-        push %r9
-        push %r10
-        push %r11
-        push %r12
-        push %r13
-        push %r14
-        push %r15
         call getch
-        pop %r15
-        pop %r14
-        pop %r13
-        pop %r12
-        pop %r11
-        pop %r10
-        pop %r9
-        pop %r8
-        pop %rdi
-        pop %rsi
-        pop %rbp
-        pop %rdx
-        pop %rcx
-        pop %rbx
+        iretq
+
+.GLOBAL kbd_isr
+kbd_isr:
+        push_caller_save_reg
+        call eoi
+        call read_key
+        pop_caller_save_reg
+        iretq
+
+.GLOBAL timer_isr
+timer_isr:
+        push_caller_save_reg
+        call eoi
+        call schedule
+        pop_caller_save_reg
         iretq

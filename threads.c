@@ -53,8 +53,8 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       kernel_stack[-5] = (long long) TEXT;            /* %rip */
       /* Stack frame two:  schedule */
       kernel_stack[-6] = (long long) thread_start;    /* %rip */
-      /* 15 registers */
-      tcbs[i].rsp = &kernel_stack[-21];
+      /* 6 callee-save registers */
+      tcbs[i].rsp = &kernel_stack[-12];
       insert_pt(old_pt);
       return 0;
     }
@@ -86,8 +86,8 @@ int idle_thread_create () {
   idle_stack[-5] = (long long) idle;         /* %rip */
   /* Stack frame two: schedule */
   idle_stack[-6] = (long long) thread_start; /* %rip */
-  /* 15 registers */
-  idle_tcb.rsp = &idle_stack[-21];
+  /* 6 callee-save registers */
+  idle_tcb.rsp = &idle_stack[-12];
   return 0;
 }
 
