@@ -1,11 +1,11 @@
 #include "gdt.h"
+
 #include "util.h"
 
 struct {
   unsigned int reserved1;
   unsigned long long rsp[3];
-  unsigned long long reserved2;
-  unsigned long long ist[7];
+  unsigned long long ist[8]; /* ist[0] is reserved */
   unsigned short reserved3[5];
   unsigned short iomapbase;
 } __attribute__((packed)) tss;

@@ -17,52 +17,40 @@
 
 void initialize_idt (void) {
   create_idt();
-  for (int i = 0; i < 256; i++) {
-    register_isr(i, isr_other);
-  }
-  register_isr(0x35, dumb_isr);
-  register_isr(0x36, yield_isr);
-  register_isr(0x37, putch_isr);
-  register_isr(0x38, exit_isr);
-  register_isr(0x39, getch_isr);
-  register_isr(0x07, nm_isr);
-  register_isr(0x08, doublefault_isr);
 
-  /* A list of syscalls I'm not handling from userspace */
-  register_isr(0x00, exit_isr);
-  register_isr(0x04, exit_isr);
-  register_isr(0x05, exit_isr);
-  register_isr(0x06, exit_isr);
-  register_isr(0x0D, exit_isr);
-  register_isr(0x0E, exit_isr);
+  /* Exceptions */
+  register_isr(0x00, fault_isr, 0); /* #DE: Divide by Zero */
+    /* 0x01  #DB: Debug */
+    /* 0x02       Non-Maskable Interrupt */
+    /* 0x03  #BP: Breakpoint Exception */
+  register_isr(0x04, fault_isr, 0); /* #OF: Overflow */
+  register_isr(0x05, fault_isr, 0); /* #BR: Bound Range Exceeded */
+  register_isr(0x06, fault_isr, 0); /* #UD: Invalid Opcode */
+  register_isr(0x07, nm_isr, 0);    /* #NM: Device Not Available */
+  register_isr(0x08, df_isr, 0);    /* #DF: Double Fault */
+    /* 0x09       Coprocessor Segment Overrun */
+    /* 0x0A  #TS: Invalid TSS */
+    /* 0x0B  #NP: Segment Not Present */
+  register_isr(0x0C, fault_isr, 0); /* #SS: Stack Fault */
+  register_isr(0x0D, fault_isr, 0); /* #GP: General Protection */
+  register_isr(0x0E, fault_isr, 0); /* #PF: Page */
+    /* 0x0F       [undefined] */
+  register_isr(0x10, fault_isr, 0); /* #MF: x87 FPE */
+    /* 0x11  #AC: Alignment Check */
+    /* 0x12  #MC: Machine Check */
+  register_isr(0x13, fault_isr, 0); /* #XM: SIMD FPE */
+    /* 0x14  #VE: Virtualization Exception */
 
-  register_isr(0x01, isr_01);
-  register_isr(0x02, isr_02);
-  register_isr(0x03, isr_03);
-  register_isr(0x09, isr_09);
-  register_isr(0x0A, isr_0A);
-  register_isr(0x0B, isr_0B);
-  register_isr(0x0C, isr_0C);
-  register_isr(0x0F, isr_0F);
-  register_isr(0x10, isr_10);
-  register_isr(0x11, isr_11);
-  register_isr(0x12, isr_12);
-  register_isr(0x13, isr_13);
-  register_isr(0x14, isr_14);
-  register_isr(0x15, isr_15);
-  register_isr(0x16, isr_16);
-  register_isr(0x17, isr_17);
-  register_isr(0x18, isr_18);
-  register_isr(0x19, isr_19);
-  register_isr(0x1A, isr_1A);
-  register_isr(0x1B, isr_1B);
-  register_isr(0x1C, isr_1C);
-  register_isr(0x1D, isr_1D);
-  register_isr(0x1E, isr_1E);
-  register_isr(0x1F, isr_1F);
+  /* IRQ */
+  register_isr(0x20, timer_isr, 0);
+  register_isr(0x21, kbd_isr, 0);
 
-  register_isr(0x20, timer_isr);
-  register_isr(0x21, kbd_isr);
+  /* Syscalls */
+  register_isr(0x36, yield_isr, 0);
+  register_isr(0x37, putch_isr, 0);
+  register_isr(0x38, exit_isr, 0);
+  register_isr(0x39, getch_isr, 0);
+
 }
 
 void create_test_threads (void) {

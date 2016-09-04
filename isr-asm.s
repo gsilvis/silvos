@@ -26,6 +26,8 @@
         pop %rax
 .endm
 
+/* Syscalls */
+
 .GLOBAL yield_isr
 yield_isr:
         call schedule
@@ -47,6 +49,8 @@ getch_isr:
         call getch
         iretq
 
+/* Interrupts */
+
 .GLOBAL kbd_isr
 kbd_isr:
         push_caller_save_reg
@@ -63,9 +67,22 @@ timer_isr:
         pop_caller_save_reg
         iretq
 
+/* Faults */
+
 .GLOBAL nm_isr
 nm_isr:
 	push_caller_save_reg
 	call fpu_activate
 	pop_caller_save_reg
 	iretq
+
+.GLOBAL fault_isr
+fault_isr:
+	push_caller_save_reg
+        call thread_exit
+        call schedule
+
+.GLOBAL df_isr
+df_isr:
+        hlt
+        jmp df_isr
