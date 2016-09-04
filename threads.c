@@ -1,26 +1,13 @@
 #include "threads.h"
+
 #include "util.h"
 #include "bits.h"
 #include "pit.h"
 #include "alloc.h"
 #include "gdt.h"
 #include "page.h"
+#include "fpu.h"
 
-enum thread_state {
-  TS_NONEXIST, /* Nothing here */
-  TS_INACTIVE, /* Exists, but is not executing */
-  TS_ACTIVE,   /* Executing, right now */
-  TS_BLOCKED,  /* Blocked on IO */
-};
-
-typedef struct {
-  enum thread_state state;
-  void *rsp;        /* Kernel stack pointer, when yielded */
-  void *stack_top;  /* For TSS usage */
-  pagetable pt;
-} tcb;
-
-#define NUMTHREADS 16
 tcb tcbs[NUMTHREADS];
 
 /* Returns 0 on success, -1 on failure */
@@ -56,6 +43,7 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       /* 6 callee-save registers */
       tcbs[i].rsp = &kernel_stack[-12];
       insert_pt(old_pt);
+      tcbs[i].fp_buf = THREAD_FP_USE_INACTIVE;
       return 0;
     }
   }
@@ -88,6 +76,7 @@ int idle_thread_create () {
   idle_stack[-6] = (long long) thread_start; /* %rip */
   /* 6 callee-save registers */
   idle_tcb.rsp = &idle_stack[-12];
+  idle_tcb.fp_buf = THREAD_FP_USE_FORBIDDEN;
   return 0;
 }
 
@@ -120,6 +109,7 @@ void schedule_helper (void) {
   running_tcb = choose_task();
   set_timeout(); /* Reset pre-emption timer */
   set_new_rsp(running_tcb->stack_top);
+  fpu_switch_thread();
   running_tcb->state = TS_ACTIVE;
   schedule_rsp = running_tcb->rsp;
   schedule_pt = running_tcb->pt;

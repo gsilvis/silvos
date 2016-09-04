@@ -62,3 +62,10 @@ timer_isr:
         call schedule
         pop_caller_save_reg
         iretq
+
+.GLOBAL nm_isr
+nm_isr:
+	push_caller_save_reg
+	call fpu_activate
+	pop_caller_save_reg
+	iretq

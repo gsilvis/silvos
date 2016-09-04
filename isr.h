@@ -8,6 +8,7 @@ void spurious_isr (void);
 void putch_isr (void);
 void exit_isr (void);
 void getch_isr (void);
+void nm_isr (void);
 void isr_other (void);
 
 

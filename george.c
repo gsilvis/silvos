@@ -9,6 +9,7 @@
 #include "page.h"
 #include "alloc.h"
 #include "kbd.h"
+#include "fpu.h"
 
 #include "userland/print-a-include.h"
 #include "userland/print-b-include.h"
@@ -24,7 +25,7 @@ void initialize_idt (void) {
   register_isr(0x37, putch_isr);
   register_isr(0x38, exit_isr);
   register_isr(0x39, getch_isr);
-  register_isr(0x07, spurious_isr);
+  register_isr(0x07, nm_isr);
   register_isr(0x08, doublefault_isr);
 
   /* A list of syscalls I'm not handling from userspace */
@@ -81,6 +82,7 @@ void kernel_main (void) {
   create_test_threads();
   idle_thread_create();
   init_kbd();
+  fpu_init();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */
 }
