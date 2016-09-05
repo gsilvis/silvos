@@ -86,3 +86,10 @@ fault_isr:
 df_isr:
         hlt
         jmp df_isr
+
+.GLOBAL pf_isr
+pf_isr:
+        push_caller_save_reg
+        call pagefault_handler
+        pop_caller_save_reg
+        iretq

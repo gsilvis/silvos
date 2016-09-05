@@ -1,6 +1,10 @@
 #include "gdt.h"
 
 #include "util.h"
+#include "alloc.h"
+#include "page.h"
+
+#include "memory-map.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -57,6 +61,9 @@ void initialize_gdt (void) {
   gdt[11][3] = (uint8_t)(base >> 56);
   memset(&tss, sizeof(tss), 0);
   /* Set up TSS */
+  uint64_t *ist1_stack_bot = (uint64_t *)LOC_IST1_STACK;
+  tss.ist[1] = (uint64_t)&ist1_stack_bot[512];
+  map_new_page(LOC_IST1_STACK, PAGE_MASK__KERNEL);
   tss.iomapbase = sizeof(tss); /* Disable IO map */
   /* Load TSS offset */
   uint16_t index = 0x50;

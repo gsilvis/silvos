@@ -32,7 +32,7 @@ void initialize_idt (void) {
     /* 0x0B  #NP: Segment Not Present */
   register_isr(0x0C, fault_isr, 0); /* #SS: Stack Fault */
   register_isr(0x0D, fault_isr, 0); /* #GP: General Protection */
-  register_isr(0x0E, fault_isr, 0); /* #PF: Page */
+  register_isr(0x0E, pf_isr, 1);    /* #PF: Page Fault */
     /* 0x0F       [undefined] */
   register_isr(0x10, fault_isr, 0); /* #MF: x87 FPE */
     /* 0x11  #AC: Alignment Check */

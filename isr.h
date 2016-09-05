@@ -9,6 +9,7 @@ void getch_isr (void);
 void fault_isr (void);
 void nm_isr (void);
 void df_isr (void);
+void pf_isr (void);
 
 void kbd_isr (void);
 void timer_isr (void);

@@ -10,6 +10,21 @@ void __attribute__ ((noreturn)) panic (const char *s);
 void blab (void);
 
 
+typedef struct {
+  void *rip;
+  void *rsp;
+  void *rbx;
+  void *rbp;
+  void *r12;
+  void *r13;
+  void *r14;
+  void *r15;
+} __attribute__ ((packed)) jmp_buf[1];
+
+int __attribute__ ((returns_twice)) setjmp (jmp_buf buf);
+void __attribute__ ((noreturn)) longjmp (jmp_buf buf, int val);
+
+
 static inline void hlt (void) {
   __asm__("hlt");
 }
