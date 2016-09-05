@@ -1,6 +1,8 @@
 #ifndef __SILVOS_PAGE_H
 #define __SILVOS_PAGE_H
 
+#include <stdint.h>
+
 #define PAGE_MASK_PRESENT 0x0000000000000001
 #define PAGE_MASK_WRITE   0x0000000000000002
 #define PAGE_MASK_PRIV    0x0000000000000004
@@ -42,14 +44,14 @@
 
 #define PAGE_NUM_ENTRIES 512
 
-typedef unsigned long long *pagetable;
+typedef uint64_t *pagetable;
 
 void insert_pt (pagetable pt);
 pagetable get_current_pt (void);
 pagetable initial_pt (void);
 pagetable new_pt (void);
-int map_page (unsigned long long phys, unsigned long long virt, unsigned int mode);
-int unmap_page (unsigned long long virt);
-int map_new_page (unsigned long long virt, unsigned int mode);
+int map_page (uint64_t phys, uint64_t virt, unsigned int mode);
+int unmap_page (uint64_t virt);
+int map_new_page (uint64_t virt, unsigned int mode);
 
 #endif

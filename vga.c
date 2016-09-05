@@ -1,17 +1,19 @@
 #include "vga.h"
 
+#include <stdint.h>
+
 #define VGA 0xB8000
 
 typedef struct {
   char c;
-  unsigned char color;
+  uint8_t color;
 } vga_screen[25][80];
 
 vga_screen *myvga = (vga_screen*) VGA;
 
 void putc (char c) {
-  static unsigned int x = 0;
-  static unsigned int y = 0;
+  static int x = 0;
+  static int y = 0;
   switch (c) {
   case '\r':
     x = 0;
@@ -58,9 +60,9 @@ void puts (const char *s) {
   }
 }
 
-void puti (unsigned int i) {
+void puti (uint32_t i) {
   char d = i % 10 + '0';
-  unsigned int rest = i / 10;
+  uint32_t rest = i / 10;
   if (rest) {
     puti(rest);
   }

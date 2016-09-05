@@ -1,6 +1,6 @@
 #include "kbd.h"
 
-#include "bits.h"
+#include "util.h"
 #include "threads.h"
 #include "vga.h"
 

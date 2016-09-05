@@ -3,17 +3,19 @@
 #include "memory-map.h"
 
 #include "util.h"
-#include "bits.h"
 #include "pit.h"
 #include "alloc.h"
 #include "gdt.h"
 #include "page.h"
 #include "fpu.h"
 
+#include <stdint.h>
+#include <stddef.h>
+
 tcb tcbs[NUMTHREADS];
 
 /* Returns 0 on success, -1 on failure */
-int user_thread_create (unsigned char *text, unsigned int length) {
+int user_thread_create (void *text, size_t length) {
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
       /* Make new page table */
@@ -23,22 +25,22 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       map_new_page(LOC_TEXT, PAGE_MASK__USER);
       map_new_page(LOC_KERN_STACK, PAGE_MASK__KERNEL);
       map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
-      memcpy(text, (unsigned char *)LOC_TEXT, length);
+      memcpy((void *)LOC_TEXT, text, length);
       /* Set up stacks */
-      long long *kernel_stack = &((long long *)LOC_KERN_STACK)[512];
-      long long *user_stack = &((long long *)LOC_USER_STACK)[512];
+      uint64_t *kernel_stack = &((uint64_t *)LOC_KERN_STACK)[512];
+      uint64_t *user_stack = &((uint64_t *)LOC_USER_STACK)[512];
       /* Initialize tcb struct */
       tcbs[i].state = TS_INACTIVE;
       tcbs[i].stack_top = &kernel_stack[0];
       /* Initialize stack */
       /* Stack frame one:  thread_start */
       kernel_stack[-1] = 0x1B;                        /* %ss */
-      kernel_stack[-2] = (long long) &user_stack[-1]; /* %rsp */
+      kernel_stack[-2] = (uint64_t) &user_stack[-1]; /* %rsp */
       kernel_stack[-3] = 0x200;                       /* EFLAGS */
       kernel_stack[-4] = 0x4B;                        /* %cs */
-      kernel_stack[-5] = (long long) LOC_TEXT;        /* %rip */
+      kernel_stack[-5] = (uint64_t) LOC_TEXT;        /* %rip */
       /* Stack frame two:  schedule */
-      kernel_stack[-6] = (long long) thread_start;    /* %rip */
+      kernel_stack[-6] = (uint64_t) thread_start;    /* %rip */
       /* 6 callee-save registers */
       tcbs[i].rsp = &kernel_stack[-12];
       insert_pt(old_pt);
@@ -62,16 +64,16 @@ int idle_thread_create () {
   idle_tcb.pt = get_current_pt();
   map_new_page(LOC_IDLE_STACK, PAGE_MASK__USER);
   /* Set up stack */
-  long long *idle_stack = &((long long *)LOC_IDLE_STACK)[512];
+  uint64_t *idle_stack = &((uint64_t *)LOC_IDLE_STACK)[512];
   idle_tcb.stack_top = &idle_stack[0]; /* Not used??? */
   /* Stack frame one: thread_start */
   idle_stack[-1] = 0x10;                     /* %ss */
-  idle_stack[-2] = (long long) idle_stack;   /* %rsp */
+  idle_stack[-2] = (uint64_t) idle_stack;   /* %rsp */
   idle_stack[-3] = 0x200;                    /* EFLAGS */
   idle_stack[-4] = 0x40;                     /* %cs */
-  idle_stack[-5] = (long long) idle;         /* %rip */
+  idle_stack[-5] = (uint64_t) idle;         /* %rip */
   /* Stack frame two: schedule */
-  idle_stack[-6] = (long long) thread_start; /* %rip */
+  idle_stack[-6] = (uint64_t) thread_start; /* %rip */
   /* 6 callee-save registers */
   idle_tcb.rsp = &idle_stack[-12];
   idle_tcb.fp_buf = THREAD_FP_USE_FORBIDDEN;

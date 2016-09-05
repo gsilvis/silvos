@@ -5,6 +5,8 @@
 #include "alloc.h"
 #include "util.h"
 
+#include <stdint.h>
+
 pagetable kernel_pd;
 
 void insert_pt (pagetable pt) {
@@ -30,11 +32,11 @@ pagetable initial_pt (void) {
   pagetable pt = (pagetable)allocate_phys_page();
   memset(pt, 0x00, PAGE_4K_SIZE);
 
-  pdpt[0] = ((unsigned long long) kernel_pd) | PAGE_MASK__KERNEL;
-  kernel_pd[0] = ((unsigned long long) pt) | PAGE_MASK__KERNEL;
+  pdpt[0] = ((uint64_t) kernel_pd) | PAGE_MASK__KERNEL;
+  kernel_pd[0] = ((uint64_t) pt) | PAGE_MASK__KERNEL;
 
   /* Map the first 2M page */
-  unsigned long long first_blank_page = (unsigned long long)&_end;
+  uint64_t first_blank_page = (uint64_t)&_end;
   if (first_blank_page & PAGE_4K_MASK) {
     first_blank_page = PAGE_4K_ALIGN(first_blank_page) + PAGE_4K_SIZE;
   }
@@ -55,11 +57,11 @@ pagetable initial_pt (void) {
   /* Set up PML4 */
   pagetable pml4 = (pagetable)allocate_phys_page();
 
-  pml4[0] = ((unsigned long long) pdpt) | PAGE_MASK__USER;
+  pml4[0] = ((uint64_t) pdpt) | PAGE_MASK__USER;
   for (unsigned int i = 1; i < PAGE_NUM_ENTRIES-1; i++) {
     pml4[i] = PAGE_MASK__FAKE;
   }
-  pml4[PAGE_NUM_ENTRIES-1] = ((unsigned long long) pml4) | PAGE_MASK__KERNEL;
+  pml4[PAGE_NUM_ENTRIES-1] = ((uint64_t) pml4) | PAGE_MASK__KERNEL;
 
   return pml4;
 }
@@ -72,27 +74,27 @@ pagetable new_pt (void) {
   pagetable pdpt_phys = (pagetable)allocate_phys_page();
   pagetable pdpt_virt = (pagetable)LOC_TEMP_PT2; /* Arbitrary otherwise unmapped location */
 
-  map_page((unsigned long long)pml4_phys, (unsigned long long)pml4_virt, PAGE_MASK__KERNEL);
-  map_page((unsigned long long)pdpt_phys, (unsigned long long)pdpt_virt, PAGE_MASK__KERNEL);
+  map_page((uint64_t)pml4_phys, (uint64_t)pml4_virt, PAGE_MASK__KERNEL);
+  map_page((uint64_t)pdpt_phys, (uint64_t)pdpt_virt, PAGE_MASK__KERNEL);
 
-  pdpt_virt[0] = ((unsigned long long) kernel_pd) | PAGE_MASK__KERNEL;
+  pdpt_virt[0] = ((uint64_t) kernel_pd) | PAGE_MASK__KERNEL;
   for (int i = 1; i < PAGE_NUM_ENTRIES; i++) {
     pdpt_virt[i] = PAGE_MASK__FAKE;
   }
 
-  pml4_virt[0] = ((unsigned long long) pdpt_phys) | PAGE_MASK__USER;
+  pml4_virt[0] = ((uint64_t) pdpt_phys) | PAGE_MASK__USER;
   for (int i = 1; i < PAGE_NUM_ENTRIES-1; i++) {
     pml4_virt[i] = PAGE_MASK__FAKE;
   }
-  pml4_virt[PAGE_NUM_ENTRIES-1] = ((unsigned long long) pml4_phys) | PAGE_MASK__KERNEL;
+  pml4_virt[PAGE_NUM_ENTRIES-1] = ((uint64_t) pml4_phys) | PAGE_MASK__KERNEL;
 
-  unmap_page((unsigned long long)pml4_virt);
-  unmap_page((unsigned long long)pdpt_virt);
+  unmap_page((uint64_t)pml4_virt);
+  unmap_page((uint64_t)pdpt_virt);
 
   return pml4_phys;
 }
 
-int map_page (unsigned long long phys, unsigned long long virt, unsigned int mode) {
+int map_page (uint64_t phys, uint64_t virt, unsigned int mode) {
   if (phys & PAGE_4K_MASK) {
     return -1;
   }
@@ -106,15 +108,15 @@ int map_page (unsigned long long phys, unsigned long long virt, unsigned int mod
   pagetable pt = (pagetable) PAGE_VIRT_PT_OF(virt);
 
   if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pml4[PAGE_HT_OF(virt)] = ((unsigned long long) allocate_phys_page()) | PAGE_MASK__USER;
+    pml4[PAGE_HT_OF(virt)] = ((uint64_t) allocate_phys_page()) | PAGE_MASK__USER;
     memset(pdpt, 0x00, PAGE_4K_SIZE);
   }
   if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pdpt[PAGE_1G_OF(virt)] = ((unsigned long long) allocate_phys_page()) | PAGE_MASK__USER;
+    pdpt[PAGE_1G_OF(virt)] = ((uint64_t) allocate_phys_page()) | PAGE_MASK__USER;
     memset(pd, 0x00, PAGE_4K_SIZE);
   }
   if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pd[PAGE_2M_OF(virt)] = ((unsigned long long) allocate_phys_page()) | PAGE_MASK__USER;
+    pd[PAGE_2M_OF(virt)] = ((uint64_t) allocate_phys_page()) | PAGE_MASK__USER;
     memset(pt, 0x00, PAGE_4K_SIZE);
   }
 
@@ -122,7 +124,7 @@ int map_page (unsigned long long phys, unsigned long long virt, unsigned int mod
   return 0;
 }
 
-int unmap_page (unsigned long long virt) {
+int unmap_page (uint64_t virt) {
   if (virt & PAGE_4K_MASK) {
     return -1;
   }
@@ -146,6 +148,6 @@ int unmap_page (unsigned long long virt) {
   return 0;
 }
 
-int map_new_page (unsigned long long virt, unsigned int mode) {
-  return map_page((unsigned long long)allocate_phys_page(), virt, mode);
+int map_new_page (uint64_t virt, unsigned int mode) {
+  return map_page((uint64_t)allocate_phys_page(), virt, mode);
 }

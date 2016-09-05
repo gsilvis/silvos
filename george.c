@@ -3,7 +3,6 @@
 #include "idt.h"
 #include "gdt.h"
 #include "util.h"
-#include "bits.h"
 #include "isr.h"
 #include "pic.h"
 #include "page.h"

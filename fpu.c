@@ -8,7 +8,7 @@
 #include "util.h"
 
 struct {
-  char data[512];
+  uint8_t data[512];
 } *const fpu_state = (void *)LOC_FP_BUF;
 
 int active_fp_buf = THREAD_FP_USE_DUMMY;
@@ -21,7 +21,7 @@ void fpu_init (void) {
   }
   memset(fpu_state, 0, 512 * NUMFPBUFS);
   /* Enable FPU */
-  unsigned long long cr0, cr4;
+  uint64_t cr0, cr4;
   __asm__("mov %%cr0,%0" : "=r"(cr0) : : );
   cr0 |= 0x0000002A;
   __asm__("mov %0,%%cr0" : : "r"(cr0) : );
@@ -41,7 +41,7 @@ void switch_fp_buf (int new_fp_buf) {
 }
 
 void disable_fpu (void) {
-  unsigned long long cr0;
+  uint64_t cr0;
   __asm__("mov %%cr0,%0" : "=r"(cr0) : : );
   cr0 |= 0x00000008;
   __asm__("mov %0,%%cr0" : : "r"(cr0) : );

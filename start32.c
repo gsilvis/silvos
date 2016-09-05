@@ -1,11 +1,14 @@
 /* This file runs in 32-bit mode.  To make sure we don't try and call 64-bit
- * code, don't include any headers. Here are the fake "imports" */
+ * code, don't include any SILVOS headers. Here are the fake "imports" */
+
+/* Standard library imports */
+#include <stdint.h>
 
 /* Data that we must access from here */
 
-extern unsigned long long memtop;
+extern uint64_t memtop;
 
-extern char gdt[][8];
+extern uint8_t gdt[][8];
 
 /* Useful constants */
 
@@ -20,12 +23,12 @@ void enable_ia32e(void);
 
 /* End "imports" */
 
-typedef unsigned long long pagetable[PAGE_NUM_ENTRIES] __attribute__((aligned(0x1000)));
+typedef uint64_t pagetable[PAGE_NUM_ENTRIES] __attribute__((aligned(0x1000)));
 
 pagetable bad_pml4;
 pagetable bad_pdpt;
 
-void enter_long_mode (int magic, unsigned int *mboot_struct) {
+void enter_long_mode (uint32_t magic, uint32_t *mboot_struct) {
   /* Check multiboot magic */
   if (magic != 0x2BADB002) {
     __asm__("hlt");
@@ -33,7 +36,7 @@ void enter_long_mode (int magic, unsigned int *mboot_struct) {
 
   /* Initialize memory allocator, while we still have easy access to the
    * multiboot information */
-  memtop = ((unsigned long long) mboot_struct[2]) * 1024;
+  memtop = ((uint64_t) mboot_struct[2]) * 1024;
   memtop += 0x100000;
   memtop &= 0xFFF;
 
@@ -42,7 +45,7 @@ void enter_long_mode (int magic, unsigned int *mboot_struct) {
    * interrupts yet.  Don't call LTR to load the segment selecter, either--we
    * have to be in 64-bit mode to do that. */
   const struct {
-    unsigned short size;
+    uint16_t size;
     void *base;
   } __attribute__((packed)) GDT_addr = {
     0x60,
@@ -54,12 +57,12 @@ void enter_long_mode (int magic, unsigned int *mboot_struct) {
   initialize_segment_selectors();
 
   /* Create a bad, provisional page table */
-  bad_pml4[PAGE_NUM_ENTRIES-1] = (unsigned int)(&bad_pml4[0]) | PAGE_MASK_KERNEL;
-  bad_pml4[0] = (unsigned int)(&bad_pdpt[0]) | PAGE_MASK_KERNEL;
+  bad_pml4[PAGE_NUM_ENTRIES-1] = (uint32_t)(&bad_pml4[0]) | PAGE_MASK_KERNEL;
+  bad_pml4[0] = (uint32_t)(&bad_pdpt[0]) | PAGE_MASK_KERNEL;
   bad_pdpt[0] = PAGE_MASK_KERNEL | PAGE_MASK_SIZE;
 
   /* Enable PAE */
-  unsigned int cr4;
+  uint32_t cr4;
   __asm__("mov %%cr4,%0" : "=r"(cr4) : : );
   cr4 |= 0x00000020;
   __asm__("mov %0,%%cr4" : : "r"(cr4) : );
@@ -71,7 +74,7 @@ void enter_long_mode (int magic, unsigned int *mboot_struct) {
   enable_ia32e();
 
   /* Enable paging */
-  unsigned int cr0;
+  uint32_t cr0;
   __asm__("mov %%cr0,%0" : "=r"(cr0) : : );
   cr0 |= 0x80000000;
   __asm__("mov %0,%%cr0" : : "r"(cr0) : );

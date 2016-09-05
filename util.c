@@ -1,15 +1,22 @@
-#include "vga.h"
-#include "bits.h"
+#include "util.h"
 
-void memset (void *ptr, char byte, unsigned int count) {
+#include "vga.h"
+
+#include <stdint.h>
+#include <stddef.h>
+
+void memset (void *ptr, char byte, size_t count) {
+  char *p = ptr;
   for (unsigned int i = 0; i < count; i++) {
-    ((char *)ptr)[i] = byte;
+    p[i] = byte;
   }
 }
 
-void memcpy (unsigned char *src, unsigned char *dest, unsigned int count) {
+void memcpy (void *dest, const void *src, size_t count) {
+  char *d = dest;
+  const char *s = src;
   for (unsigned int i = 0; i < count; i++) {
-    dest[i] = src[i];
+    d[i] = s[i];
   }
 }
 

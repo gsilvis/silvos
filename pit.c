@@ -1,4 +1,6 @@
-#include "bits.h"
+#include "pit.h"
+
+#include "util.h"
 
 void set_timeout (void) {
   outb(0x43, 0x30); /* Set Channel 0 to two-byte mode, interrupt on terminal count */

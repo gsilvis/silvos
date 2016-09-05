@@ -2,12 +2,15 @@
 
 #include "util.h"
 
+#include <stdint.h>
+#include <stddef.h>
+
 struct {
-  unsigned int reserved1;
-  unsigned long long rsp[3];
-  unsigned long long ist[8]; /* ist[0] is reserved */
-  unsigned short reserved3[5];
-  unsigned short iomapbase;
+  uint32_t reserved1;
+  uint64_t rsp[3];
+  uint64_t ist[8]; /* ist[0] is reserved */
+  uint16_t reserved3[5];
+  uint16_t iomapbase;
 } __attribute__((packed)) tss;
 
 /* Useful stack segment selectors:
@@ -21,7 +24,7 @@ struct {
  * mode.  The 16-bit and 64-bit segments can only be used in ia32-e mode.
  */
 
-char gdt[][8] = {
+uint8_t gdt[][8] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* Null */
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* Unused */
   {0xFF, 0xFF, 0x00, 0x00, 0x00, 0x92, 0xCF, 0x00}, /* ring 0 data */
@@ -38,30 +41,30 @@ char gdt[][8] = {
 
 void initialize_gdt (void) {
   /* Set up TSS descriptor */
-  long long base = (long long) &tss;
-  int limit = sizeof(tss);
-  gdt[10][0] = (char)(limit);
-  gdt[10][1] = (char)(limit >> 8);
-  gdt[10][2] = (char)(base);
-  gdt[10][3] = (char)(base >> 8);
-  gdt[10][4] = (char)(base >> 16);
+  uint64_t base = (uint64_t) &tss;
+  size_t limit = sizeof(tss);
+  gdt[10][0] = (uint8_t)(limit);
+  gdt[10][1] = (uint8_t)(limit >> 8);
+  gdt[10][2] = (uint8_t)(base);
+  gdt[10][3] = (uint8_t)(base >> 8);
+  gdt[10][4] = (uint8_t)(base >> 16);
   gdt[10][5] = 0x89;
-  gdt[10][6] = (char)(0x40 | (limit >> 16));
-  gdt[10][7] = (char)(base >> 24);
-  gdt[11][0] = (char)(base >> 32);
-  gdt[11][1] = (char)(base >> 40);
-  gdt[11][2] = (char)(base >> 48);
-  gdt[11][3] = (char)(base >> 56);
-  memset((char *)&tss, sizeof(tss), 0);
+  gdt[10][6] = (uint8_t)(0x40 | (limit >> 16));
+  gdt[10][7] = (uint8_t)(base >> 24);
+  gdt[11][0] = (uint8_t)(base >> 32);
+  gdt[11][1] = (uint8_t)(base >> 40);
+  gdt[11][2] = (uint8_t)(base >> 48);
+  gdt[11][3] = (uint8_t)(base >> 56);
+  memset(&tss, sizeof(tss), 0);
   /* Set up TSS */
   tss.iomapbase = sizeof(tss); /* Disable IO map */
   /* Load TSS offset */
-  unsigned short index = 0x50;
+  uint16_t index = 0x50;
   __asm__("ltr %0" :: "r"(index));
 
 }
 
 void set_new_rsp (void *rsp) {
-  tss.rsp[0] = (unsigned long long)rsp;
+  tss.rsp[0] = (uint64_t)rsp;
 }
 

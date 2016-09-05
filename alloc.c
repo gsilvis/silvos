@@ -1,5 +1,7 @@
 #include "alloc.h"
 
+#include <stdint.h>
+
 /* Current plan: Identity map low memory, and the memory hole.  Identity map
    the kernel at 0x100000.  After that... go wild! */
 
@@ -9,7 +11,7 @@ void *memtop;
 extern int _end;
 
 void initialize_allocator (void) {
-  unsigned long long tmp = (unsigned long long) &_end;
+  uint64_t tmp = (uint64_t) &_end;
   if (tmp & 0xFFF) {
     tmp &= 0xFFFFF000;
     tmp += 0x1000;
