@@ -1,5 +1,7 @@
 #include "fpu.h"
 
+#include "memory-map.h"
+
 #include "threads.h"
 #include "alloc.h"
 #include "page.h"
@@ -7,18 +9,15 @@
 
 struct {
   char data[512];
-} *fpu_state;
+} *const fpu_state = (void *)LOC_FP_BUF;
 
 int active_fp_buf = THREAD_FP_USE_DUMMY;
 
 void fpu_init (void) {
   /* Set up buffers to save FPU information in */
-  fpu_state = (void *) 0x00150000;
   int num_fpbuf_pages = (NUMFPBUFS - 1) / 8 + 1;
   for (int i = 0; i < num_fpbuf_pages; i++) {
-    map_page((unsigned long long)allocate_phys_page(),
-             0x00150000 + 0x1000 * i,
-             PAGE_MASK__KERNEL);
+    map_new_page(LOC_FP_BUF + 0x1000 * i, PAGE_MASK__KERNEL);
   }
   memset(fpu_state, 0, 512 * NUMFPBUFS);
   /* Enable FPU */

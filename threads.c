@@ -1,5 +1,7 @@
 #include "threads.h"
 
+#include "memory-map.h"
+
 #include "util.h"
 #include "bits.h"
 #include "pit.h"
@@ -12,22 +14,19 @@ tcb tcbs[NUMTHREADS];
 
 /* Returns 0 on success, -1 on failure */
 int user_thread_create (unsigned char *text, unsigned int length) {
-#define TEXT 0x40000000
-#define KERNEL_STACK 0x40001000
-#define USER_STACK 0x40002000
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
       /* Make new page table */
       pagetable old_pt = get_current_pt();
       tcbs[i].pt = new_pt();
       insert_pt(tcbs[i].pt);
-      map_page((unsigned long long)allocate_phys_page(), TEXT, PAGE_MASK__USER);
-      map_page((unsigned long long)allocate_phys_page(), KERNEL_STACK, PAGE_MASK__KERNEL);
-      map_page((unsigned long long)allocate_phys_page(), USER_STACK, PAGE_MASK__USER);
-      memcpy(text, (unsigned char *)TEXT, length);
+      map_new_page(LOC_TEXT, PAGE_MASK__USER);
+      map_new_page(LOC_KERN_STACK, PAGE_MASK__KERNEL);
+      map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
+      memcpy(text, (unsigned char *)LOC_TEXT, length);
       /* Set up stacks */
-      long long *kernel_stack = &((long long *)KERNEL_STACK)[512];
-      long long *user_stack = &((long long *)USER_STACK)[512];
+      long long *kernel_stack = &((long long *)LOC_KERN_STACK)[512];
+      long long *user_stack = &((long long *)LOC_USER_STACK)[512];
       /* Initialize tcb struct */
       tcbs[i].state = TS_INACTIVE;
       tcbs[i].stack_top = &kernel_stack[0];
@@ -37,7 +36,7 @@ int user_thread_create (unsigned char *text, unsigned int length) {
       kernel_stack[-2] = (long long) &user_stack[-1]; /* %rsp */
       kernel_stack[-3] = 0x200;                       /* EFLAGS */
       kernel_stack[-4] = 0x4B;                        /* %cs */
-      kernel_stack[-5] = (long long) TEXT;            /* %rip */
+      kernel_stack[-5] = (long long) LOC_TEXT;        /* %rip */
       /* Stack frame two:  schedule */
       kernel_stack[-6] = (long long) thread_start;    /* %rip */
       /* 6 callee-save registers */
@@ -59,12 +58,11 @@ void idle () {
 }
 
 int idle_thread_create () {
-#define IDLE_STACK 0xC0000000
   idle_tcb.state = TS_INACTIVE;
   idle_tcb.pt = get_current_pt();
-  map_page((unsigned long long)allocate_phys_page(), IDLE_STACK, PAGE_MASK__USER);
+  map_new_page(LOC_IDLE_STACK, PAGE_MASK__USER);
   /* Set up stack */
-  long long *idle_stack = &((long long *)IDLE_STACK)[512];
+  long long *idle_stack = &((long long *)LOC_IDLE_STACK)[512];
   idle_tcb.stack_top = &idle_stack[0]; /* Not used??? */
   /* Stack frame one: thread_start */
   idle_stack[-1] = 0x10;                     /* %ss */
@@ -116,7 +114,6 @@ void schedule_helper (void) {
 }
 
 void thread_exit (void) {
-  puts("Exiting thread...");
   running_tcb->state = TS_NONEXIST;
 }
 

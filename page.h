@@ -50,5 +50,6 @@ pagetable initial_pt (void);
 pagetable new_pt (void);
 int map_page (unsigned long long phys, unsigned long long virt, unsigned int mode);
 int unmap_page (unsigned long long virt);
+int map_new_page (unsigned long long virt, unsigned int mode);
 
 #endif

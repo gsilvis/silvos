@@ -1,4 +1,7 @@
-#include "isr.h"
+#include "idt.h"
+
+#include "memory-map.h"
+
 #include "util.h"
 #include "alloc.h"
 #include "page.h"
@@ -14,11 +17,10 @@ struct IDT_entry {
 } __attribute__ ((packed));
 
 
-struct IDT_entry *idt;
+struct IDT_entry *idt = LOC_IDT;
 
 void create_idt () {
-  idt = (struct IDT_entry *)allocate_phys_page();
-  map_page((unsigned long long)idt, (unsigned long long)idt, PAGE_MASK__KERNEL); // FIXME, map somewhere better
+  map_new_page(LOC_IDT, PAGE_MASK__KERNEL);
 }
 
 void register_isr (unsigned char num,

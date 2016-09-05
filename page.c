@@ -1,5 +1,7 @@
 #include "page.h"
 
+#include "memory-map.h"
+
 #include "alloc.h"
 #include "util.h"
 
@@ -66,9 +68,9 @@ pagetable initial_pt (void) {
  * pagetable. */
 pagetable new_pt (void) {
   pagetable pml4_phys = (pagetable)allocate_phys_page();
-  pagetable pml4_virt = (pagetable)0x00001000; /* Arbitrary otherwise unmapped location */
+  pagetable pml4_virt = (pagetable)LOC_TEMP_PT; /* Arbitrary otherwise unmapped location */
   pagetable pdpt_phys = (pagetable)allocate_phys_page();
-  pagetable pdpt_virt = (pagetable)0x00002000; /* Arbitrary otherwise unmapped location */
+  pagetable pdpt_virt = (pagetable)LOC_TEMP_PT2; /* Arbitrary otherwise unmapped location */
 
   map_page((unsigned long long)pml4_phys, (unsigned long long)pml4_virt, PAGE_MASK__KERNEL);
   map_page((unsigned long long)pdpt_phys, (unsigned long long)pdpt_virt, PAGE_MASK__KERNEL);
@@ -142,4 +144,8 @@ int unmap_page (unsigned long long virt) {
 
   pt[PAGE_4K_OF(virt)] = PAGE_MASK__FAKE;
   return 0;
+}
+
+int map_new_page (unsigned long long virt, unsigned int mode) {
+  return map_page((unsigned long long)allocate_phys_page(), virt, mode);
 }
