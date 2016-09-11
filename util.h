@@ -37,15 +37,13 @@ static inline void sti (void) {
   __asm__("sti");
 }
 
-static inline void outb (uint8_t port, uint8_t data) {
-  __asm__("mov %1, %%al;\n\t"
-          "out %%al, %0" : : "i"(port), "r"(data) : "%eax");
+static inline void outb (uint16_t port, uint8_t data) {
+  __asm__ volatile("outb %0, %1" : : "a"(data), "Nd"(port));
 }
 
-static inline uint8_t inb (uint8_t port) {
+static inline uint8_t inb (uint16_t port) {
   uint8_t data;
-  __asm__ volatile("in %1, %%al\n\t"
-                   "mov %%al, %0" : "=r"(data) : "i"(port) : "%eax", "%edx");
+  __asm__ volatile("inb %1, %0" : "=a"(data) : "Nd"(port));
   return data;
 }
 
