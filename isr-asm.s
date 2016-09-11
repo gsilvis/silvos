@@ -49,6 +49,20 @@ getch_isr:
         call getch
         iretq
 
+.GLOBAL read_isr
+read_isr:
+	mov %rax,%rdi
+	mov %rbx,%rsi
+	call read_sector
+	iretq
+
+.GLOBAL write_isr
+write_isr:
+	mov %rax,%rdi
+	mov %rbx,%rsi
+	call write_sector
+	iretq
+
 /* Interrupts */
 
 .GLOBAL kbd_isr

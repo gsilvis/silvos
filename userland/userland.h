@@ -22,4 +22,22 @@ static inline char getch (void) {
   return c;
 }
 
+static inline int read (long long sector, char dest[512]) {
+  int out;
+  __asm__ volatile("int $0x3A;"
+                   : "=a" (out)
+                   : "a" (sector), "b" (dest)
+                   : CALLER_SAVE_REGISTERS2, "memory");
+  return out;
+}
+
+static inline int write (long long sector, const void *src) {
+  int out;
+  __asm__ volatile("int $0x3B;"
+                   : "=a" (out)
+                   : "a" (sector), "b" (src)
+                   : CALLER_SAVE_REGISTERS2, "memory");
+  return out;
+}
+
 #endif

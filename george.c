@@ -9,6 +9,7 @@
 #include "alloc.h"
 #include "kbd.h"
 #include "fpu.h"
+#include "pci.h"
 
 #include "userland/print-a-include.h"
 #include "userland/print-b-include.h"
@@ -49,6 +50,8 @@ void initialize_idt (void) {
   register_isr(0x37, putch_isr, 0);
   register_isr(0x38, exit_isr, 0);
   register_isr(0x39, getch_isr, 0);
+  register_isr(0x3A, read_isr, 0);
+  register_isr(0x3B, write_isr, 0);
 
 }
 
@@ -70,6 +73,7 @@ void kernel_main (void) {
   idle_thread_create();
   init_kbd();
   fpu_init();
+  check_all_pci_busses();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */
 }
