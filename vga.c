@@ -68,3 +68,19 @@ void puti (uint32_t i) {
   }
   putc(d);
 }
+
+void put_byte (uint8_t d) {
+  const char *out = "0123456789ABCDEF";
+  putc(out[0x0F & (d >> 4)]);
+  putc(out[0x0F & (d)]);
+}
+
+void put_short (uint16_t d) {
+  put_byte((uint8_t)(d >> 8));
+  put_byte((uint8_t)(d));
+}
+
+void put_int (uint32_t d) {
+  put_short((uint16_t)(d >> 16));
+  put_short((uint16_t)(d));
+}
