@@ -21,7 +21,6 @@ void memcpy (void *dest, const void *src, size_t count) {
 }
 
 void __attribute__ ((noreturn)) panic (const char *s) {
-  cli();
   puts("\r\nKERNEL PANIC: ");
   puts(s);
   while (1) {

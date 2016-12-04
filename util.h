@@ -29,14 +29,6 @@ static inline void hlt (void) {
   __asm__("hlt");
 }
 
-static inline void cli (void) {
-  __asm__("cli");
-}
-
-static inline void sti (void) {
-  __asm__("sti");
-}
-
 static inline void outb (uint16_t port, uint8_t data) {
   __asm__ volatile("outb %0, %1" : : "a"(data), "Nd"(port));
 }
