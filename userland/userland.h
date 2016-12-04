@@ -1,8 +1,8 @@
 #ifndef __SILVOS_USERLAND_H
 #define __SILVOS_USERLAND_H
 
-#define CALLER_SAVE_REGISTERS "rax", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"
 #define CALLER_SAVE_REGISTERS2 "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"
+#define CALLER_SAVE_REGISTERS "rax", CALLER_SAVE_REGISTERS2
 
 static inline void yield (void) {
   __asm__ volatile("int $0x36" ::: CALLER_SAVE_REGISTERS);
