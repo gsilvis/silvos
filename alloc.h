@@ -3,5 +3,6 @@
 
 void initialize_allocator (void);
 void *allocate_phys_page (void);
+void free_phys_page (void *page);
 
 #endif
