@@ -44,7 +44,7 @@ int user_thread_create (void *text, size_t length) {
       /* 6 callee-save registers */
       tcbs[i].rsp = &kernel_stack[-12];
       insert_pt(old_pt);
-      tcbs[i].fp_buf = THREAD_FP_USE_INACTIVE;
+      tcbs[i].fpu_state = THREAD_FPU_STATE_INACTIVE;
       return 0;
     }
   }
@@ -76,7 +76,7 @@ int idle_thread_create () {
   idle_stack[-6] = (uint64_t) thread_start; /* %rip */
   /* 6 callee-save registers */
   idle_tcb.rsp = &idle_stack[-12];
-  idle_tcb.fp_buf = THREAD_FP_USE_FORBIDDEN;
+  idle_tcb.fpu_state = THREAD_FPU_STATE_FORBIDDEN;
   return 0;
 }
 
@@ -116,6 +116,7 @@ void schedule_helper (void) {
 }
 
 void thread_exit (void) {
+  fpu_exit_thread();
   running_tcb->state = TS_NONEXIST;
 }
 

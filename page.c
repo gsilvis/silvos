@@ -95,6 +95,12 @@ pagetable new_pt (void) {
   return pml4_phys;
 }
 
+/* Get virtual address referred to by the given virtual address.  This function
+ * is unsafe. */
+uint64_t virt_to_phys (uint64_t virt) {
+  return ((pagetable)PAGE_VIRT_PT_OF(virt))[PAGE_4K_OF(virt)];
+}
+
 int map_page (uint64_t phys, uint64_t virt, unsigned int mode) {
   if (phys & PAGE_4K_MASK) {
     return -1;
@@ -151,4 +157,8 @@ int unmap_page (uint64_t virt) {
 
 int map_new_page (uint64_t virt, unsigned int mode) {
   return map_page((uint64_t)allocate_phys_page(), virt, mode);
+}
+
+int remap_page (uint64_t virt_from, uint64_t virt_to, unsigned int mode) {
+  return map_page(virt_to_phys(virt_from), virt_to, mode);
 }

@@ -15,12 +15,18 @@ enum thread_state {
   TS_BLOCKED,  /* Blocked on IO */
 };
 
+enum fpu_state {
+  THREAD_FPU_STATE_INACTIVE,  /* not used yet */
+  THREAD_FPU_STATE_FORBIDDEN, /* using exits thread */
+  THREAD_FPU_STATE_ACTIVE,    /* there's an FPU buf allocated */
+};
+
 typedef struct {
   enum thread_state state;
   void *rsp;        /* Kernel stack pointer, when yielded */
   void *stack_top;  /* For TSS usage */
   pagetable pt;
-  int fp_buf;
+  enum fpu_state fpu_state;
 } tcb;
 
 extern tcb *running_tcb;

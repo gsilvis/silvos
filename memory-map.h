@@ -12,8 +12,8 @@
 
 /* Null page:          0x000000000000  -  0x000000000FFF */
 
-#define LOC_FP_BUF     0x0000000E0000  /* 0x0000000EFFFF  (16 pages) */
 #define LOC_IDT        0x0000000F0000  /* 0x0000000F0FFF  (1 page)   */
+#define LOC_FP_BUF     0x0000000FA000  /* 0x0000000FAFFF  (1 page)   */
 #define LOC_IST1_STACK 0x0000000FB000  /* 0x0000000FBFFF  (1 page)   */
 #define LOC_TEMP_PT    0x0000000FC000  /* 0x0000000FCFFF  (1 page)   */
 #define LOC_TEMP_PT2   0x0000000FD000  /* 0x0000000FDFFF  (1 page)   */
@@ -27,7 +27,8 @@
  * Second 2M page is for thread-local storage.
  */
 
-#define LOC_KERN_STACK  0x0000001FF000
+#define LOC_THREAD_FP   0x000000200000  /* 0x000000200FFF  (1 page)   */
+#define LOC_KERN_STACK  0x0000002FF000  /* 0x0000002FFFFF  (1 page)   */
 
 /* Rest of first 1G page is unused */
 

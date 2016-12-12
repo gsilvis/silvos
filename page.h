@@ -50,8 +50,10 @@ void insert_pt (pagetable pt);
 pagetable get_current_pt (void);
 pagetable initial_pt (void);
 pagetable new_pt (void);
+uint64_t virt_to_phys (uint64_t virt);
 int map_page (uint64_t phys, uint64_t virt, unsigned int mode);
 int unmap_page (uint64_t virt);
 int map_new_page (uint64_t virt, unsigned int mode);
+int remap_page (uint64_t virt_from, uint64_t virt_to, unsigned int mode);
 
 #endif
