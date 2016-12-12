@@ -11,6 +11,7 @@ void blab (void);
 
 
 typedef struct {
+  /* %rip, %rsp, and all callee-save registers */
   void *rip;
   void *rsp;
   void *rbx;
