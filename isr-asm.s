@@ -63,6 +63,19 @@ write_isr:
 	call write_sector
 	iretq
 
+.GLOBAL palloc_isr
+palloc_isr:
+	mov %rax,%rdi
+	call palloc
+	iretq
+
+.GLOBAL pfree_isr
+pfree_isr:
+	mov %rax,%rdi
+	call pfree
+	iretq
+
+
 /* Interrupts */
 
 .GLOBAL kbd_isr

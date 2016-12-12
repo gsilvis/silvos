@@ -52,6 +52,8 @@ void initialize_idt (void) {
   register_isr(0x39, getch_isr, 0);
   register_isr(0x3A, read_isr, 0);
   register_isr(0x3B, write_isr, 0);
+  register_isr(0x3C, palloc_isr, 0);
+  register_isr(0x3C, pfree_isr, 0);
 
 }
 

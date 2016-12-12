@@ -7,6 +7,8 @@ void exit_isr (void);
 void getch_isr (void);
 void read_isr (void);
 void write_isr (void);
+void palloc_isr (void);
+void pfree_isr (void);
 
 void fault_isr (void);
 void nm_isr (void);

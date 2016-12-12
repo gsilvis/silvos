@@ -1,7 +1,7 @@
 
 all: george.multiboot temp_drive
 
-george.multiboot: start32-asm.o start32.o george.o threads.o threads-asm.o vga.o util.o idt.o isr-asm.o pic.o pit.o util-asm.o gdt.o page.o alloc.o kbd.o fpu.o pagefault.o pci.o ide.o
+george.multiboot: start32-asm.o start32.o george.o threads.o threads-asm.o vga.o util.o idt.o isr-asm.o pic.o pit.o util-asm.o gdt.o page.o alloc.o kbd.o fpu.o pagefault.o pci.o ide.o palloc.o
 	x86_64-elf-gcc -T kernel.ld $^ -o $@ -nostdlib -lgcc -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
 
 start32-asm.o: start32-asm.s
