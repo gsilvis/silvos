@@ -1,6 +1,9 @@
 
-/* Hardware interrupts must push all caller-save registers.  Syscall handlers
- * don't need to do anything. */
+/* Hardware interrupts must push all caller-save registers.   Syscall handlers
+ * don't need to do anything.  (Callee-save registers are saved later.  For
+ * hardware interrupts, this means all registers are saved.  The syscall ABI
+ * lets the kernel clobber caller-save registers.)  Be careful about using any
+ * registers in these routines. */
 
 .macro push_caller_save_reg
         push %rax
