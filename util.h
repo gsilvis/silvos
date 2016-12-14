@@ -4,6 +4,25 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef uint8_t *bit_array;
+
+/* Returns 0 if 0, and non-zero if 1 */
+static inline int bit_array_get(bit_array a, uint64_t i) {
+  uint8_t mask = 1 << (i%8);
+  return a[i/8] & mask;
+}
+
+/* Sets bit if b non-zero, clears bit if b zero */
+static inline void bit_array_set(bit_array a, uint64_t i, int b) {
+  uint8_t mask = 1 << (i%8);
+  if (b) {
+    a[i/8] |= mask;
+  } else {
+    a[i/8] &= ~mask;
+  }
+}
+
+
 void memset (void *ptr, char byte, size_t count);
 void memcpy (void *dest, const void *src, size_t count);
 void __attribute__ ((noreturn)) panic (const char *s);
