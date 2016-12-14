@@ -23,21 +23,20 @@ int user_thread_create (void *text, size_t length) {
       tcbs[i].pt = new_pt();
       insert_pt(tcbs[i].pt);
       map_new_page(LOC_TEXT, PAGE_MASK__USER);
-      map_new_page(LOC_KERN_STACK, PAGE_MASK__KERNEL);
       map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
       memcpy((void *)LOC_TEXT, text, length);
       /* Set up stacks */
-      uint64_t *kernel_stack = &((uint64_t *)LOC_KERN_STACK)[512];
+      uint64_t *kernel_stack = &((uint64_t *)allocate_phys_page())[512];
       uint64_t *user_stack = &((uint64_t *)LOC_USER_STACK)[512];
       /* Initialize tcb struct */
       tcbs[i].state = TS_INACTIVE;
       tcbs[i].stack_top = &kernel_stack[0];
       /* Initialize stack */
       /* Stack frame one:  thread_start */
-      kernel_stack[-1] = 0x1B;                        /* %ss */
+      kernel_stack[-1] = 0x1B;                       /* %ss */
       kernel_stack[-2] = (uint64_t) &user_stack[-1]; /* %rsp */
-      kernel_stack[-3] = 0x200;                       /* EFLAGS */
-      kernel_stack[-4] = 0x4B;                        /* %cs */
+      kernel_stack[-3] = 0x200;                      /* EFLAGS */
+      kernel_stack[-4] = 0x4B;                       /* %cs */
       kernel_stack[-5] = (uint64_t) LOC_TEXT;        /* %rip */
       /* Stack frame two:  schedule */
       kernel_stack[-6] = (uint64_t) thread_start;    /* %rip */
@@ -62,15 +61,14 @@ void idle () {
 int idle_thread_create () {
   idle_tcb.state = TS_INACTIVE;
   idle_tcb.pt = get_current_pt();
-  map_new_page(LOC_IDLE_STACK, PAGE_MASK__USER);
   /* Set up stack */
-  uint64_t *idle_stack = &((uint64_t *)LOC_IDLE_STACK)[512];
+  uint64_t *idle_stack = &((uint64_t *)allocate_phys_page())[512];
   idle_tcb.stack_top = &idle_stack[0]; /* Not used??? */
   /* Stack frame one: thread_start */
-  idle_stack[-1] = 0x10;                     /* %ss */
+  idle_stack[-1] = 0x10;                    /* %ss */
   idle_stack[-2] = (uint64_t) idle_stack;   /* %rsp */
-  idle_stack[-3] = 0x200;                    /* EFLAGS */
-  idle_stack[-4] = 0x40;                     /* %cs */
+  idle_stack[-3] = 0x200;                   /* EFLAGS */
+  idle_stack[-4] = 0x40;                    /* %cs */
   idle_stack[-5] = (uint64_t) idle;         /* %rip */
   /* Stack frame two: schedule */
   idle_stack[-6] = (uint64_t) thread_start; /* %rip */

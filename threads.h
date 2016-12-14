@@ -27,6 +27,7 @@ typedef struct {
   void *stack_top;  /* For TSS usage */
   pagetable pt;
   enum fpu_state fpu_state;
+  char (*fpu_buf)[512];
 } tcb;
 
 extern tcb *running_tcb;

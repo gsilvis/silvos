@@ -61,9 +61,8 @@ void initialize_gdt (void) {
   gdt[11][3] = (uint8_t)(base >> 56);
   memset(&tss, sizeof(tss), 0);
   /* Set up TSS */
-  uint64_t *ist1_stack_bot = (uint64_t *)LOC_IST1_STACK;
+  uint64_t *ist1_stack_bot = (uint64_t *)allocate_phys_page();
   tss.ist[1] = (uint64_t)&ist1_stack_bot[512];
-  map_new_page(LOC_IST1_STACK, PAGE_MASK__KERNEL);
   tss.iomapbase = sizeof(tss); /* Disable IO map */
   /* Load TSS offset */
   uint16_t index = 0x50;

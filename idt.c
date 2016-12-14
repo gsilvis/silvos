@@ -17,10 +17,10 @@ struct IDT_entry {
 } __attribute__ ((packed));
 
 
-struct IDT_entry *idt = (struct IDT_entry *)LOC_IDT;
+struct IDT_entry *idt;
 
 void create_idt () {
-  map_new_page(LOC_IDT, PAGE_MASK__KERNEL);
+  idt = (struct IDT_entry *)allocate_phys_page();
 }
 
 void register_isr (uint8_t num,

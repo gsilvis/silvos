@@ -37,8 +37,7 @@ void enter_long_mode (uint32_t magic, uint32_t *mboot_struct) {
   /* Initialize memory allocator, while we still have easy access to the
    * multiboot information */
   memtop = ((uint64_t) mboot_struct[2]) * 1024;
-  memtop += 0x100000;
-  memtop &= 0xFFF;
+  memtop += 0x100000; /* low memory */
 
   /* Insert GDT.  It's not yet fully initialized, so the TSS descriptor will
    * not be correct.  This is all right, because we're not enabling

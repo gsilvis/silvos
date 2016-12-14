@@ -20,7 +20,7 @@ george.o: george.c userland/print-a-include.h userland/print-b-include.h userlan
 	x86_64-elf-gcc -c $^ -o $@ -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 
 userland/%.o: userland/%.c
-	x86_64-elf-gcc -c $^ -o $@ -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2
+	x86_64-elf-gcc -c $^ -o $@ -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2 -fpie
 
 userland/startup.o: userland/startup.s
 	x86_64-elf-as $^ -o $@

@@ -9,10 +9,6 @@
 
 tcb *previous_tcb = NULL; /* always the same as which one is mapped in LOC_FP_BUF */
 
-struct {
-  uint8_t data[512];
-} *const fp_buf = (void *)LOC_FP_BUF;
-
 void fpu_init (void) {
   /* Enable FPU */
   uint64_t cr0, cr4;
@@ -29,12 +25,11 @@ void switch_fp_buf (tcb *new_tcb) {
     return;
   }
   if (previous_tcb) {
-    __asm__("fxsave64 %0" : : "m"(fp_buf) : );
-    unmap_page(LOC_FP_BUF);
+    __asm__("fxsave64 %0" : : "m"(*previous_tcb->fpu_buf) : );
   }
+   blab();
+  __asm__("fxrstor64 %0" : : "m"(*new_tcb->fpu_buf) : );
   previous_tcb = new_tcb;
-  remap_page(LOC_THREAD_FP, LOC_FP_BUF, PAGE_MASK__KERNEL);
-  __asm__("fxrstor64 %0" : : "m"(fp_buf) : );
 }
 
 void disable_fpu (void) {
@@ -56,11 +51,10 @@ void fpu_switch_thread (void) {
 void fpu_exit_thread (void) {
   if (running_tcb == previous_tcb) {
     previous_tcb = 0;
-    unmap_page(LOC_FP_BUF);
   }
   if (running_tcb->fpu_state == THREAD_FPU_STATE_ACTIVE) {
     running_tcb->fpu_state = THREAD_FPU_STATE_INACTIVE;
-    free_phys_page((void *)virt_to_phys(LOC_THREAD_FP));
+    free_phys_page((void *)running_tcb->fpu_buf);
   }
 }
 
@@ -70,7 +64,8 @@ void fpu_activate (void) {
   }
   /* fp_buf != THREAD_FP_USE_FORBIDDEN */
   if (running_tcb->fpu_state == THREAD_FPU_STATE_INACTIVE) {
-    map_new_page(LOC_THREAD_FP, PAGE_MASK__KERNEL);
+    /* TODO: this is more memory than is actually needed. */
+    running_tcb->fpu_buf = allocate_phys_page();
     running_tcb->fpu_state = THREAD_FPU_STATE_ACTIVE;
   }
   enable_fpu();
