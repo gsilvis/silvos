@@ -5,12 +5,13 @@
 
 /* Rest of the lower half is for the userland */
 
-#define LOC_USERZONE_BOT 0x008000000000
+#define LOC_USERZONE_BOT  0x008000000000
 
-#define LOC_TEXT         0x008000000000
-#define LOC_USER_STACK   0x7FFFFFFFF000
+#define LOC_TEXT          0x008000000000
+#define LOC_USER_STACK    0x7FFFFFFFF000
+#define LOC_USER_STACKTOP 0x7FFFFFFFFFFC
 
-#define LOC_USERZONE_TOP 0x800000000000
+#define LOC_USERZONE_TOP  0x800000000000
 
 /* Upper half of memory: currently unused. */
 

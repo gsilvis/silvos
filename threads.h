@@ -26,6 +26,8 @@ typedef struct {
   void *rsp;        /* Kernel stack pointer, when yielded */
   void *stack_top;  /* For TSS usage */
   pagetable pt;
+  void *text;
+  size_t text_length;
   enum fpu_state fpu_state;
   char (*fpu_buf)[512];
 } tcb;
@@ -40,6 +42,8 @@ int user_thread_create (void *text, size_t length);
 void schedule_helper (void);
 void thread_exit (void);
 void thread_start (void);
+void user_thread_start (void);
+void user_thread_launch (void);
 void schedule (void);
 void wake_a_thread (void);
 void block_current_thread (void);

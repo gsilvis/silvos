@@ -18,36 +18,36 @@ tcb tcbs[NUMTHREADS];
 int user_thread_create (void *text, size_t length) {
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
-      /* Make new page table */
-      pagetable old_pt = get_current_pt();
       tcbs[i].pt = new_pt();
-      insert_pt(tcbs[i].pt);
-      map_new_page(LOC_TEXT, PAGE_MASK__USER);
-      map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
-      memcpy((void *)LOC_TEXT, text, length);
+      tcbs[i].text = text;
+      tcbs[i].text_length = length;
       /* Set up stacks */
       uint64_t *kernel_stack = &((uint64_t *)allocate_phys_page())[512];
-      uint64_t *user_stack = &((uint64_t *)LOC_USER_STACK)[512];
       /* Initialize tcb struct */
       tcbs[i].state = TS_INACTIVE;
       tcbs[i].stack_top = &kernel_stack[0];
       /* Initialize stack */
-      /* Stack frame one:  thread_start */
-      kernel_stack[-1] = 0x1B;                       /* %ss */
-      kernel_stack[-2] = (uint64_t) &user_stack[-1]; /* %rsp */
-      kernel_stack[-3] = 0x200;                      /* EFLAGS */
-      kernel_stack[-4] = 0x4B;                       /* %cs */
-      kernel_stack[-5] = (uint64_t) LOC_TEXT;        /* %rip */
+      /* Stack frame one:  user_thread_start */
+      kernel_stack[-1] = 0x1B;                         /* %ss */
+      kernel_stack[-2] = (uint64_t)LOC_USER_STACKTOP;  /* %rsp */
+      kernel_stack[-3] = 0x200;                        /* EFLAGS */
+      kernel_stack[-4] = 0x4B;                         /* %cs */
+      kernel_stack[-5] = (uint64_t)LOC_TEXT;           /* %rip */
       /* Stack frame two:  schedule */
-      kernel_stack[-6] = (uint64_t) thread_start;    /* %rip */
+      kernel_stack[-6] = (uint64_t)user_thread_start;  /* %rip */
       /* 6 callee-save registers */
       tcbs[i].rsp = &kernel_stack[-12];
-      insert_pt(old_pt);
       tcbs[i].fpu_state = THREAD_FPU_STATE_INACTIVE;
       return 0;
     }
   }
   return -1; /* No thread available! */
+}
+
+void user_thread_launch () {
+  map_new_page(LOC_TEXT, PAGE_MASK__USER);
+  map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
+  memcpy((void *)LOC_TEXT, running_tcb->text, running_tcb->text_length);
 }
 
 tcb idle_tcb;

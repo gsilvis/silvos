@@ -2,6 +2,11 @@
 thread_start:
         iretq
 
+.GLOBAL user_thread_start
+user_thread_start:
+        call user_thread_launch
+        iretq
+
 .GLOBAL schedule
 schedule:
         /* Push callee-save registers */
