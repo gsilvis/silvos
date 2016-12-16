@@ -24,7 +24,7 @@ extern int _end;
 pagetable initial_pt (void) {
   /* Set up the shared kernel pt */
   kernel_pdpt = (pagetable)allocate_phys_page();
-  for (uint64_t j = 0x00; j < PAGE_NUM_ENTRIES; j++) {
+  for (uint64_t j = 0x00; j < PAGE_PT_NUM_ENTRIES; j++) {
     kernel_pdpt[j] = (j * PAGE_1G_SIZE) | PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
   }
   return new_pt();
@@ -36,7 +36,7 @@ pagetable new_pt (void) {
   pagetable pml4 = (pagetable)allocate_phys_page();
   memset(pml4, 0x00, PAGE_4K_SIZE);
   pml4[0] = ((uint64_t)kernel_pdpt) | PAGE_MASK__KERNEL;
-  pml4[PAGE_NUM_ENTRIES-1] = ((uint64_t)pml4) | PAGE_MASK__KERNEL;
+  pml4[PAGE_PT_SELF_MAP] = ((uint64_t)pml4) | PAGE_MASK__KERNEL;
   return pml4;
 }
 

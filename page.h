@@ -15,34 +15,65 @@
 #define PAGE_MASK__USER (PAGE_MASK_PRESENT | PAGE_MASK_WRITE | PAGE_MASK_PRIV)
 #define PAGE_MASK__FAKE 0x0000000000000000
 
+static const uint64_t PAGE_4K_MASK = (1L << 12) - 1;
+static const uint64_t PAGE_2M_MASK = (1L << 21) - 1;
+static const uint64_t PAGE_1G_MASK = (1L << 30) - 1;
+static const uint64_t PAGE_HT_MASK = (1L << 39) - 1;
+static const uint64_t PAGE_VM_MASK = (1L << 48) - 1;
 
-#define PAGE_4K_MASK 0x000000000FFF
-#define PAGE_2M_MASK 0x0000001FFFFF
-#define PAGE_1G_MASK 0x00003FFFFFFF
-#define PAGE_HT_MASK 0x007FFFFFFFFF
-#define PAGE_VM_MASK 0xFFFFFFFFFFFF
+static const uint64_t PAGE_4K_SIZE = 1L << 12;
+static const uint64_t PAGE_2M_SIZE = 1L << 21;
+static const uint64_t PAGE_1G_SIZE = 1L << 30;
+static const uint64_t PAGE_HT_SIZE = 1L << 39;
+static const uint64_t PAGE_VM_SIZE = 1L << 48;
 
-#define PAGE_4K_SIZE 0x000000001000
-#define PAGE_2M_SIZE 0x000000200000
-#define PAGE_1G_SIZE 0x000040000000
-#define PAGE_HT_SIZE 0x008000000000
+static inline uint64_t PAGE_4K_OF(uint64_t mem) { return 0x1FF & (mem >> 12); }
+static inline uint64_t PAGE_2M_OF(uint64_t mem) { return 0x1FF & (mem >> 21); }
+static inline uint64_t PAGE_1G_OF(uint64_t mem) { return 0x1FF & (mem >> 30); }
+static inline uint64_t PAGE_HT_OF(uint64_t mem) { return 0x1FF & (mem >> 39); }
 
-#define PAGE_4K_OF(mem) (0x1FF & ((mem) >> 12))
-#define PAGE_2M_OF(mem) (0x1FF & ((mem) >> 21))
-#define PAGE_1G_OF(mem) (0x1FF & ((mem) >> 30))
-#define PAGE_HT_OF(mem) (0x1FF & ((mem) >> 39))
+static inline uint64_t PAGE_4K_ALIGN(uint64_t mem) { return mem & ~PAGE_4K_MASK; }
+static inline uint64_t PAGE_2M_ALIGN(uint64_t mem) { return mem & ~PAGE_2M_MASK; }
+static inline uint64_t PAGE_1G_ALIGN(uint64_t mem) { return mem & ~PAGE_1G_MASK; }
+static inline uint64_t PAGE_HT_ALIGN(uint64_t mem) { return mem & ~PAGE_HT_MASK; }
 
-#define PAGE_4K_ALIGN(mem) ((mem) & (~PAGE_4K_MASK))
-#define PAGE_2M_ALIGN(mem) ((mem) & (~PAGE_2M_MASK))
-#define PAGE_1G_ALIGN(mem) ((mem) & (~PAGE_1G_MASK))
-#define PAGE_HT_ALIGN(mem) ((mem) & (~PAGE_HT_MASK))
+static const uint64_t PAGE_PT_NUM_ENTRIES = 512;
+static const uint64_t PAGE_PT_SELF_MAP = 510;
 
-#define PAGE_VIRT_PT_OF(mem)   (~PAGE_HT_MASK | (((mem) & ~PAGE_2M_MASK) >> 9))
-#define PAGE_VIRT_PD_OF(mem)   (~PAGE_1G_MASK | (((mem) & ~PAGE_1G_MASK) >> 18))
-#define PAGE_VIRT_PDPT_OF(mem)   (~PAGE_2M_MASK | (((mem) & ~PAGE_HT_MASK) >> 27))
-#define PAGE_VIRT_PML4_OF(mem)   (~PAGE_4K_MASK | (((mem) & ~PAGE_VM_MASK) >> 36))
+static inline uint64_t PAGE_MAKE_CANONICAL_ADDR(uint64_t mem) {
+  uint64_t lead = ((1L << 47) & mem) ? ~PAGE_VM_MASK : 0;
+  return lead | mem;
+}
 
-#define PAGE_NUM_ENTRIES 512
+static inline uint64_t PAGE_VIRT_PT_OF(uint64_t mem) {
+  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_2M_MASK) >> 9;
+  uint64_t upper = (PAGE_PT_SELF_MAP << 39);
+  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
+}
+
+static inline uint64_t PAGE_VIRT_PD_OF(uint64_t mem) {
+  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_1G_MASK) >> 18;
+  uint64_t upper = (PAGE_PT_SELF_MAP << 39)
+                 | (PAGE_PT_SELF_MAP << 30);
+  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
+}
+
+static inline uint64_t PAGE_VIRT_PDPT_OF(uint64_t mem) {
+  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_HT_MASK) >> 27;
+  uint64_t upper = (PAGE_PT_SELF_MAP << 39)
+                 | (PAGE_PT_SELF_MAP << 30)
+                 | (PAGE_PT_SELF_MAP << 21);
+  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
+}
+
+static inline uint64_t PAGE_VIRT_PML4_OF(uint64_t mem) {
+  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_VM_MASK) >> 36;
+  uint64_t upper = (PAGE_PT_SELF_MAP << 39)
+                 | (PAGE_PT_SELF_MAP << 30)
+                 | (PAGE_PT_SELF_MAP << 21)
+                 | (PAGE_PT_SELF_MAP << 12);
+  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
+}
 
 typedef uint64_t *pagetable;
 
