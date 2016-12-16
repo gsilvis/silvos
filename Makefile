@@ -1,14 +1,20 @@
 
 all: george.multiboot temp_drive
 
-george.multiboot: start32-asm.o start32.o george.o threads.o threads-asm.o vga.o util.o idt.o isr-asm.o pic.o pit.o util-asm.o gdt.o page.o alloc.o kbd.o fpu.o pagefault.o pci.o ide.o palloc.o
-	x86_64-elf-gcc -T kernel.ld $^ -o $@ -nostdlib -lgcc -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
+george.multiboot: start-asm.o start.o george.o threads.o threads-asm.o vga.o util.o idt.o isr-asm.o pic.o pit.o util-asm.o gdt.o page.o alloc.o kbd.o fpu.o pagefault.o pci.o ide.o palloc.o
+	x86_64-elf-gcc -T kernel.ld $^ -o $@ -nostdlib -lgcc -Wl,-z,max-page-size=0x1000
 
 start32-asm.o: start32-asm.s
 	x86_64-elf-as --32 $^ -o $@
 
 start32.o: start32.c
 	x86_64-elf-gcc -m32 -c $^ -o $@ -ffreestanding -Wall -Wextra -std=c99 -O2 -g
+
+start-asm.o: start32-asm.o
+	x86_64-elf-objcopy $^ $@ -I elf32-i386 -O elf64-x86-64
+
+start.o: start32.o
+	x86_64-elf-objcopy $^ $@ -I elf32-i386 -O elf64-x86-64
 
 %-asm.o: %-asm.s
 	x86_64-elf-as $^ -o $@
