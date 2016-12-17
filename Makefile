@@ -33,43 +33,49 @@ KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000
 USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2 -fpie
 USER_LDFLAGS := -nostdlib -lgcc
 
+CC := x86_64-elf-gcc
+AS := x86_64-elf-as
+OBJCOPY := x86_64-elf-objcopy
+
+# Primary targets
+
 all: george.multiboot temp_drive
 
 george.multiboot: $(patsubst %, kernel/%, $(KERNEL_OBJS))
-	x86_64-elf-gcc -T kernel/kernel.ld $^ -o $@ $(KERN_LDFLAGS)
+	$(CC) -T kernel/kernel.ld $^ -o $@ $(KERN_LDFLAGS)
 
 # Kernel Objects
 
 kernel/%.o: kernel/%.c
-	x86_64-elf-gcc -c $^ -o $@ $(KERN_CFLAGS)
+	$(CC) -c $^ -o $@ $(KERN_CFLAGS)
 
 kernel/%-asm.o: kernel/%-asm.s
-	x86_64-elf-as $^ -o $@
+	$(AS) $^ -o $@
 
 ## Special Kernel Objects
 
 kernel/start32-asm.o: kernel/start32-asm.s
-	x86_64-elf-as --32 $^ -o $@
+	$(AS) --32 $^ -o $@
 
 kernel/start32.o: kernel/start32.c
-	x86_64-elf-gcc -c $^ -o $@ $(KERN_CFLAGS_32)
+	$(CC) -c $^ -o $@ $(KERN_CFLAGS_32)
 
 kernel/start-asm.o: kernel/start32-asm.o
-	x86_64-elf-objcopy $^ $@ -I elf32-i386 -O elf64-x86-64
+	$(OBJCOPY) $^ $@ -I elf32-i386 -O elf64-x86-64
 
 kernel/start.o: kernel/start32.o
-	x86_64-elf-objcopy $^ $@ -I elf32-i386 -O elf64-x86-64
+	$(OBJCOPY) $^ $@ -I elf32-i386 -O elf64-x86-64
 
 kernel/george.o: kernel/george.c $(patsubst %, userland/%-include.h, $(USERLAND_PROGS))
-	x86_64-elf-gcc -c $< -o $@ $(KERN_CFLAGS) -I.
+	$(CC) -c $< -o $@ $(KERN_CFLAGS) -I.
 
 # User Objects
 
 userland/%/main.o: userland/%/main.c
-	x86_64-elf-gcc -c $^ -o $@ $(USER_CFLAGS) -Iuserland
+	$(CC) -c $^ -o $@ $(USER_CFLAGS) -Iuserland
 
 userland/%.bin: userland/%/main.o userland/startup.o
-	x86_64-elf-gcc -T userland/linker-script $< -o $@ $(USER_LDFLAGS)
+	$(CC) -T userland/linker-script $< -o $@ $(USER_LDFLAGS)
 
 userland/%-include.h: userland/%.bin
 	xxd -i $^ > $@
@@ -77,7 +83,7 @@ userland/%-include.h: userland/%.bin
 ## Special User Objects
 
 userland/startup.o: userland/startup.s
-	x86_64-elf-as $^ -o $@
+	$(AS) $^ -o $@
 
 # Convenience
 
