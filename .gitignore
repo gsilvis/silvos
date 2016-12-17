@@ -1,0 +1,4 @@
+*.o
+george.multiboot
+temp_drive
+userland/*-include.h
