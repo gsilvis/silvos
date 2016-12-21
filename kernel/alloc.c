@@ -4,7 +4,6 @@
 
 #include <stdint.h>
 
-uint64_t memtop;
 extern int _end;
 
 /* Buddy allocator, inspired by the linux kernel's version.  Can allocate pages

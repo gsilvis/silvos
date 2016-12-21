@@ -1,27 +1,14 @@
 OUTPUT_FORMAT(elf32-i386)
-OUTPUT_ARCH(i386:x86-64)
 
 ENTRY(_start)
 
 SECTIONS
 {
-    . = 2M;
-
-    _multiboot_header = .;
-    .multiboot BLOCK(4K) : ALIGN(4K)
-    {
-        LONG(0x1BADB002)
-	LONG(0x00008003)
-	LONG(0x00000000 - 0x1BADB002 - 0x00008003)
-	LONG(_multiboot_header)
-	LONG(0x00200000)
-	LONG(_data_end)
-	LONG(_end)
-	LONG(_start)
-    }
+    . = 1M;
 
     .text BLOCK(4K) : ALIGN(4K)
     {
+        *(.multiboot)
         *(.text)
     }
 
@@ -34,12 +21,10 @@ SECTIONS
     {
         *(.data)
     }
-    _data_end = .;
 
     .bss BLOCK(4K) : ALIGN(4K)
     {
         *(COMMON)
         *(.bss)
     }
-    _end = .;
 }

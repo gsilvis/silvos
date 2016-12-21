@@ -62,7 +62,11 @@ void create_test_threads (void) {
   user_thread_create(&userland_calc_bin[0], userland_calc_bin_len);
 }
 
-void kernel_main (void) {
+void kernel_main (uint32_t mboot_struct_addr) {
+  uint32_t *mboot_struct = (uint32_t *)(uint64_t)mboot_struct_addr;
+  memtop = ((uint64_t)mboot_struct[2]) * 1024;
+  memtop += 0x100000;
+
   clear_screen();
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
   initialize_allocator();

@@ -1,6 +1,5 @@
 KERNEL_OBJS :=  \
 	start-asm.o \
-	start.o \
 	george.o \
 	threads.o \
 	threads-asm.o \
@@ -27,8 +26,10 @@ USERLAND_PROGS := \
 	calc
 
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
-KERN_CFLAGS_32 := $(KERN_CFLAGS) -m32
 KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000
+
+BOOTLOADER_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
+BOOTLOADER_LDFLAGS := -nostdlib -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
 
 USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2 -fpie
 USER_LDFLAGS := -nostdlib -lgcc
@@ -39,7 +40,7 @@ OBJCOPY := x86_64-elf-objcopy
 
 # Primary targets
 
-all: george.multiboot temp_drive
+all: bootloader.multiboot george.multiboot temp_drive
 
 george.multiboot: $(patsubst %, kernel/%, $(KERNEL_OBJS))
 	$(CC) -T kernel/kernel.ld $^ -o $@ $(KERN_LDFLAGS)
@@ -54,20 +55,22 @@ kernel/%-asm.o: kernel/%-asm.s
 
 ## Special Kernel Objects
 
-kernel/start32-asm.o: kernel/start32-asm.s
-	$(AS) --32 $^ -o $@
-
-kernel/start32.o: kernel/start32.c
-	$(CC) -c $^ -o $@ $(KERN_CFLAGS_32)
-
-kernel/start-asm.o: kernel/start32-asm.o
-	$(OBJCOPY) $^ $@ -I elf32-i386 -O elf64-x86-64
-
-kernel/start.o: kernel/start32.o
-	$(OBJCOPY) $^ $@ -I elf32-i386 -O elf64-x86-64
-
 kernel/george.o: kernel/george.c $(patsubst %, userland/%-include.h, $(USERLAND_PROGS))
 	$(CC) -c $< -o $@ $(KERN_CFLAGS) -I.
+
+# Bootloader
+
+bootloader.multiboot: bootloader/start32.o bootloader/start64.o bootloader/start-asm.o
+	$(CC) -T bootloader/bootloader.ld $^ -o $@ $(BOOTLOADER_LDFLAGS)
+
+bootloader/start32.o: bootloader/start32.c
+	$(CC) -m32 -c $^ -o $@ $(BOOTLOADER_CFLAGS)
+
+bootloader/start64.o: bootloader/start64.c
+	$(CC) -c $^ -o $@ $(BOOTLOADER_CFLAGS)
+
+bootloader/start-asm.o: bootloader/start-asm.s
+	$(AS) $^ -o $@
 
 # User Objects
 
@@ -94,4 +97,4 @@ temp_drive:
 	dd if=/dev/zero of=$@ bs=512 count=16
 
 clean:
-	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o userland/*-include.h temp_drive
+	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o userland/*-include.h temp_drive bootloader.multiboot bootloader/*.o

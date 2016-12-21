@@ -43,6 +43,17 @@ uint8_t gdt[][8] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* TSS, upper half */
 };
 
+void insert_gdt (void) {
+  const struct {
+    uint16_t size;
+    void *base;
+  } __attribute__((packed)) GDT_addr = {
+    0x60,
+    gdt,
+  };
+  __asm__("lgdt %0" : : "m"(GDT_addr) : );
+}
+
 void initialize_gdt (void) {
   /* Set up TSS descriptor */
   uint64_t base = (uint64_t) &tss;

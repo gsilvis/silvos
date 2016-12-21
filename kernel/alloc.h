@@ -13,6 +13,8 @@
  * bsize==18   4K block
  */
 
+uint64_t memtop;
+
 void free_block (int bsize, uint64_t index);
 void *alloc_block (int bsize);
 void initialize_allocator (void);
