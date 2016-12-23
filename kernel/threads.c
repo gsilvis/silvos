@@ -60,7 +60,7 @@ void idle () {
 
 int idle_thread_create () {
   idle_tcb.state = TS_INACTIVE;
-  idle_tcb.pt = get_current_pt();
+  idle_tcb.pt = new_pt();
   /* Set up stack */
   uint64_t *idle_stack = &((uint64_t *)allocate_phys_page())[512];
   idle_tcb.stack_top = &idle_stack[0]; /* Not used??? */

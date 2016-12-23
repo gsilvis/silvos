@@ -10,23 +10,19 @@
 pagetable kernel_pdpt;
 
 void insert_pt (pagetable pt) {
-  __asm__("mov %0,%%cr3" : : "r"(pt) : );
+  __asm__("mov %0,%%cr3" : : "r"((pagetable)virt_to_phys((uint64_t)pt)) : );
 }
 
-pagetable get_current_pt (void) {
-  pagetable pt;
-  __asm__("mov %%cr3,%0" : "=r"(pt) : : );
-  return pt;
-}
 
 extern int _end;
 
 pagetable initial_pt (void) {
   /* Set up the shared kernel pt */
   kernel_pdpt = (pagetable)allocate_phys_page();
-  for (uint64_t j = 0x00; j < PAGE_PT_NUM_ENTRIES; j++) {
+  for (uint64_t j = 0x00; j < PAGE_PT_NUM_ENTRIES - 1; j++) {
     kernel_pdpt[j] = (j * PAGE_1G_SIZE) | PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
   }
+  kernel_pdpt[PAGE_PT_NUM_ENTRIES-1] = PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
   return new_pt();
 }
 
@@ -35,15 +31,9 @@ pagetable initial_pt (void) {
 pagetable new_pt (void) {
   pagetable pml4 = (pagetable)allocate_phys_page();
   memset(pml4, 0x00, PAGE_4K_SIZE);
-  pml4[0] = ((uint64_t)kernel_pdpt) | PAGE_MASK__KERNEL;
-  pml4[PAGE_PT_SELF_MAP] = ((uint64_t)pml4) | PAGE_MASK__KERNEL;
+  pml4[PAGE_PT_SELF_MAP] = virt_to_phys((uint64_t)pml4) | PAGE_MASK__KERNEL;
+  pml4[PAGE_PT_NUM_ENTRIES-1] = virt_to_phys((uint64_t)kernel_pdpt) | PAGE_MASK__KERNEL;
   return pml4;
-}
-
-/* Get virtual address referred to by the given virtual address.  This function
- * is unsafe. */
-uint64_t virt_to_phys (uint64_t virt) {
-  return ((pagetable)PAGE_VIRT_PT_OF(virt))[PAGE_4K_OF(virt)];
 }
 
 int map_page (uint64_t phys, uint64_t virt, unsigned int mode) {
@@ -60,15 +50,15 @@ int map_page (uint64_t phys, uint64_t virt, unsigned int mode) {
   pagetable pt = (pagetable) PAGE_VIRT_PT_OF(virt);
 
   if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pml4[PAGE_HT_OF(virt)] = ((uint64_t) allocate_phys_page()) | PAGE_MASK__USER;
+    pml4[PAGE_HT_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | PAGE_MASK__USER;
     memset(pdpt, 0x00, PAGE_4K_SIZE);
   }
   if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pdpt[PAGE_1G_OF(virt)] = ((uint64_t) allocate_phys_page()) | PAGE_MASK__USER;
+    pdpt[PAGE_1G_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | PAGE_MASK__USER;
     memset(pd, 0x00, PAGE_4K_SIZE);
   }
   if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pd[PAGE_2M_OF(virt)] = ((uint64_t) allocate_phys_page()) | PAGE_MASK__USER;
+    pd[PAGE_2M_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | PAGE_MASK__USER;
     memset(pt, 0x00, PAGE_4K_SIZE);
   }
 
@@ -101,9 +91,5 @@ int unmap_page (uint64_t virt) {
 }
 
 int map_new_page (uint64_t virt, unsigned int mode) {
-  return map_page((uint64_t)allocate_phys_page(), virt, mode);
-}
-
-int remap_page (uint64_t virt_from, uint64_t virt_to, unsigned int mode) {
-  return map_page(virt_to_phys(virt_from), virt_to, mode);
+  return map_page(virt_to_phys((uint64_t)allocate_phys_page()), virt, mode);
 }

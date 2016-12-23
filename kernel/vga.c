@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define VGA 0xB8000
+#define VGA 0xFFFFFF80000B8000
 
 typedef struct {
   char c;

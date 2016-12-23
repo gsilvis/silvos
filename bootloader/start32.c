@@ -49,7 +49,10 @@ void setup_gdt (void) {
 }
 
 void init_page_table (void) {
-  bad_pml4[PAGE_NUM_ENTRIES-1] = (uint32_t)(&bad_pml4[0]) | PAGE_MASK_KERNEL;
   bad_pml4[0] = (uint32_t)(&bad_pdpt[0]) | PAGE_MASK_KERNEL;
-  bad_pdpt[0] = PAGE_MASK_KERNEL | PAGE_MASK_SIZE;
+  bad_pml4[511] = (uint32_t)(&bad_pdpt[0]) | PAGE_MASK_KERNEL;
+  for (uint64_t i = 0; i < PAGE_NUM_ENTRIES - 1; i++) {
+    bad_pdpt[i] = (i << 30) | PAGE_MASK_KERNEL | PAGE_MASK_SIZE;
+  }
+  bad_pdpt[511] = PAGE_MASK_KERNEL | PAGE_MASK_SIZE;
 }

@@ -1,6 +1,7 @@
 #include "alloc.h"
 
 #include "util.h"
+#include "memory-map.h"
 
 #include <stdint.h>
 
@@ -23,11 +24,11 @@ freelist free_blocks[19];
 freelist *get_freelist (int bsize, uint64_t index, uint64_t gig_offset) {
   index = index << (30 - bsize);
   index += 0x40000000 * gig_offset;
-  return (freelist *)index;
+  return (freelist *)phys_to_virt(index);
 }
 
 uint64_t get_index (int bsize, freelist *ptr) {
-  return (uint64_t)ptr >> (30 - bsize);
+  return virt_to_phys((uint64_t)ptr) >> (30 - bsize);
 }
 
 void free_block (int bsize, uint64_t index) {
@@ -102,12 +103,13 @@ void *alloc_block (int bsize) {
 void initialize_allocator (void) {
   /* Allocate bit-arrays, initialize as "all memory used" */
   uint64_t num_gigs = (memtop - 1) / 0x40000000 + 1;
-  uint64_t curr = (uint64_t) &_end;
+  uint64_t curr = ((uint64_t)&_end) - 0xFFFFFFFFC0000000;
+  /* curr is the current /physical/ memory address */
   if (curr & 0x7FFF) {
     curr &= 0xFFFFFFFFFFFF8000;
     curr += 0x8000;
   }
-  bit_arrays = (block_alloc_array *)curr;
+  bit_arrays = (block_alloc_array *)phys_to_virt(curr);
   curr += num_gigs * 0x8000;
   memset(bit_arrays, 0xFF, num_gigs * 0x8000);
 

@@ -20,8 +20,8 @@ schedule:
         mov %rsp,(schedule_rsp)
         call schedule_helper
         mov (schedule_rsp),%rsp
-        mov (schedule_pt),%rax
-        mov %rax,%cr3
+        mov (schedule_pt),%rdi
+        call insert_pt
 
         /* Pop callee-save registers */
         pop %r15

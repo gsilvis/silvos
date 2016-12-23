@@ -70,7 +70,7 @@ void initialize_gdt (void) {
   gdt[11][1] = (uint8_t)(base >> 40);
   gdt[11][2] = (uint8_t)(base >> 48);
   gdt[11][3] = (uint8_t)(base >> 56);
-  memset(&tss, sizeof(tss), 0);
+  memset(&tss, 0, sizeof(tss));
   /* Set up TSS */
   uint64_t *ist1_stack_bot = (uint64_t *)allocate_phys_page();
   tss.ist[1] = (uint64_t)&ist1_stack_bot[512];
