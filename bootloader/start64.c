@@ -37,6 +37,13 @@ typedef struct {
 } multiboot_module;
 
 uint64_t relocate_kernel (uint32_t mboot_struct_addr) {
+  /* Procedure:  Find out where the kernel will end up.  For each module that
+   * overlaps that, copy it past the end.  Then move the kernel into place.
+   * Finally, copy the displaced modules back to where the kernel used to be.
+   *
+   * Assumptions:  That the modules are all AFTER the multiboot header and the
+   * module list.  That no one cares about module names.
+   */
   uint32_t *mboot_struct = (uint32_t *)(uint64_t)mboot_struct_addr;
   if (mboot_struct[5] == 0) {
     fail();
@@ -63,15 +70,49 @@ uint64_t relocate_kernel (uint32_t mboot_struct_addr) {
     fail(); /* We do not support parsing ELF */
   }
 
-  /* Finally, move the kernel */
+  uint32_t old_kernel_loc = mod_list[0].start;
   uint32_t header_addr = kernel[i+3];
   uint32_t load_addr = kernel[i+4];
   uint32_t load_end_addr = kernel[i+5];
   uint32_t bss_end_addr = kernel[i+6];
   uint32_t entry_addr = kernel[i+7];
+
+  /* First, copy all the modules the kernel will interfere with to after the
+   * kernel. */
+  uint32_t copy_to_addr = bss_end_addr;
+  for (uint32_t j = 1; j < mboot_struct[5]; j++) {
+    if (mod_list[j].start < bss_end_addr && mod_list[j].end > load_addr) {
+      uint32_t length = mod_list[j].end - mod_list[j].start;
+      memmove(copy_to_addr, mod_list[j].start, length);
+      mod_list[j].start = copy_to_addr;
+      mod_list[j].end = copy_to_addr + length;
+    }
+  }
+
+  /* Move the kernel */
   memmove(load_addr,
           ((uint64_t)&kernel[i]) + load_addr - header_addr,
           load_end_addr - load_addr);
   memset(load_end_addr, 0, bss_end_addr - load_end_addr);
+
+  /* Move the modules back */
+  copy_to_addr = old_kernel_loc;
+  for (uint32_t j = 1; j < mboot_struct[5]; j++) {
+    if (mod_list[j].start >= bss_end_addr) {
+      uint32_t length = mod_list[j].end - mod_list[j].start;
+      memmove(copy_to_addr, mod_list[j].start, length);
+      mod_list[j].start = copy_to_addr;
+      mod_list[j].end = copy_to_addr + length;
+    }
+  }
+
+  /* Fix up the list of modules */
+  for (uint32_t j = 0; j < mboot_struct[5]; j++) {
+    mod_list[j].string = 0; /* These got clobbered anyways */
+  }
+  mboot_struct[5]--;
+  mboot_struct[6] += sizeof(multiboot_module);
+
+  /* Return the entry point. */
   return entry_addr + MAP_OFFSET;
 }

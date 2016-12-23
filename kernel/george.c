@@ -10,10 +10,11 @@
 #include "kbd.h"
 #include "fpu.h"
 #include "pci.h"
+#include "memory-map.h"
 
-#include "userland/print-a-include.h"
-#include "userland/print-b-include.h"
-#include "userland/calc-include.h"
+// #include "userland/print-a-include.h"
+// #include "userland/print-b-include.h"
+// #include "userland/calc-include.h"
 
 void initialize_idt (void) {
   create_idt();
@@ -57,16 +58,18 @@ void initialize_idt (void) {
 
 }
 
-void create_test_threads (void) {
-  user_thread_create(&userland_print_b_bin[0], userland_print_b_bin_len);
-  user_thread_create(&userland_calc_bin[0], userland_calc_bin_len);
-}
+typedef struct {
+  uint32_t start;
+  uint32_t end;
+  uint32_t string;
+  uint32_t unused;
+} multiboot_module;
 
 void kernel_main (uint32_t mboot_struct_addr) {
-  uint32_t *mboot_struct = (uint32_t *)(uint64_t)mboot_struct_addr;
+  uint32_t *mboot_struct =
+      (uint32_t *)phys_to_virt((uint64_t)mboot_struct_addr);
   memtop = ((uint64_t)mboot_struct[2]) * 1024;
   memtop += 0x100000;
-
   clear_screen();
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
   initialize_allocator();
@@ -75,7 +78,14 @@ void kernel_main (uint32_t mboot_struct_addr) {
   insert_idt();
   initialize_gdt();
   remap_pic();
-  create_test_threads();
+
+  multiboot_module *mod_list =
+      (multiboot_module *)phys_to_virt((uint64_t)mboot_struct[6]);
+  for (uint32_t i = 0; i < mboot_struct[5]; i++) {
+    user_thread_create((void *)phys_to_virt((uint64_t)mod_list[i].start),
+                       mod_list[i].end - mod_list[i].start);
+  }
+
   idle_thread_create();
   init_kbd();
   fpu_init();

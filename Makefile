@@ -41,7 +41,8 @@ OBJCOPY := x86_64-elf-objcopy
 
 # Primary targets
 
-all: bootloader.multiboot george.multiboot temp_drive
+all: bootloader.multiboot george.multiboot temp_drive \
+	$(patsubst %, userland/%.bin, $(USERLAND_PROGS))
 
 george.multiboot: $(patsubst %, kernel/%, $(KERNEL_OBJS))
 	$(CC) -T kernel/kernel.ld $^ -o $@ $(KERN_LDFLAGS)
@@ -53,11 +54,6 @@ kernel/%.o: kernel/%.c
 
 kernel/%-asm.o: kernel/%-asm.s
 	$(AS) $^ -o $@
-
-## Special Kernel Objects
-
-kernel/george.o: kernel/george.c $(patsubst %, userland/%-include.h, $(USERLAND_PROGS))
-	$(CC) -c $< -o $@ $(KERN_CFLAGS) -I.
 
 # Bootloader
 
@@ -81,9 +77,6 @@ userland/%/main.o: userland/%/main.c
 userland/%.bin: userland/%/main.o userland/startup.o
 	$(CC) $^ -o $@ $(USER_LDFLAGS)
 
-userland/%-include.h: userland/%.bin
-	xxd -i $^ > $@
-
 ## Special User Objects
 
 userland/startup.o: userland/startup.s
@@ -98,4 +91,4 @@ temp_drive:
 	dd if=/dev/zero of=$@ bs=512 count=16
 
 clean:
-	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o userland/*-include.h temp_drive bootloader.multiboot bootloader/*.o
+	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o temp_drive bootloader.multiboot bootloader/*.o
