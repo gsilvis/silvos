@@ -18,7 +18,8 @@ KERNEL_OBJS :=  \
 	pagefault.o \
 	pci.o \
 	ide.o \
-	palloc.o
+	palloc.o \
+	loader.o
 
 USERLAND_PROGS := \
 	print-a \
@@ -78,7 +79,7 @@ userland/%/main.o: userland/%/main.c
 	$(CC) -c $^ -o $@ $(USER_CFLAGS) -Iuserland
 
 userland/%.bin: userland/%/main.o userland/startup.o
-	$(CC) -T userland/linker-script $< -o $@ $(USER_LDFLAGS)
+	$(CC) $^ -o $@ $(USER_LDFLAGS)
 
 userland/%-include.h: userland/%.bin
 	xxd -i $^ > $@

@@ -8,14 +8,18 @@
 #include "gdt.h"
 #include "page.h"
 #include "fpu.h"
+#include "loader.h"
 
 #include <stdint.h>
 #include <stddef.h>
 
 tcb tcbs[NUMTHREADS];
 
-/* Returns 0 on success, -1 on failure */
+/* Returns 0 on success, negative on failure */
 int user_thread_create (void *text, size_t length) {
+  if (elf64_check(text, length)) {
+    return -2; /* Bad elf! */
+  }
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
       tcbs[i].pt = new_pt();
@@ -32,7 +36,7 @@ int user_thread_create (void *text, size_t length) {
       kernel_stack[-2] = (uint64_t)LOC_USER_STACKTOP;  /* %rsp */
       kernel_stack[-3] = 0x200;                        /* EFLAGS */
       kernel_stack[-4] = 0x4B;                         /* %cs */
-      kernel_stack[-5] = (uint64_t)LOC_TEXT;           /* %rip */
+      kernel_stack[-5] = elf64_get_entry(text);        /* %rip */
       /* Stack frame two:  schedule */
       kernel_stack[-6] = (uint64_t)user_thread_start;  /* %rip */
       /* 6 callee-save registers */
@@ -45,13 +49,8 @@ int user_thread_create (void *text, size_t length) {
 }
 
 void user_thread_launch () {
-  for (uint64_t addr = LOC_TEXT;
-       addr < LOC_TEXT + running_tcb->text_length;
-       addr += 4096) {
-    map_new_page(addr, PAGE_MASK__USER);
-  }
+  elf64_load(running_tcb->text);
   map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
-  memcpy((void *)LOC_TEXT, running_tcb->text, running_tcb->text_length);
 }
 
 tcb idle_tcb;
