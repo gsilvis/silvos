@@ -29,37 +29,49 @@ void __attribute__ ((noreturn)) fail (void) {
   }
 }
 
+typedef struct {
+  uint32_t start;
+  uint32_t end;
+  uint32_t string;
+  uint32_t unused;
+} multiboot_module;
+
 uint64_t relocate_kernel (uint32_t mboot_struct_addr) {
   uint32_t *mboot_struct = (uint32_t *)(uint64_t)mboot_struct_addr;
   if (mboot_struct[5] == 0) {
     fail();
   }
-  uint32_t *kernel_mod_struct = (uint32_t *)(uint64_t)mboot_struct[6];
-  uint32_t *kernel = (uint32_t *)(uint64_t)kernel_mod_struct[0];
-  for (uint16_t i = 0; i < 2048; i++) {
+  multiboot_module *mod_list = (multiboot_module *)(uint64_t)mboot_struct[6];
+
+  /* Find out where we're copying the kernel */
+  uint32_t *kernel = (uint32_t *)(uint64_t)mod_list[0].start;
+  uint16_t i;
+  for (i = 0; i < 2048; i++) {
     if (kernel[i] == 0x1BADB002) {
-      uint32_t flags = kernel[i+1];
-      uint32_t check = kernel[i+2];
-      if (0x1BADB002 + flags + check) {
-	continue; /* Bad checksum */
+      if (0 == 0x1BADB002 + kernel[i+1] + kernel[i+2]) {
+        break; /* Found multiboot magic with valid checksum */
       }
-      if (flags & 0x00007FFC) {
-        fail(); /* Unknown/unsupported mandatory flag */
-      }
-      if (!(flags & 0x00008000)) {
-        fail(); /* We do not support parsing ELF */
-      }
-      uint32_t header_addr = kernel[i+3];
-      uint32_t load_addr = kernel[i+4];
-      uint32_t load_end_addr = kernel[i+5];
-      uint32_t bss_end_addr = kernel[i+6];
-      uint32_t entry_addr = kernel[i+7];
-      memmove(load_addr,
-              ((uint64_t)&kernel[i]) + load_addr - header_addr,
-              load_end_addr - load_addr);
-      memset(load_end_addr, 0, bss_end_addr - load_end_addr);
-      return entry_addr + MAP_OFFSET;
     }
   }
-  fail(); /* No multiboot header found. */
+  if (i == 2048) {
+    fail(); /* No multiboot header found. */
+  }
+  if (kernel[i+1] & 0x00007FFC) {
+    fail(); /* Unknown/unsupported mandatory flag */
+  }
+  if (!(kernel[i+1] & 0x00008000)) {
+    fail(); /* We do not support parsing ELF */
+  }
+
+  /* Finally, move the kernel */
+  uint32_t header_addr = kernel[i+3];
+  uint32_t load_addr = kernel[i+4];
+  uint32_t load_end_addr = kernel[i+5];
+  uint32_t bss_end_addr = kernel[i+6];
+  uint32_t entry_addr = kernel[i+7];
+  memmove(load_addr,
+          ((uint64_t)&kernel[i]) + load_addr - header_addr,
+          load_end_addr - load_addr);
+  memset(load_end_addr, 0, bss_end_addr - load_end_addr);
+  return entry_addr + MAP_OFFSET;
 }
