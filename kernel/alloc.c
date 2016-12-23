@@ -103,7 +103,7 @@ void *alloc_block (int bsize) {
 void initialize_allocator (void) {
   /* Allocate bit-arrays, initialize as "all memory used" */
   uint64_t num_gigs = (memtop - 1) / 0x40000000 + 1;
-  uint64_t curr = ((uint64_t)&_end) - 0xFFFFFFFFC0000000;
+  uint64_t curr = ((uint64_t)&_end) - 0xFFFFFFFF80000000;
   /* curr is the current /physical/ memory address */
   if (curr & 0x7FFF) {
     curr &= 0xFFFFFFFFFFFF8000;

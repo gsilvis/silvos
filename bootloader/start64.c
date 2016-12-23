@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#define MAP_OFFSET 0xFFFFFFFFC0000000
+#define MAP_OFFSET 0xFFFFFFFF80000000
 
 void memmove (uint64_t dest, uint64_t src, uint64_t n) {
   uint8_t *d = (uint8_t *)dest;

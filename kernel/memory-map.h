@@ -31,14 +31,14 @@ static inline uint64_t virt_to_phys(uint64_t addr) {
  */
 
 /* Last 512G of memory are for kernel use.  There are two separate maps here:
- * the last 1G maps to the first 1G of memory, for kernel symbols.  The rest
+ * the last 2G maps to the first 2G of memory, for kernel symbols.  The rest
  * also maps to low memory, for allocations inside the kernel.
  *
  * ALLOCATABLE_MEMORY_START  0xFF8000000000    (0x000000000000)
- * ALLOCATABLE_MEMORY_END    0xFFFFBFFFFFFF    (0x00FBFFFFFFFF)
+ * ALLOCATABLE_MEMORY_END    0xFFFF7FFFFFFF    (0x00F7FFFFFFFF)
  *
- * KERNEL_SYMBOLS_START      0xFFFFC0000000    (0x000000000000)
- * KERNEL_SYMBOLS_END        0xFFFFFFFFFFFF    (0x00003FFFFFFF)
+ * KERNEL_SYMBOLS_START      0xFFFF80000000    (0x000000000000)
+ * KERNEL_SYMBOLS_END        0xFFFFFFFFFFFF    (0x00007FFFFFFF)
  */
 
 
