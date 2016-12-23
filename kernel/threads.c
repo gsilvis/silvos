@@ -45,7 +45,11 @@ int user_thread_create (void *text, size_t length) {
 }
 
 void user_thread_launch () {
-  map_new_page(LOC_TEXT, PAGE_MASK__USER);
+  for (uint64_t addr = LOC_TEXT;
+       addr < LOC_TEXT + running_tcb->text_length;
+       addr += 4096) {
+    map_new_page(addr, PAGE_MASK__USER);
+  }
   map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
   memcpy((void *)LOC_TEXT, running_tcb->text, running_tcb->text_length);
 }

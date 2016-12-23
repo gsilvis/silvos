@@ -11,9 +11,6 @@ int check_addr (const void *low, const void *high) {
   if ((uint64_t)low > (uint64_t)high) {
     return -1;
   }
-  if ((uint64_t)low < LOC_USERZONE_BOT) {
-    return -1;
-  }
   if ((uint64_t)high > LOC_USERZONE_TOP) {
     return -1;
   }

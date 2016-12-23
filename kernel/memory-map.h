@@ -11,22 +11,34 @@ static inline uint64_t virt_to_phys(uint64_t addr) {
   return addr - 0xFFFFFF8000000000;
 }
 
-/* First 512G of memory is identity-mapped, kernel-only. */
+/* Lower half of memory is for userland */
 
-/* Rest of the lower half is for the userland */
+#define LOC_USERZONE_BOT  0x000000000000
 
-#define LOC_USERZONE_BOT  0x008000000000
-
-#define LOC_TEXT          0x008000000000
+#define LOC_TEXT          0x000000000000
 #define LOC_USER_STACK    0x7FFFFFFFF000
 #define LOC_USER_STACKTOP 0x7FFFFFFFFFF8
 
 #define LOC_USERZONE_TOP  0x800000000000
 
-/* Upper half of memory: currently unused. */
+/* Upper half of memory is for the kernel. */
 
-/* Last 512G of memory map to the pagetables.  See page.h for how to find
- * various levels of page table for various locations.
+/* Second-to-last 512G of memory map to the pagetables.  See page.h for how to
+ * find various levels of page table for various locations.
+ *
+ * PAGE_TABLE_START  0xFF0000000000
+ * PAGE_TABLE_END    0xFF7FFFFFFFFF
+ */
+
+/* Last 512G of memory are for kernel use.  There are two separate maps here:
+ * the last 1G maps to the first 1G of memory, for kernel symbols.  The rest
+ * also maps to low memory, for allocations inside the kernel.
+ *
+ * ALLOCATABLE_MEMORY_START  0xFF8000000000    (0x000000000000)
+ * ALLOCATABLE_MEMORY_END    0xFFFFBFFFFFFF    (0x00FBFFFFFFFF)
+ *
+ * KERNEL_SYMBOLS_START      0xFFFFC0000000    (0x000000000000)
+ * KERNEL_SYMBOLS_END        0xFFFFFFFFFFFF    (0x00003FFFFFFF)
  */
 
 

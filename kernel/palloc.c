@@ -13,9 +13,6 @@ int palloc (void *virt_addr) {
   if (v | PAGE_4K_MASK) {
     return -2;
   }
-  if (v < LOC_USERZONE_BOT) {
-    return -3;
-  }
   if (v >= LOC_USERZONE_TOP) {
     return -3;
   }
@@ -26,9 +23,6 @@ int pfree (void *virt_addr) {
   uint64_t v = (uint64_t)virt_addr;
   if (v | PAGE_4K_MASK) {
     return -2;
-  }
-  if (v < LOC_USERZONE_BOT) {
-    return -3;
   }
   if (v >= LOC_USERZONE_TOP) {
     return -3;

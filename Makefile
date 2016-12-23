@@ -31,7 +31,7 @@ KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel
 BOOTLOADER_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 BOOTLOADER_LDFLAGS := -nostdlib -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
 
-USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2 -fpie
+USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2
 USER_LDFLAGS := -nostdlib -lgcc
 
 CC := x86_64-elf-gcc

@@ -3,7 +3,7 @@ OUTPUT_FORMAT(binary)
 STARTUP(userland/startup.o)
 MEMORY
 {
-  code_page : ORIGIN = 0x008000000000, LENGTH = 0x1000
+  code_page : ORIGIN = 0x000000000000, LENGTH = 0x80000000
 }
 SECTIONS
 {
