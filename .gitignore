@@ -2,4 +2,4 @@
 george.multiboot
 bootloader.multiboot
 temp_drive
-userland/*-include.h
+userland/*.bin
