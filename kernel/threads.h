@@ -22,6 +22,7 @@ enum fpu_state {
 };
 
 typedef struct {
+  uint8_t thread_id;
   enum thread_state state;
   void *rsp;        /* Kernel stack pointer, when yielded */
   void *stack_top;  /* For TSS usage */

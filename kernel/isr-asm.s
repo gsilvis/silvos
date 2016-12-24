@@ -78,6 +78,12 @@ pfree_isr:
 	call pfree
 	iretq
 
+.GLOBAL debug_isr
+debug_isr:
+	mov %rax,%rdi
+	mov %rbx,%rsi
+	call com_debug_thread
+	iretq
 
 /* Interrupts */
 

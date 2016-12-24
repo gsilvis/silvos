@@ -11,10 +11,7 @@
 #include "fpu.h"
 #include "pci.h"
 #include "memory-map.h"
-
-// #include "userland/print-a-include.h"
-// #include "userland/print-b-include.h"
-// #include "userland/calc-include.h"
+#include "com.h"
 
 void initialize_idt (void) {
   create_idt();
@@ -55,6 +52,7 @@ void initialize_idt (void) {
   register_isr(0x3B, write_isr, 0);
   register_isr(0x3C, palloc_isr, 0);
   register_isr(0x3D, pfree_isr, 0);
+  register_isr(0x3E, debug_isr, 0);
 
 }
 
@@ -90,6 +88,7 @@ void kernel_main (uint32_t mboot_struct_addr) {
   init_kbd();
   fpu_init();
   check_all_pci_busses();
+  com_initialize();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */
 }

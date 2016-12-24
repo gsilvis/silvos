@@ -19,12 +19,14 @@ KERNEL_OBJS :=  \
 	pci.o \
 	ide.o \
 	palloc.o \
-	loader.o
+	loader.o \
+	com.o
 
 USERLAND_PROGS := \
 	print-a \
 	print-b \
-	calc
+	calc \
+	test-debug
 
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g -mcmodel=kernel
 KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel
