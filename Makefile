@@ -25,7 +25,8 @@ KERNEL_OBJS :=  \
 	hpet.o
 
 TEST_PROGS := \
-	test-debug
+	test-debug \
+	test-memory
 
 USERLAND_PROGS := \
 	print-a \
