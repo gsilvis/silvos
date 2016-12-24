@@ -20,6 +20,17 @@ void memcpy (void *dest, const void *src, size_t count) {
   }
 }
 
+int strncmp (const char *a, const char *b, size_t n) {
+  for (unsigned int i = 0; i < n; i++) {
+    if (a[i] < b[i]) {
+      return -1;
+    } else if (a[i] > b[i]) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void __attribute__ ((noreturn)) panic (const char *s) {
   puts("\r\nKERNEL PANIC: ");
   puts(s);

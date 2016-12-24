@@ -20,7 +20,8 @@ KERNEL_OBJS :=  \
 	ide.o \
 	palloc.o \
 	loader.o \
-	com.o
+	com.o \
+	acpi.o
 
 USERLAND_PROGS := \
 	print-a \
