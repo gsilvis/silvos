@@ -40,4 +40,22 @@ static inline int write (long long sector, const void *src) {
   return out;
 }
 
+static inline int palloc (const void *virt_addr) {
+ int out;
+ __asm__ volatile("int $0x3C;"
+                  : "=a" (out)
+                  : "a" (virt_addr)
+                  : CALLER_SAVE_REGISTERS2);
+ return out;
+}
+
+static inline int pfree (const void *virt_addr) {
+ int out;
+ __asm__ volatile("int $0x3D;"
+                  : "=a" (out)
+                  : "a" (virt_addr)
+                  : CALLER_SAVE_REGISTERS2);
+ return out;
+}
+
 #endif
