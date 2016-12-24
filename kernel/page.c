@@ -37,7 +37,7 @@ pagetable new_pt (void) {
   return pml4;
 }
 
-int map_page (uint64_t phys, uint64_t virt, unsigned int mode) {
+int map_page (uint64_t phys, uint64_t virt, uint64_t mode) {
   if (phys & PAGE_4K_MASK) {
     return -1;
   }
@@ -91,6 +91,6 @@ int unmap_page (uint64_t virt) {
   return 0;
 }
 
-int map_new_page (uint64_t virt, unsigned int mode) {
+int map_new_page (uint64_t virt, uint64_t mode) {
   return map_page(virt_to_phys((uint64_t)allocate_phys_page()), virt, mode);
 }

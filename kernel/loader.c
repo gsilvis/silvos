@@ -65,7 +65,14 @@ void elf64_load (uint8_t *elf) {
     for (uint64_t page = PAGE_4K_ALIGN(seg->p_vaddr);
          page < seg->p_vaddr + seg->p_memsz;
          page += PAGE_4K_SIZE) {
-      /* TODO permissions */
+      uint64_t flags = PAGE_MASK_PRIV;
+      if (!(seg->p_flags & PF_X)) {
+        flags |= PAGE_MASK_NX;
+      }
+      if (seg->p_flags & PF_W) {
+        flags |= PAGE_MASK_WRITE;
+      }
+      /* I don't believe there's anything useful to do with the PF_R flag */
       map_new_page(page, PAGE_MASK__USER);
     }
     memcpy((void *)seg->p_vaddr, (void *)&elf[seg->p_offset], seg->p_filesz);

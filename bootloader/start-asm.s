@@ -45,9 +45,10 @@ _start:
 	movl %edi,%cr3
 
 	/* Enable ia32e (in 32-bit compatibility mode) */
+	/* Also enable NX bit */
 	movl $0xC0000080,%ecx
 	rdmsr
-	orl $0x00000100,%eax
+	orl $0x00000900,%eax
 	wrmsr
 
 	/* Enable paging */

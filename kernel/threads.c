@@ -50,7 +50,7 @@ int user_thread_create (void *text, size_t length) {
 
 void user_thread_launch () {
   elf64_load(running_tcb->text);
-  map_new_page(LOC_USER_STACK, PAGE_MASK__USER);
+  map_new_page(LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
 }
 
 tcb idle_tcb;
