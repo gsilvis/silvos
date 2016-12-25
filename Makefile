@@ -21,7 +21,8 @@ KERNEL_OBJS :=  \
 	palloc.o \
 	loader.o \
 	com.o \
-	acpi.o
+	acpi.o \
+	hpet.o
 
 USERLAND_PROGS := \
 	print-a \

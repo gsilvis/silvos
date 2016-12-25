@@ -13,6 +13,7 @@
 #include "memory-map.h"
 #include "com.h"
 #include "acpi.h"
+#include "hpet.h"
 
 void initialize_idt (void) {
   create_idt();
@@ -91,6 +92,7 @@ void kernel_main (uint32_t mboot_struct_addr) {
   check_all_pci_busses();
   com_initialize();
   acpi_initialize();
+  hpet_initialize();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */
 }

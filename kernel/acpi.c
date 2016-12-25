@@ -6,46 +6,6 @@
 
 #include <stdint.h>
 
-struct RSDPDescriptor {
-  char Signature[8];
-  uint8_t Checksum;
-  char OEMID[6];
-  uint8_t Revision;
-  uint32_t RsdtAddress;
-} __attribute__ ((packed));
-
-struct ACPISDTHeader {
-  char Signature[4];
-  uint32_t Length;
-  uint8_t Revision;
-  uint8_t Checksum;
-  char OEMID[6];
-  char OEMTableID[8];
-  uint32_t OEMRevision;
-  uint32_t CreatorID;
-  uint32_t CreatorRevision;
-} __attribute__ ((packed));
-
-struct RSDT {
-  struct ACPISDTHeader h;
-  uint32_t TablePointers[];
-} __attribute__ ((packed));
-
-struct FADT {
-  struct ACPISDTHeader h;
-  uint32_t FACS;
-  uint32_t DSDT;
-  /* Much more stuff, that I don't care about yet. */
-} __attribute__ ((packed));
-
-struct RSDPDescriptor *rsdp = NULL;
-struct RSDT *rsdt = 0;
-struct FADT *fadt = 0;
-struct ACPISDTHeader *dsdt = 0;
-struct ACPISDTHeader *ssdt = 0;
-struct ACPISDTHeader *madt = 0;
-struct ACPISDTHeader *hpet = 0;
-
 uint8_t acpi_checksum (uint8_t *table, uint64_t length) {
   uint8_t check = 0;
   for (uint64_t i = 0; i < length; i++) {
@@ -106,7 +66,7 @@ int acpi_parse_table (struct ACPISDTHeader *table) {
   } else if (!strncmp(table->Signature, "APIC", 4)) {
     madt = table;
   } else if (!strncmp(table->Signature, "HPET", 4)) {
-    hpet = table;
+    hpet = (struct HPET *)table;
   }
   return 0;
 }

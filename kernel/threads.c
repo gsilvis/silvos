@@ -9,6 +9,7 @@
 #include "page.h"
 #include "fpu.h"
 #include "loader.h"
+#include "hpet.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -111,7 +112,7 @@ void schedule_helper (void) {
     }
   }
   running_tcb = choose_task();
-  set_timeout(); /* Reset pre-emption timer */
+  hpet_reset_timeout(); /* Reset pre-emption timer */
   set_new_rsp(running_tcb->stack_top);
   fpu_switch_thread();
   running_tcb->state = TS_ACTIVE;
