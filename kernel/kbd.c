@@ -20,12 +20,15 @@ int buf_tail;
 char lshift;
 char rshift;
 
+struct wait_queue_head kbd_wait;
 
 void init_kbd (void) {
   buf_head = 0;
   buf_tail = 0;
   lshift = 0;
   rshift = 0;
+  kbd_wait.next = &kbd_wait;
+  kbd_wait.prev = &kbd_wait;
 }
 
 void read_key (void) {
@@ -53,10 +56,6 @@ void read_key (void) {
     /* Don't */
     r = scancode[c];
   }
-  /* If the buffer was empty, wake up a thread */
-  if (CIRC_CNT(buf_head, buf_tail, 256) == 0) {
-    wake_a_thread();
-  }
   /* Put the character in the buffer */
   buf[buf_head] = r;
   buf_head = (buf_head + 1) & 255;
@@ -64,13 +63,15 @@ void read_key (void) {
     /* Buffer's full, so drop least-recent char. */
     buf_tail = (buf_tail + 1) & 255;
   }
+  /* Wake a up a thread.  This causes a race condition, if there were two
+   * threads waiting, and two characters came in close to eachother.  This should
+   * be fixed at some point. */
+  wake_up(kbd_wait);
 }
 
 
 char getch (void) {
-  while (CIRC_CNT(buf_head, buf_tail, 256) == 0) {
-    block_current_thread();
-  }
+  wait_event(kbd_wait, CIRC_CNT(buf_head, buf_tail, 256));
   char r = buf[buf_tail];
   buf_tail = (buf_tail + 1) % 256;
   return r;

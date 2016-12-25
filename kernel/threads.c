@@ -125,15 +125,6 @@ void thread_exit (void) {
   running_tcb->state = TS_NONEXIST;
 }
 
-void wake_a_thread (void) {
-  for (int i = 0; i < NUMTHREADS; i++) {
-    if (tcbs[i].state == TS_BLOCKED) {
-      tcbs[i].state = TS_INACTIVE;
-      break;
-    }
-  }
-}
-
 void block_current_thread (void) {
   running_tcb->state = TS_BLOCKED;
   schedule();

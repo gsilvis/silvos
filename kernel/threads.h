@@ -21,7 +21,12 @@ enum fpu_state {
   THREAD_FPU_STATE_ACTIVE,    /* there's an FPU buf allocated */
 };
 
+struct wait_queue_head {
+  struct wait_queue_head *prev, *next;
+};
+
 typedef struct {
+  struct wait_queue_head wait;
   uint8_t thread_id;
   enum thread_state state;
   void *rsp;        /* Kernel stack pointer, when yielded */
@@ -46,8 +51,35 @@ void thread_start (void);
 void user_thread_start (void);
 void user_thread_launch (void);
 void schedule (void);
-void wake_a_thread (void);
-void block_current_thread (void);
 int idle_thread_create (void);
+
+
+#define wait_event(buf_head, cond)                        \
+do {                                                      \
+  if ((buf_head.next == &buf_head) && (cond))  break;     \
+  running_tcb->wait.next = &buf_head;                     \
+  running_tcb->wait.prev = buf_head.prev;                 \
+  buf_head.prev->next = &running_tcb->wait;               \
+  buf_head.prev = &running_tcb->wait;                     \
+  while (!cond) {                                         \
+    running_tcb->state = TS_BLOCKED;                      \
+    schedule();                                           \
+  }                                                       \
+  running_tcb->wait.prev->next = running_tcb->wait.next;  \
+  running_tcb->wait.next->prev = running_tcb->wait.prev;  \
+  running_tcb->wait.prev = NULL;                          \
+  running_tcb->wait.next = NULL;                          \
+} while (0)
+
+
+/* TODO: instead of casting buf_head to a TCB, implement offset_of */
+
+#define wake_up(buf_head)                  \
+do {                                       \
+  if (buf_head.next == &buf_head)  break;  \
+  tcb *t = (tcb *)buf_head.next;           \
+  t->state = TS_INACTIVE;                  \
+} while (0)
+
 
 #endif
