@@ -20,15 +20,13 @@ int buf_tail;
 char lshift;
 char rshift;
 
-struct wait_queue_head kbd_wait;
+LIST_HEAD(kbd_wait);
 
 void init_kbd (void) {
   buf_head = 0;
   buf_tail = 0;
   lshift = 0;
   rshift = 0;
-  kbd_wait.next = &kbd_wait;
-  kbd_wait.prev = &kbd_wait;
 }
 
 void read_key (void) {

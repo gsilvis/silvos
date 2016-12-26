@@ -1,5 +1,6 @@
 #include "alloc.h"
 
+#include "list.h"
 #include "util.h"
 #include "memory-map.h"
 
@@ -14,20 +15,16 @@ typedef uint8_t block_alloc_array[0x8000];
 
 block_alloc_array *bit_arrays;
 
-typedef struct freelist_ {
-  struct freelist_ *next;
-  struct freelist_ *prev;
-} freelist;
+struct list_head free_blocks[19];
 
-freelist free_blocks[19];
-
-freelist *get_freelist (int bsize, uint64_t index, uint64_t gig_offset) {
+struct list_head *get_freelist (int bsize, uint64_t index,
+                                uint64_t gig_offset) {
   index = index << (30 - bsize);
   index += 0x40000000 * gig_offset;
-  return (freelist *)phys_to_virt(index);
+  return (struct list_head *)phys_to_virt(index);
 }
 
-uint64_t get_index (int bsize, freelist *ptr) {
+uint64_t get_index (int bsize, void *ptr) {
   return virt_to_phys((uint64_t)ptr) >> (30 - bsize);
 }
 
@@ -38,29 +35,15 @@ void free_block (int bsize, uint64_t index) {
   for (; bsize > 0; bsize--, index /= 2) {
     if (bit_array_get((uint8_t *)&bit_arrays[gig_offset], per_gig + index/2)) {
       bit_array_set((uint8_t *)&bit_arrays[gig_offset], per_gig + index/2, 0);
-      freelist *new = get_freelist(bsize, index, gig_offset);
       /* insert into free list */
-      new->prev = &free_blocks[bsize];
-      new->next = free_blocks[bsize].next;
-      free_blocks[bsize].next->prev = new;
-      free_blocks[bsize].next = new;
+      list_push_front(get_freelist(bsize, index, gig_offset), &free_blocks[bsize]);
       return;
     }
     /* remove buddy from free list */
-    uint64_t buddy = index ^ 0x1;
-    freelist *old = get_freelist(bsize, buddy, gig_offset);
-    old->prev->next = old->next;
-    old->next->prev = old->prev;
-    /* remove suspicious information */
-    old->prev = NULL;
-    old->next = NULL;
+    list_remove(get_freelist(bsize, index ^ 0x1, gig_offset));
   }
   /* put entire 1G block into free list */
-  freelist *new = get_freelist(0, 0, gig_offset);
-  new->prev = &free_blocks[0];
-  new->next = free_blocks[0].next;
-  free_blocks[0].next->prev = new;
-  free_blocks[0].next = new;
+  list_push_front(get_freelist(0, 0, gig_offset), &free_blocks[0]);
 }
 
 void *alloc_block (int bsize) {
@@ -75,11 +58,7 @@ void *alloc_block (int bsize) {
     /* Didn't find any free memory */
     return NULL;
   }
-  freelist *to_return = free_blocks[b].next;
-  /* unlink it */
-  to_return->prev->next = to_return->next;
-  to_return->next->prev = to_return->prev;
-  /* mark it used */
+  struct list_head *to_return = list_pop_front(&free_blocks[b]);
   uint64_t index = get_index(b, to_return);
   uint64_t gig_offset = index / (0x1 << b);
   index = index % (0x1 << b);
@@ -87,16 +66,10 @@ void *alloc_block (int bsize) {
   b++; index *= 2;
   for (; b <= bsize; b++, index *= 2) {
     /* make buddy blocks free */
-    freelist *to_add = get_freelist(b, index + 1, gig_offset);
-    to_add->prev = &free_blocks[b];
-    to_add->next = free_blocks[b].next;
-    free_blocks[b].next->prev = to_add;
-    free_blocks[b].next = to_add;
+    struct list_head *to_add = get_freelist(b, index + 1, gig_offset);
+    list_push_front(to_add, &free_blocks[b]);
     bit_array_set((uint8_t *)&bit_arrays[gig_offset], (0x1 << b) + index/2, 0);
   }
-  /* remove suspicious information */
-  to_return->prev = NULL;
-  to_return->next = NULL;
   return (void *)to_return;
 }
 

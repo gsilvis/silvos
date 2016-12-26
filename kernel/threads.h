@@ -1,6 +1,7 @@
 #ifndef __SILVOS_THREADS_H
 #define __SILVOS_THREADS_H
 
+#include "list.h"
 #include "page.h"
 
 #include <stdint.h>
@@ -21,12 +22,9 @@ enum fpu_state {
   THREAD_FPU_STATE_ACTIVE,    /* there's an FPU buf allocated */
 };
 
-struct wait_queue_head {
-  struct wait_queue_head *prev, *next;
-};
 
 typedef struct {
-  struct wait_queue_head wait;
+  struct list_head wait_queue;
   uint8_t thread_id;
   enum thread_state state;
   void *rsp;        /* Kernel stack pointer, when yielded */
@@ -54,31 +52,25 @@ void schedule (void);
 int idle_thread_create (void);
 
 
-#define wait_event(buf_head, cond)                        \
-do {                                                      \
-  if ((buf_head.next == &buf_head) && (cond))  break;     \
-  running_tcb->wait.next = &buf_head;                     \
-  running_tcb->wait.prev = buf_head.prev;                 \
-  buf_head.prev->next = &running_tcb->wait;               \
-  buf_head.prev = &running_tcb->wait;                     \
-  while (!cond) {                                         \
-    running_tcb->state = TS_BLOCKED;                      \
-    schedule();                                           \
-  }                                                       \
-  running_tcb->wait.prev->next = running_tcb->wait.next;  \
-  running_tcb->wait.next->prev = running_tcb->wait.prev;  \
-  running_tcb->wait.prev = NULL;                          \
-  running_tcb->wait.next = NULL;                          \
+#define wait_event(wq, cond)                      \
+do {                                              \
+  if (list_empty(&wq) && (cond))  break;          \
+  list_push_back(&running_tcb->wait_queue, &wq);  \
+  while (!cond) {                                 \
+    running_tcb->state = TS_BLOCKED;              \
+    schedule();                                   \
+  }                                               \
+  list_remove(&running_tcb->wait_queue);          \
 } while (0)
 
 
 /* TODO: instead of casting buf_head to a TCB, implement offset_of */
 
-#define wake_up(buf_head)                  \
-do {                                       \
-  if (buf_head.next == &buf_head)  break;  \
-  tcb *t = (tcb *)buf_head.next;           \
-  t->state = TS_INACTIVE;                  \
+#define wake_up(wq)             \
+do {                            \
+  if (list_empty(&wq))  break;  \
+  tcb *t = (tcb *)wq.next;      \
+  t->state = TS_INACTIVE;       \
 } while (0)
 
 
