@@ -88,15 +88,23 @@ int idle_thread_create () {
 /* Round-robin scheduling. */
 tcb *choose_task (void) {
   static int rr = -1; /* Start with thread 0 the first time we're called. */
+  int thread_exists = 0;
   for (int i = 1; i <= NUMTHREADS; i++) {
     int index = (rr+i) % NUMTHREADS;
     if (tcbs[index].state == TS_INACTIVE) {
       rr = index;
       return &tcbs[index];
+    } else if (tcbs[index].state != TS_NONEXIST) {
+      thread_exists = 0;
     }
   }
-  /* Nothing to do; idle. */
-  return &idle_tcb;
+  if (thread_exists) {
+    /* Nothing to do right now; idle. */
+    return &idle_tcb;
+  } else {
+    /* All threads have exited.  Power off. */
+    qemu_debug_shutdown();
+  }
 }
 
 tcb *running_tcb = 0;
