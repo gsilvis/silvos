@@ -24,11 +24,14 @@ KERNEL_OBJS :=  \
 	acpi.o \
 	hpet.o
 
+TEST_PROGS := \
+	test-debug
+
 USERLAND_PROGS := \
 	print-a \
 	print-b \
 	calc \
-	test-debug
+	$(TEST_PROGS)
 
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g -mcmodel=kernel
 KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel
@@ -94,5 +97,22 @@ george.disk: george.multiboot menu.lst
 temp_drive:
 	dd if=/dev/zero of=$@ bs=512 count=16
 
+# Testing
+
+test: $(patsubst %, test/%, $(TEST_PROGS))
+
+userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot
+	qemu-system-x86_64 -kernel bootloader.multiboot \
+		-initrd george.multiboot,$(word 1,$^) \
+		-serial file:$@ \
+		-device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+		-nographic \
+		-display none \
+		| true
+
+test/%: userland/%/expected.txt userland/%/output.txt
+	diff -q $^
+
+
 clean:
-	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o temp_drive bootloader.multiboot bootloader/*.o
+	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o temp_drive bootloader.multiboot bootloader/*.o userland/*/output.txt

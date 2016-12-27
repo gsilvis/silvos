@@ -33,7 +33,7 @@ uint32_t com_debug_thread (char *text, uint32_t len) {
     return 0;
   }
   const char header[] = "THREAD 0x";
-  for (size_t i = 0; i < sizeof(header); i++) {
+  for (size_t i = 0; header[i]; i++) {
     com_putch(header[i]);
   }
   const char hex[] = "0123456789ABCDEF";
@@ -44,7 +44,7 @@ uint32_t com_debug_thread (char *text, uint32_t len) {
   com_putch(':');
   com_putch(' ');
 
-  for (size_t i = 0; i < len; i++) {
+  for (size_t i = 0; (i < len) && tmp[i]; i++) {
     com_putch(tmp[i]);
   }
 

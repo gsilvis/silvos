@@ -1,0 +1,3 @@
+THREAD 0x01: Abracadabra
+THREAD 0x01: 川端康成
+THREAD 0x01: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!

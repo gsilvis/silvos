@@ -3,3 +3,4 @@ george.multiboot
 bootloader.multiboot
 temp_drive
 userland/*.bin
+userland/*/*.output.txt
