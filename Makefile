@@ -28,7 +28,8 @@ TEST_PROGS := \
 	test-debug \
 	test-memory \
 	test-float-fib \
-	test-yield
+	test-yield \
+	test-exit
 
 USERLAND_PROGS := \
 	print-a \
