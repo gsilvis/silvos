@@ -111,7 +111,7 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot
 		| true
 
 test/%: userland/%/expected.txt userland/%/output.txt
-	diff -q $^
+	diff $^
 
 
 clean:
