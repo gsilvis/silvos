@@ -6,3 +6,9 @@ sufficient.
 To run, execute:
 
     ./script/TEST-QEMU.sh & ./script/TEST-GDB.sh
+
+# Contributors
+
+- [George Silvis III](https://github.com/gsilvis)
+- [Colin Stanfill](https://github.com/cstanfill)
+- [Allan Wirth](https://github.com/allanlw)
