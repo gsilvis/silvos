@@ -13,9 +13,8 @@ static inline uint64_t virt_to_phys(uint64_t addr) {
 
 /* Lower half of memory is for userland */
 
-#define LOC_USERZONE_BOT  0x000000000000
+#define LOC_USERZONE_BOT  0x000000001000
 
-#define LOC_TEXT          0x000000000000
 #define LOC_USER_STACK    0x7FFFFFFFF000
 #define LOC_USER_STACKTOP 0x7FFFFFFFFFF8
 

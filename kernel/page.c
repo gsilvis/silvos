@@ -1,8 +1,11 @@
 #include "page.h"
 
 #include "memory-map.h"
+#include "page-constants.h"
 
 #include "alloc.h"
+#include "pagemap.h"
+#include "threads.h"
 #include "util.h"
 
 #include <stdint.h>
@@ -37,14 +40,7 @@ pagetable new_pt (void) {
   return pml4;
 }
 
-int map_page (uint64_t phys, uint64_t virt, uint64_t mode) {
-  if (phys & PAGE_4K_MASK) {
-    return -1;
-  }
-  if (virt & PAGE_4K_MASK) {
-    return -1;
-  }
-
+void insert_page (uint64_t phys, uint64_t virt, uint64_t mode) {
   pagetable pml4 = (pagetable) PAGE_VIRT_PML4_OF(virt);
   pagetable pdpt = (pagetable) PAGE_VIRT_PDPT_OF(virt);
   pagetable pd = (pagetable) PAGE_VIRT_PD_OF(virt);
@@ -64,33 +60,60 @@ int map_page (uint64_t phys, uint64_t virt, uint64_t mode) {
   }
 
   pt[PAGE_4K_OF(virt)] = phys | mode;
-  return 0;
 }
 
-int unmap_page (uint64_t virt) {
-  if (virt & PAGE_4K_MASK) {
-    return -1;
-  }
-
+void remove_page (uint64_t virt) {
+  /* TODO: Bug-logging if we remove a page that's not mapped. */
   pagetable pml4 = (pagetable) PAGE_VIRT_PML4_OF(virt);
   pagetable pdpt = (pagetable) PAGE_VIRT_PDPT_OF(virt);
   pagetable pd = (pagetable) PAGE_VIRT_PD_OF(virt);
   pagetable pt = (pagetable) PAGE_VIRT_PT_OF(virt);
 
   if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return 0;
+    return;
   }
   if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return 0;
+    return;
   }
   if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return 0;
+    return;
+  }
+  if (!(pt[PAGE_4K_OF(virt)] & PAGE_MASK_PRESENT)) {
+    return;
   }
 
   pt[PAGE_4K_OF(virt)] = PAGE_MASK__FAKE;
+}
+
+int unmap_page (uint64_t virt) {
+  if (virt & PAGE_4K_MASK) {
+    return -1;
+  }
+  pagemap *pm = &running_tcb->pm;
+  int ret;
+  if ((ret = pm_remove_ent(pm, virt))) {
+    return ret;
+  }
+
+  remove_page(virt);
   return 0;
 }
 
 int map_new_page (uint64_t virt, uint64_t mode) {
-  return map_page(virt_to_phys((uint64_t)allocate_phys_page()), virt, mode);
+  if (virt & PAGE_4K_MASK) {
+    return -1;
+  }
+  pagemap *pm = &running_tcb->pm;
+  /* Don't map the same page twice */
+  if (pm_is_mapped(pm, virt)) {
+    return -2;
+  }
+  if (pm->num_entries == NUMMAPS) {
+    return -3;
+  }
+  uint64_t phys = virt_to_phys((uint64_t)allocate_phys_page());
+  /* We checked that the pagemap wasn't full before, so this can't fail. */
+  pm_add_ent(pm, virt, phys);
+  insert_page(phys, virt, mode);
+  return 0;
 }

@@ -16,6 +16,7 @@
 
 tcb tcbs[NUMTHREADS];
 
+
 /* Returns 0 on success, negative on failure */
 int user_thread_create (void *text, size_t length) {
   static uint8_t thread_id = 1;
@@ -25,6 +26,7 @@ int user_thread_create (void *text, size_t length) {
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
       tcbs[i].thread_id = thread_id++;
+      tcbs[i].pm.num_entries = 0;
       tcbs[i].pt = new_pt();
       tcbs[i].text = text;
       tcbs[i].text_length = length;
@@ -67,6 +69,7 @@ void idle () {
 int idle_thread_create () {
   idle_tcb.thread_id = 0;
   idle_tcb.state = TS_INACTIVE;
+  idle_tcb.pm.num_entries = 0;
   idle_tcb.pt = new_pt();
   /* Set up stack */
   uint64_t *idle_stack = &((uint64_t *)allocate_phys_page())[512];
