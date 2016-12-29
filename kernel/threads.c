@@ -95,7 +95,7 @@ tcb *choose_task (void) {
       rr = index;
       return &tcbs[index];
     } else if (tcbs[index].state != TS_NONEXIST) {
-      thread_exists = 0;
+      thread_exists = 1;
     }
   }
   if (thread_exists) {
