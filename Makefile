@@ -26,7 +26,8 @@ KERNEL_OBJS :=  \
 
 TEST_PROGS := \
 	test-debug \
-	test-memory
+	test-memory \
+	test-float-fib
 
 USERLAND_PROGS := \
 	print-a \
