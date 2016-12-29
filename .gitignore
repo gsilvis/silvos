@@ -4,3 +4,4 @@ bootloader.multiboot
 temp_drive
 userland/*.bin
 userland/*/*.output.txt
+userland/*/coverage.log
