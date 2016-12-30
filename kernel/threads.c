@@ -136,6 +136,7 @@ void thread_exit (void) {
 void thread_exit_schedule (void) {
   thread_exit();
   schedule();
+  panic("Rescheduled exited thread");
 }
 
 void block_current_thread (void) {

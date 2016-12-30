@@ -78,8 +78,7 @@ nm_isr:
 .GLOBAL fault_isr
 fault_isr:
 	push_caller_save_reg
-        call thread_exit
-        call schedule
+        call thread_exit_schedule
 
 .GLOBAL df_isr
 df_isr:
