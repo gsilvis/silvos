@@ -1,3 +1,4 @@
+.section .rodata
 .GLOBAL syscall_defns
 syscall_defns:
 	.quad schedule
