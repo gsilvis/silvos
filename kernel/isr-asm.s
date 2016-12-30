@@ -31,64 +31,13 @@
 
 /* Syscalls */
 
-.GLOBAL yield_isr
-yield_isr:
-        call schedule
-        iretq
-
-.GLOBAL putch_isr
-putch_isr:
-        mov %rax,%rdi
-        call putc
-        iretq
-
-.GLOBAL exit_isr
-exit_isr:
-        call thread_exit
-        call schedule
-
-.GLOBAL getch_isr
-getch_isr:
-        call getch
-        iretq
-
-.GLOBAL read_isr
-read_isr:
-	mov %rax,%rdi
-	mov %rbx,%rsi
-	call read_sector
-	iretq
-
-.GLOBAL write_isr
-write_isr:
-	mov %rax,%rdi
-	mov %rbx,%rsi
-	call write_sector
-	iretq
-
-.GLOBAL palloc_isr
-palloc_isr:
-	mov %rax,%rdi
-	call palloc
-	iretq
-
-.GLOBAL pfree_isr
-pfree_isr:
-	mov %rax,%rdi
-	call pfree
-	iretq
-
-.GLOBAL debug_isr
-debug_isr:
-	mov %rax,%rdi
-	mov %rbx,%rsi
-	call com_debug_thread
-	iretq
-
-.GLOBAL nanosleep_isr
-nanosleep_isr:
-	mov %rax,%rdi
-	call hpet_nanosleep
+.GLOBAL syscall_isr
+syscall_isr:
+	mov %rbx,%rdi
+	mov %rcx,%rsi
+	mov $syscall_defns, %r8
+	mov (%r8, %rax, 8), %rax
+	call *%rax
 	iretq
 
 /* Interrupts */

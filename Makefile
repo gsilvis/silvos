@@ -22,7 +22,8 @@ KERNEL_OBJS :=  \
 	loader.o \
 	com.o \
 	acpi.o \
-	hpet.o
+	hpet.o \
+	syscall-asm.o
 
 TEST_PROGS := \
 	test-debug \
