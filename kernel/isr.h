@@ -10,6 +10,7 @@ void write_isr (void);
 void palloc_isr (void);
 void pfree_isr (void);
 void debug_isr (void);
+void nanosleep_isr (void);
 
 void fault_isr (void);
 void nm_isr (void);
@@ -18,5 +19,6 @@ void pf_isr (void);
 
 void kbd_isr (void);
 void timer_isr (void);
+void rtc_isr (void);
 
 #endif

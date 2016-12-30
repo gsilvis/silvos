@@ -1,7 +1,9 @@
 #include "hpet.h"
 
 #include "acpi.h"
+#include "list.h"
 #include "memory-map.h"
+#include "threads.h"
 
 uint64_t timeslice;
 
@@ -18,16 +20,104 @@ int hpet_initialize (void) {
   timeslice = 50000000000000 / (hpet_reg->capabilities >> 32);
   /* PIT and RTC are now inactive */
   /* Set timers 0 and 1 to edge-triggered */
-  uint64_t config = hpet_reg->timers[0].config_and_cap;
-  config &= ~HPET_TIMER_CONFIG_INTERRUPT_TYPE;  /* Edge-triggred */
-  config &= ~HPET_TIMER_CONFIG_PERIODIC;        /* One-shot */
-  config &= ~HPET_TIMER_CONFIG_FORCE_32;        /* 64-bit */
-  config |= HPET_TIMER_CONFIG_INTERRUPT_ENABLE; /* Enabled */
-  hpet_reg->timers[0].config_and_cap = config;
+  for (int i = 0; i < 2; i++) {
+    uint64_t config = hpet_reg->timers[i].config_and_cap;
+    config &= ~HPET_TIMER_CONFIG_INTERRUPT_TYPE;  /* Edge-triggred */
+    config &= ~HPET_TIMER_CONFIG_PERIODIC;        /* One-shot */
+    config &= ~HPET_TIMER_CONFIG_FORCE_32;        /* 64-bit */
+    config |= HPET_TIMER_CONFIG_INTERRUPT_ENABLE; /* Enabled */
+    hpet_reg->timers[i].config_and_cap = config;
+  }
   return 0;
 }
+
+
+/* Timeslice preemption, on timer 0 */
 
 void hpet_reset_timeout (void) {
   uint64_t cur = hpet_reg->main_counter;
   hpet_reg->timers[0].comparator = cur + timeslice;
+}
+
+
+/* Sleep, on timer 1 */
+
+struct sleeper {
+  struct list_head queue;
+  uint64_t deadline;
+  tcb *thread;
+};
+
+LIST_HEAD(sleep_queue);
+uint64_t current_deadline = 0xFFFFFFFFFFFFFFFF;
+
+void hpet_nanosleep (uint64_t usecs) {
+  uint64_t ticks = usecs * 1000000000 / (hpet_reg->capabilities >> 32);
+  uint64_t cur = hpet_reg->main_counter;
+  uint64_t deadline = cur + ticks;
+  if (deadline < cur) {
+    return;
+  }
+
+  struct list_head *i = sleep_queue.next;
+  while (i != &sleep_queue) {
+    struct sleeper *s = (struct sleeper *)i;
+    if (deadline < s->deadline) {
+      break;
+    }
+    i = i->next;
+  }
+
+  struct sleeper thread_sleeper = {
+    .deadline = deadline,
+    .thread = running_tcb,
+  };
+  list_push_back(&thread_sleeper.queue, i);
+  running_tcb->state = TS_BLOCKED;
+
+  /* I would love to just write to the register and call 'schedule()', but
+   * there's an irritating race-condition: the main counter could pass our
+   * deadline between when we read the main counter and when we wrote the
+   * deadline.  So, we have to carefully write it, and check it afterwards... it
+   * turns out that this is exactly the same logic we have to use on getting an
+   * interrupt.  So just do that procedure. */
+  hpet_sleepers_awake();
+
+  /* Different from the interrupt case, we actually need to handle the thread
+   * logic here: if the thread really is blocked, sleep; if it's not, make it
+   * active again and return immediately. */
+  if (running_tcb->state == TS_BLOCKED) {
+    schedule();
+  } else {
+    running_tcb->state = TS_ACTIVE;
+  }
+};
+
+void hpet_sleepers_awake() {
+  while (1) {
+    struct list_head *i = sleep_queue.next;
+    while (i != &sleep_queue) {
+      uint64_t cur = hpet_reg->main_counter;
+      struct sleeper *s = (struct sleeper *)i;
+      if (s->deadline >= cur) {
+        break;
+      }
+      i = i->next;
+      list_remove(&s->queue);
+      s->thread->state = TS_INACTIVE;
+    }
+    if (list_empty(&sleep_queue)) {
+      current_deadline = 0xFFFFFFFFFFFFFFFF;
+    } else {
+      struct sleeper *s = (struct sleeper *)i;
+      current_deadline = s->deadline;
+    }
+    hpet_reg->timers[1].comparator = current_deadline;
+    if (hpet_reg->main_counter < current_deadline) {
+      return;
+    }
+    /* Dammit, the deadline passed in-between our last two reads of the main
+     * register.  We don't know if we'll get an interrupt for it, so assume we
+     * won't:  wake the sleepers again. */
+  }
 }

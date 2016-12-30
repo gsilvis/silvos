@@ -85,12 +85,18 @@ debug_isr:
 	call com_debug_thread
 	iretq
 
+.GLOBAL nanosleep_isr
+nanosleep_isr:
+	mov %rax,%rdi
+	call hpet_nanosleep
+	iretq
+
 /* Interrupts */
 
 .GLOBAL kbd_isr
 kbd_isr:
         push_caller_save_reg
-        call eoi
+        call master_eoi
         call read_key
         pop_caller_save_reg
         iretq
@@ -98,8 +104,16 @@ kbd_isr:
 .GLOBAL timer_isr
 timer_isr:
         push_caller_save_reg
-        call eoi
+        call master_eoi
         call schedule
+        pop_caller_save_reg
+        iretq
+
+.GLOBAL rtc_isr
+rtc_isr:
+        push_caller_save_reg
+        call slave_eoi
+        call hpet_sleepers_awake
         pop_caller_save_reg
         iretq
 
@@ -126,6 +140,7 @@ df_isr:
 .GLOBAL pf_isr
 pf_isr:
         push_caller_save_reg
+	mov %cr2,%rax
         call pagefault_handler
         pop_caller_save_reg
         iretq

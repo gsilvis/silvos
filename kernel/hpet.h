@@ -48,4 +48,7 @@ struct HPET_Registers *hpet_reg;
 int hpet_initialize (void);
 void hpet_reset_timeout (void);
 
+void hpet_nanosleep (uint64_t usecs);
+void hpet_sleepers_awake();
+
 #endif

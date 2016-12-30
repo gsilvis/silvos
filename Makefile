@@ -34,6 +34,7 @@ TEST_PROGS := \
 USERLAND_PROGS := \
 	print-a \
 	print-b \
+	print-c \
 	calc \
 	$(TEST_PROGS)
 

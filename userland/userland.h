@@ -67,4 +67,11 @@ static inline int debug (const char *string, int len) {
   return out;
 }
 
+static inline void nanosleep (long long usecs) {
+  __asm__ volatile("int $0x3F"
+                   : "=a" (usecs)
+                   : "a" (usecs)
+                   : CALLER_SAVE_REGISTERS2);
+}
+
 #endif

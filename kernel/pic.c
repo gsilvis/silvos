@@ -14,14 +14,19 @@ void remap_pic (void) {
   outb(0x21, 0x01); /* Enter 8086 mode */
 
   outb(0xA0, 0x11);
-  outb(0xA1, 0x40); /* Offset to 0x48-0x4F, I think */
+  outb(0xA1, 0x28); /* Offset to 0x28-0x2F, I think */
   outb(0xA1, 0x02);
   outb(0xA1, 0x01); /* 8086 mode */
 
-  outb(0x21, 0xFC); /* Block non-keyboard, non-timer lines */
-  outb(0xA1, 0xFF); /* block everything */
+  outb(0x21, 0xF8); /* Block non-keyboard, non-timer lines */
+  outb(0xA1, 0xFE); /* block non-rtc lines */
 }
 
-void eoi (void) {
+void master_eoi (void) {
   outb(0x20, 0x20); /* End of interrupt for master PIC */
+}
+
+void slave_eoi (void) {
+  outb(0xA0, 0x20); /* End of interrupt for slave PIC */
+  master_eoi(); /* and do this too, because cascading is awful. */
 }
