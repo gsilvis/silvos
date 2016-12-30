@@ -30,7 +30,8 @@ TEST_PROGS := \
 	test-memory \
 	test-float-fib \
 	test-yield \
-	test-exit
+	test-exit \
+	test-nanosleep
 
 USERLAND_PROGS := \
 	print-a \
