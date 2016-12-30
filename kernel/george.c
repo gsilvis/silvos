@@ -47,17 +47,7 @@ void initialize_idt (void) {
   register_isr(0x28, rtc_isr, 0);
 
   /* Syscalls */
-  register_isr(0x36, yield_isr, 0);
-  register_isr(0x37, putch_isr, 0);
-  register_isr(0x38, exit_isr, 0);
-  register_isr(0x39, getch_isr, 0);
-  register_isr(0x3A, read_isr, 0);
-  register_isr(0x3B, write_isr, 0);
-  register_isr(0x3C, palloc_isr, 0);
-  register_isr(0x3D, pfree_isr, 0);
-  register_isr(0x3E, debug_isr, 0);
-  register_isr(0x3F, nanosleep_isr, 0);
-
+  register_isr(0x36, syscall_isr, 0);
 }
 
 typedef struct {

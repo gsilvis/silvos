@@ -24,8 +24,7 @@ void pagefault_handler (void) {
   if (is_copying) {
     longjmp(for_copying, -1);
   } else {
-    thread_exit();
-    schedule();
+    thread_exit_schedule();
   }
 }
 

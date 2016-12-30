@@ -45,6 +45,7 @@ extern tcb *running_tcb;
 int user_thread_create (void *text, size_t length);
 void schedule_helper (void);
 void thread_exit (void);
+void __attribute__ ((noreturn)) thread_exit_schedule (void);
 void thread_start (void);
 void user_thread_start (void);
 void user_thread_launch (void);
