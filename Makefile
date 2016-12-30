@@ -50,6 +50,9 @@ CC := x86_64-elf-gcc
 AS := x86_64-elf-as
 OBJCOPY := x86_64-elf-objcopy
 
+# this instructs GNU make to use bash as our shell
+SHELL = /bin/bash
+
 # Primary targets
 
 all: bootloader.multiboot george.multiboot temp_drive \
@@ -105,9 +108,14 @@ temp_drive:
 
 test: $(patsubst %, test/%, $(TEST_PROGS))
 
+## This rule enforces that coverage.log requires output.txt to be built
+## But doesn't do anything else
+userland/%/coverage.log: userland/%/output.txt
+
 userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot
 	qemu-system-x86_64 -kernel bootloader.multiboot \
-		-initrd george.multiboot,$(word 1,$^) \
+		-d in_asm -D >( grep -E "^(Trace.*\[ffffffff|IN:|0xffffff)" | uniq > $(subst output.txt,coverage.log,$@)) \
+		-initrd george.multiboot,$< \
 		-serial file:$@ \
 		-device isa-debug-exit,iobase=0xf4,iosize=0x04 \
 		-nographic \
@@ -119,4 +127,15 @@ test/%: userland/%/expected.txt userland/%/output.txt
 
 
 clean:
-	rm -f kernel/*.o george.multiboot george.disk userland/*.bin userland/*.o userland/*/*.o temp_drive bootloader.multiboot bootloader/*.o userland/*/output.txt
+	rm -f \
+		kernel/*.o \
+		george.multiboot \
+		george.disk \
+		userland/*.bin \
+		userland/*.o \
+		userland/*/*.o \
+		temp_drive \
+		bootloader.multiboot \
+		bootloader/*.o \
+		userland/*/output.txt \
+		userland/*/coverage.log
