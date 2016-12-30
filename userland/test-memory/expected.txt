@@ -3,3 +3,4 @@ THREAD 0x01: Reading
 THREAD 0x01: Freeing
 THREAD 0x01: Reading
 THREAD 0x01: Page faulting
+Kernel: THREAD 0x01 page fault at 0x0000000000004000

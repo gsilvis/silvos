@@ -87,8 +87,8 @@ df_isr:
 
 .GLOBAL pf_isr
 pf_isr:
-        push_caller_save_reg
-	mov %cr2,%rax
-        call pagefault_handler
-        pop_caller_save_reg
-        iretq
+	push_caller_save_reg
+	mov %cr2,%rdi
+	call pagefault_handler
+	pop_caller_save_reg
+	iretq
