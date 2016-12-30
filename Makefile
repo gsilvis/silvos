@@ -1,44 +1,10 @@
-KERNEL_OBJS :=  \
-	start-asm.o \
-	george.o \
-	threads.o \
-	threads-asm.o \
-	vga.o \
-	util.o \
-	idt.o \
-	isr-asm.o \
-	pic.o \
-	pit.o \
-	util-asm.o \
-	gdt.o \
-	page.o \
-	alloc.o \
-	kbd.o \
-	fpu.o \
-	pagefault.o \
-	pci.o \
-	ide.o \
-	palloc.o \
-	loader.o \
-	com.o \
-	acpi.o \
-	hpet.o \
-	syscall-asm.o
+KERNEL_OBJS := \
+	$(patsubst kernel/%.c, kernel/%.o, $(wildcard kernel/*.c)) \
+	$(patsubst kernel/%.s, kernel/%.o, $(wildcard kernel/*.s))
 
-TEST_PROGS := \
-	test-debug \
-	test-memory \
-	test-float-fib \
-	test-yield \
-	test-exit \
-	test-nanosleep
+TEST_PROGS := $(patsubst userland/%/expected.txt, %, $(wildcard userland/*/expected.txt))
 
-USERLAND_PROGS := \
-	print-a \
-	print-b \
-	print-c \
-	calc \
-	$(TEST_PROGS)
+USERLAND_PROGS := $(patsubst userland/%/main.c, %, $(wildcard userland/*/main.c))
 
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g -mcmodel=kernel
 KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel
@@ -61,7 +27,7 @@ SHELL = /bin/bash
 all: bootloader.multiboot george.multiboot temp_drive \
 	$(patsubst %, userland/%.bin, $(USERLAND_PROGS))
 
-george.multiboot: $(patsubst %, kernel/%, $(KERNEL_OBJS))
+george.multiboot: $(KERNEL_OBJS)
 	$(CC) -T kernel/kernel.ld $^ -o $@ $(KERN_LDFLAGS)
 
 # Kernel Objects
