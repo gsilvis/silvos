@@ -13,4 +13,7 @@
 
 void ide_device_register(uint8_t bus, uint8_t device, uint8_t function);
 
+int read_sector (uint64_t sector, void *to);
+int write_sector (uint64_t sector, const void *from);
+
 #endif

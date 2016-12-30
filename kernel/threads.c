@@ -133,6 +133,11 @@ void thread_exit (void) {
   running_tcb->state = TS_NONEXIST;
 }
 
+void thread_exit_schedule (void) {
+  thread_exit();
+  schedule();
+}
+
 void block_current_thread (void) {
   running_tcb->state = TS_BLOCKED;
   schedule();
