@@ -11,3 +11,4 @@ syscall_defns:
 	.quad pfree
 	.quad com_debug_thread
 	.quad hpet_nanosleep
+	.quad fork

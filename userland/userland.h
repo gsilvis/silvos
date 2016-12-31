@@ -68,4 +68,8 @@ static inline void nanosleep (long long usecs) {
   __syscall1(SYSCALL_NANOSLEEP, usecs);
 }
 
+static inline int fork () {
+  return (int)__syscall0(SYSCALL_FORK);
+}
+
 #endif

@@ -22,6 +22,23 @@ void com_putch (char c) {
   outb(PORT, c);
 }
 
+void com_puts (const char *text) {
+  for (int i = 0; text[i]; ++i) {
+    com_putch(text[i]);
+  }
+}
+
+void com_put_tid (void) {
+  const char header[] = "THREAD 0x";
+  for (size_t i = 0; header[i]; i++) {
+    com_putch(header[i]);
+  }
+  const char hex[] = "0123456789ABCDEF";
+  uint8_t t = running_tcb->thread_id;
+  com_putch(hex[0x0F & (t >> 4)]);
+  com_putch(hex[0x0F & t]);
+}
+
 uint32_t com_debug_thread (char *text, uint32_t len) {
   /* TODO: check that user text is nice (doesn't contain control characters,
    * for intance) */
@@ -32,15 +49,7 @@ uint32_t com_debug_thread (char *text, uint32_t len) {
   if (copy_from_user(&tmp[0], text, len)) {
     return 0;
   }
-  const char header[] = "THREAD 0x";
-  for (size_t i = 0; header[i]; i++) {
-    com_putch(header[i]);
-  }
-  const char hex[] = "0123456789ABCDEF";
-  uint8_t t = running_tcb->thread_id;
-  com_putch(hex[0x0F & (t >> 4)]);
-  com_putch(hex[0x0F & t]);
-
+  com_put_tid();
   com_putch(':');
   com_putch(' ');
 

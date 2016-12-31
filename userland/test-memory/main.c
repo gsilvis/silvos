@@ -5,41 +5,55 @@ inline unsigned char* getpage(unsigned int i) {
   return (unsigned char*) ((1 << i) * 4096L);
 }
 
-inline unsigned char getent(unsigned int i, unsigned int j) {
-  return ((i * 37) ^ j) & 0xff;
+inline unsigned char getent(unsigned int i, unsigned int j, int pid) {
+  return ((i * 37) ^ j ^ pid) & 0xff;
 }
 
 void main() {
-  // TODO: Use our PID or a rand() to seed the values stored in our allocated
-  // pages, and run two of these at the same time (after clone() or fork()).
-  DEBUG("Writing");
+  DEBUG("Allocating");
   const unsigned int num_pages = 7;
   for (unsigned int i = 0; i < num_pages; ++i) {
-    // Use unsigned char to prevent problems when extending to unsigned longs.
     unsigned char* my_page = getpage(i);
     int ret = palloc(my_page);
     if (ret) {
       DEBUG("Failed to allocate page!");
       exit();
     }
-
-    for (unsigned int j = 0; j < 4096; ++j) {
-      my_page[j] = getent(i, j);
-    }
-    yield();
   }
+
+  DEBUG("Forking");
+  int pid = fork();
+  if (pid < 0) {
+    DEBUG("Failed to fork!");
+    exit();
+  }
+  if (pid == 0) {
+    DEBUG("Child");
+  } else {
+    DEBUG("Parent");
+  }
+  yield();
+
+  DEBUG("Writing");
+  for (unsigned int i = 0; i < num_pages; ++i) {
+    unsigned char* my_page = getpage(i);
+    for (unsigned int j = 0; j < 4096; ++j) {
+      my_page[j] = getent(i, j, pid);
+    }
+  }
+  yield();
 
   DEBUG("Reading");
   for (unsigned int i = 0; i < num_pages; ++i) {
     unsigned char* my_page = getpage(i);
     for (unsigned int j = 0; j < 4096; ++j) {
       unsigned char ent = my_page[j];
-      if (ent != getent(i, j)) {
+      if (ent != getent(i, j, pid)) {
         DEBUG("Values differed (before freeing a page)");
       }
     }
-    yield();
   }
+  yield();
 
   DEBUG("Freeing");
   unsigned char* freed_page = getpage(2);
@@ -58,12 +72,12 @@ void main() {
     unsigned char* my_page = getpage(i);
     for (unsigned int j = 0; j < 4096; ++j) {
       unsigned char ent = my_page[j];
-      if (ent != getent(i, j)) {
+      if (ent != getent(i, j, pid)) {
         DEBUG("Values differed (after freeing a page)");
       }
     }
-    yield();
   }
+  yield();
 
   DEBUG("Page faulting");
   getpage(2)[0] = 42;

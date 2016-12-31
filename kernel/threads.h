@@ -3,6 +3,7 @@
 
 #include "list.h"
 #include "page.h"
+#include "pagemap.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -34,6 +35,7 @@ typedef struct {
   size_t text_length;
   enum fpu_state fpu_state;
   char (*fpu_buf)[512];
+  pagemap pm;
 } tcb;
 
 extern tcb *running_tcb;
@@ -47,6 +49,8 @@ void user_thread_start (void);
 void user_thread_launch (void);
 void schedule (void);
 int idle_thread_create (void);
+int clone_thread (uint64_t fork_rsp);
+int finish_fork (int thread_id);
 
 
 #define wait_event(wq, cond)                      \

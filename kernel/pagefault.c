@@ -1,5 +1,6 @@
 #include "pagefault.h"
 
+#include "com.h"
 #include "util.h"
 #include "memory-map.h"
 #include "threads.h"
@@ -20,12 +21,21 @@ int check_addr (const void *low, const void *high) {
 jmp_buf for_copying;
 int is_copying;
 
-void pagefault_handler (void) {
+void pagefault_handler (uint64_t addr) {
   if (is_copying) {
     longjmp(for_copying, -1);
-  } else {
-    thread_exit_schedule();
   }
+  com_puts("Kernel: ");
+  com_put_tid();
+  com_puts(" page fault at ");
+  char pf_addr[] = "0x0000000000000000";
+  const char hex[] = "0123456789ABCDEF";
+  for (int i = 0; i < 16; ++i) {
+    pf_addr[sizeof(pf_addr) - 2 - i] = hex[0x0F & (addr >> (4 * i))];
+  }
+  com_puts(pf_addr);
+  com_putch('\n');
+  thread_exit_schedule();
 }
 
 
