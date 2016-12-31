@@ -24,10 +24,15 @@ thread_start:
 .GLOBAL schedule
 schedule:
         push_callee_save_reg
-        mov %rsp,(schedule_rsp)
+	mov (running_tcb), %rbx
+	test %rbx, %rbx
+	jz dont_save_rsp
+        mov %rsp,0x10(%rbx) /* saved rsp is first in the tcb after queue */
+dont_save_rsp:
         call schedule_helper
-        mov (schedule_rsp),%rsp
-        mov (schedule_pt),%rdi
+	mov (running_tcb), %rbx
+        mov 0x10(%rbx),%rsp
+        mov 0x18(%rbx),%rdi
         call insert_pt
         pop_callee_save_reg
         ret

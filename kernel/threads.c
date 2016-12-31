@@ -15,8 +15,6 @@
 #include <stddef.h>
 
 tcb *running_tcb = 0;
-void *schedule_rsp;
-pagetable schedule_pt;
 
 static tcb tcbs[NUMTHREADS];
 static int32_t total_threads = -1;  /* The idle thread doesn't count. */
@@ -120,15 +118,10 @@ static tcb *choose_task (void) {
 }
 
 void schedule_helper (void) {
-  if (running_tcb) {
-    running_tcb->rsp = schedule_rsp;
-  }
   running_tcb = choose_task();
   hpet_reset_timeout(); /* Reset pre-emption timer */
   set_new_rsp(running_tcb->stack_top);
   fpu_switch_thread();
-  schedule_rsp = running_tcb->rsp;
-  schedule_pt = running_tcb->pt;
 }
 
 void thread_exit (void) {
