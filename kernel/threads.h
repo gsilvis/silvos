@@ -53,6 +53,8 @@ void user_thread_start (void);
 void user_thread_launch (void);
 void schedule (void);
 int idle_thread_create (void);
+int clone_thread (uint64_t fork_rsp);
+int finish_fork (int thread_id);
 
 
 #define wait_event(wq, cond)                      \

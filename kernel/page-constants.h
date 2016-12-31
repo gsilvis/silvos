@@ -79,4 +79,12 @@ static inline uint64_t PAGE_VIRT_PML4_OF(uint64_t mem) {
   return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
 }
 
+static inline uint64_t PAGE_PADDR_FROM_ENTRY(uint64_t entry) {
+  return PAGE_4K_ALIGN(entry) & ~PAGE_MASK_NX;
+}
+
+static inline uint64_t PAGE_FLAGS_FROM_ENTRY(uint64_t entry) {
+  return entry & (PAGE_MASK_NX | PAGE_4K_MASK);
+}
+
 #endif

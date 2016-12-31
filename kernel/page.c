@@ -113,7 +113,27 @@ int map_new_page (uint64_t virt, uint64_t mode) {
   }
   uint64_t phys = virt_to_phys((uint64_t)allocate_phys_page());
   /* We checked that the pagemap wasn't full before, so this can't fail. */
-  pm_add_ent(pm, virt, phys);
+  pm_add_ent(pm, virt, phys | mode);
   insert_page(phys, virt, mode);
   return 0;
+}
+
+void clone_pagemap (pagemap *dst, pagemap *src) {
+  /* TODO: Copy-on-write. */
+  for (uint8_t i = 0; i < src->num_entries; ++i) {
+    void *new_page = allocate_phys_page();
+    memcpy(new_page, (void *)phys_to_virt(PAGE_PADDR_FROM_ENTRY(src->entries[i].phys)), PAGE_4K_SIZE);
+    dst->entries[i].virt = src->entries[i].virt;
+    dst->entries[i].phys = virt_to_phys((uint64_t) new_page) | (src->entries[i].phys & PAGE_4K_MASK);
+  }
+  dst->num_entries = src->num_entries;
+}
+
+void apply_pagemap (void) {
+  pagemap *pm = &running_tcb->pm;
+  for (uint8_t i = 0; i < pm->num_entries; ++i) {
+    pagemap_ent ent = pm->entries[i];
+    insert_page(PAGE_PADDR_FROM_ENTRY(ent.phys), ent.virt,
+        PAGE_FLAGS_FROM_ENTRY(ent.phys));
+  }
 }
