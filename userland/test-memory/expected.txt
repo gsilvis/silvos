@@ -1,6 +1,16 @@
+THREAD 0x01: Allocating
+THREAD 0x01: Forking
+THREAD 0x01: Parent
+THREAD 0x02: Child
 THREAD 0x01: Writing
+THREAD 0x02: Writing
 THREAD 0x01: Reading
+THREAD 0x02: Reading
 THREAD 0x01: Freeing
+THREAD 0x02: Freeing
 THREAD 0x01: Reading
+THREAD 0x02: Reading
 THREAD 0x01: Page faulting
 Kernel: THREAD 0x01 page fault at 0x0000000000004000
+THREAD 0x02: Page faulting
+Kernel: THREAD 0x02 page fault at 0x0000000000004000
