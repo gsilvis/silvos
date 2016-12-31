@@ -49,7 +49,7 @@ void free_block (int bsize, uint64_t index) {
 void *alloc_block (int bsize) {
   int b = bsize;
   for (; b >= 0; b--) {
-    if (free_blocks[b].next != &free_blocks[b]) {
+    if (!list_empty(&free_blocks[b])) {
       /* Found some free memory */
       break;
     }

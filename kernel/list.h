@@ -37,8 +37,8 @@ static inline void list_push_back (struct list_head *to_add,
 static inline void list_remove (struct list_head *to_remove) {
   to_remove->next->prev = to_remove->prev;
   to_remove->prev->next = to_remove->next;
-  to_remove->prev = NULL;
-  to_remove->next = NULL;
+  to_remove->prev = to_remove;
+  to_remove->next = to_remove;
 }
 
 static inline struct list_head *list_pop_front (struct list_head *head) {

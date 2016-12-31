@@ -1,9 +1,9 @@
 .section .rodata
 .GLOBAL syscall_defns
 syscall_defns:
-	.quad schedule
+	.quad yield
 	.quad putc
-	.quad thread_exit_schedule
+	.quad thread_exit
 	.quad getch
 	.quad read_sector
 	.quad write_sector

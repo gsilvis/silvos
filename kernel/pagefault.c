@@ -35,7 +35,7 @@ void pagefault_handler (uint64_t addr) {
   }
   com_puts(pf_addr);
   com_putch('\n');
-  thread_exit_schedule();
+  thread_exit();
 }
 
 

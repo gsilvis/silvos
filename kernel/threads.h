@@ -12,9 +12,7 @@
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
-  TS_INACTIVE, /* Exists, but is not executing */
-  TS_ACTIVE,   /* Executing, right now */
-  TS_BLOCKED,  /* Blocked on IO */
+  TS_EXIST,    /* There's a thread */
 };
 
 enum fpu_state {
@@ -42,8 +40,7 @@ extern tcb *running_tcb;
 
 int user_thread_create (void *text, size_t length);
 void schedule_helper (void);
-void thread_exit (void);
-void __attribute__ ((noreturn)) thread_exit_schedule (void);
+void __attribute__((noreturn)) thread_exit (void);
 void thread_start (void);
 void user_thread_start (void);
 void user_thread_launch (void);
@@ -51,27 +48,28 @@ void schedule (void);
 int idle_thread_create (void);
 int clone_thread (uint64_t fork_rsp);
 int finish_fork (int thread_id);
+void reschedule_thread (tcb *thread);
+void yield (void);
 
 
-#define wait_event(wq, cond)                      \
-do {                                              \
-  if (list_empty(&wq) && (cond))  break;          \
-  list_push_back(&running_tcb->wait_queue, &wq);  \
-  while (!cond) {                                 \
-    running_tcb->state = TS_BLOCKED;              \
-    schedule();                                   \
-  }                                               \
-  list_remove(&running_tcb->wait_queue);          \
+#define wait_event(wq, cond)                       \
+do {                                               \
+  if (list_empty(&wq) && (cond))  break;           \
+  while (!cond) {                                  \
+    list_push_back(&running_tcb->wait_queue, &wq); \
+    schedule();                                    \
+  }                                                \
 } while (0)
 
 
 /* TODO: instead of casting buf_head to a TCB, implement offset_of */
 
-#define wake_up(wq)             \
-do {                            \
-  if (list_empty(&wq))  break;  \
-  tcb *t = (tcb *)wq.next;      \
-  t->state = TS_INACTIVE;       \
+#define wake_up(wq)                    \
+do {                                   \
+  tcb *t = (tcb *)list_pop_front(&wq); \
+  if (!t)  break;                      \
+  list_remove(&t->wait_queue);         \
+  reschedule_thread(t);                \
 } while (0)
 
 

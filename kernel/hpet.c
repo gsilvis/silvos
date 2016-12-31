@@ -73,7 +73,6 @@ void hpet_nanosleep (uint64_t usecs) {
     .thread = running_tcb,
   };
   list_push_back(&thread_sleeper.queue, i);
-  running_tcb->state = TS_BLOCKED;
 
   /* I would love to just write to the register and call 'schedule()', but
    * there's an irritating race-condition: the main counter could pass our
@@ -83,14 +82,10 @@ void hpet_nanosleep (uint64_t usecs) {
    * interrupt.  So just do that procedure. */
   hpet_sleepers_awake();
 
-  /* Different from the interrupt case, we actually need to handle the thread
-   * logic here: if the thread really is blocked, sleep; if it's not, make it
-   * active again and return immediately. */
-  if (running_tcb->state == TS_BLOCKED) {
-    schedule();
-  } else {
-    running_tcb->state = TS_ACTIVE;
-  }
+  /* Even if the thread isn't blocked, still deschedule it.  Users shouldn't be
+   * sleeping for small enough amounts of time that they get control back
+   * immediately. */
+  schedule();
 };
 
 void hpet_sleepers_awake() {
@@ -104,7 +99,7 @@ void hpet_sleepers_awake() {
       }
       i = i->next;
       list_remove(&s->queue);
-      s->thread->state = TS_INACTIVE;
+      reschedule_thread(s->thread);
     }
     if (list_empty(&sleep_queue)) {
       current_deadline = 0xFFFFFFFFFFFFFFFF;

@@ -7,7 +7,7 @@
 #include "page.h"
 #include "util.h"
 
-tcb *previous_tcb = NULL; /* always the same as which one is mapped in LOC_FP_BUF */
+tcb *previous_tcb = NULL;
 
 void fpu_init (void) {
   /* Enable FPU */

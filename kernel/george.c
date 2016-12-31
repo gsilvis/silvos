@@ -71,6 +71,7 @@ void kernel_main (uint32_t mboot_struct_addr) {
   initialize_gdt();
   remap_pic();
 
+  idle_thread_create();
   multiboot_module *mod_list =
       (multiboot_module *)phys_to_virt((uint64_t)mboot_struct[6]);
   for (uint32_t i = 0; i < mboot_struct[5]; i++) {
@@ -78,7 +79,6 @@ void kernel_main (uint32_t mboot_struct_addr) {
                        mod_list[i].end - mod_list[i].start);
   }
 
-  idle_thread_create();
   init_kbd();
   fpu_init();
   check_all_pci_busses();

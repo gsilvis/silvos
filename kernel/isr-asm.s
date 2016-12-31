@@ -54,7 +54,7 @@ kbd_isr:
 timer_isr:
         push_caller_save_reg
         call master_eoi
-        call schedule
+        call yield
         pop_caller_save_reg
         iretq
 
@@ -78,7 +78,7 @@ nm_isr:
 .GLOBAL fault_isr
 fault_isr:
 	push_caller_save_reg
-        call thread_exit_schedule
+        call thread_exit
 
 .GLOBAL df_isr
 df_isr:

@@ -33,5 +33,6 @@ void main() {
   if (depth > 0) {
     exit();
   }
+  yield();
   DEBUG("I'm the original");
 }
