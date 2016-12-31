@@ -38,10 +38,6 @@ typedef struct {
 
 extern tcb *running_tcb;
 
-#define THREAD_FP_USE_INACTIVE (-1)
-#define THREAD_FP_USE_FORBIDDEN (-2)
-#define THREAD_FP_USE_DUMMY (-3)
-
 int user_thread_create (void *text, size_t length);
 void schedule_helper (void);
 void thread_exit (void);
