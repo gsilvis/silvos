@@ -43,30 +43,39 @@ tcb *create_thread (void* text, size_t length) {
   return 0;
 }
 
-/* Returns 0 on success, negative on failure */
-int user_thread_create (void *text, size_t length) {
-  if (elf64_check(text, length)) {
-    return -2; /* Bad elf! */
-  }
+static tcb* create_thread_internal (int kernel, void *text, size_t length, uint64_t entry) {
   tcb *new_tcb = create_thread(text, length);
   if (!new_tcb) {
-    return -1;
+    return 0;
   }
 
   uint64_t *kernel_stack = (uint64_t *)new_tcb->stack_top;
   /* Initialize stack */
   /* Stack frame one:  user_thread_start */
-  kernel_stack[-1] = 0x1B;                         /* %ss */
-  kernel_stack[-2] = (uint64_t)LOC_USER_STACKTOP;  /* %rsp */
+  kernel_stack[-1] = kernel ? 0x10 : 0x1B;                         /* %ss */
+  kernel_stack[-2] = kernel ? (uint64_t)kernel_stack : (uint64_t)LOC_USER_STACKTOP;  /* %rsp */
   kernel_stack[-3] = 0x200;                        /* EFLAGS */
-  kernel_stack[-4] = 0x4B;                         /* %cs */
-  kernel_stack[-5] = elf64_get_entry(text);        /* %rip */
+  kernel_stack[-4] = kernel ? 0x40 : 0x4B;                         /* %cs */
+  kernel_stack[-5] = entry;        /* %rip */
   /* Stack frame two:  schedule */
-  kernel_stack[-6] = (uint64_t)user_thread_start;  /* %rip */
+  kernel_stack[-6] = kernel ? (uint64_t) thread_start : (uint64_t)user_thread_start;  /* %rip */
   /* 6 callee-save registers */
   new_tcb->rsp = &kernel_stack[-12];
+  return new_tcb;
+}
+
+/* Returns 0 on success, negative on failure */
+int user_thread_create (void *text, size_t length) {
+  if (elf64_check(text, length)) {
+    return -2; /* Bad elf! */
+  }
+  tcb *new_tcb = create_thread_internal(0, text, length, elf64_get_entry(text));
+  if (!new_tcb) {
+    return -1;
+  }
+
   reschedule_thread(new_tcb);
-  return -1; /* No thread available! */
+  return 0;
 }
 
 void user_thread_launch () {
@@ -83,22 +92,11 @@ void idle () {
 tcb *idle_tcb = 0;
 
 int idle_thread_create () {
-  idle_tcb = create_thread(NULL, 0);
+  idle_tcb = create_thread_internal(1, NULL, 0, (uint64_t)idle);
   if (!idle_tcb) {
-    return -1;
+    panic("Couldn't create idle thread!");
   }
-  /* Set up stack */
-  uint64_t *idle_stack = (uint64_t *)idle_tcb->stack_top;
-  /* Stack frame one: thread_start */
-  idle_stack[-1] = 0x10;                    /* %ss */
-  idle_stack[-2] = (uint64_t) idle_stack;   /* %rsp */
-  idle_stack[-3] = 0x200;                   /* EFLAGS */
-  idle_stack[-4] = 0x40;                    /* %cs */
-  idle_stack[-5] = (uint64_t) idle;         /* %rip */
-  /* Stack frame two: schedule */
-  idle_stack[-6] = (uint64_t) thread_start; /* %rip */
-  /* 6 callee-save registers */
-  idle_tcb->rsp = &idle_stack[-12];
+
   idle_tcb->fpu_state = THREAD_FPU_STATE_FORBIDDEN;
   return 0;
 }
