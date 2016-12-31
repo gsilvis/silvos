@@ -47,7 +47,9 @@ static tcb *create_thread (void* text, size_t length) {
   return 0;
 }
 
-static tcb* create_thread_internal (int kernel, void *text, size_t length, uint64_t entry) {
+static tcb* create_thread_internal (void *text, size_t length, uint64_t entry) {
+  int kernel = !text;
+
   tcb *new_tcb = create_thread(text, length);
   if (!new_tcb) {
     return 0;
@@ -62,7 +64,7 @@ static tcb* create_thread_internal (int kernel, void *text, size_t length, uint6
   kernel_stack[-4] = kernel ? 0x40 : 0x4B;                         /* %cs */
   kernel_stack[-5] = entry;        /* %rip */
   /* Stack frame two:  schedule */
-  kernel_stack[-6] = kernel ? (uint64_t) thread_start : (uint64_t)user_thread_start;  /* %rip */
+  kernel_stack[-6] = (uint64_t)thread_start;  /* %rip */
   /* 6 callee-save registers */
   new_tcb->rsp = &kernel_stack[-12];
   return new_tcb;
@@ -73,7 +75,7 @@ int user_thread_create (void *text, size_t length) {
   if (elf64_check(text, length)) {
     return -2; /* Bad elf! */
   }
-  tcb *new_tcb = create_thread_internal(0, text, length, elf64_get_entry(text));
+  tcb *new_tcb = create_thread_internal(text, length, elf64_get_entry(text));
   if (!new_tcb) {
     return -1;
   }
@@ -82,9 +84,11 @@ int user_thread_create (void *text, size_t length) {
   return 0;
 }
 
-void user_thread_launch () {
-  elf64_load(running_tcb->text);
-  map_new_page(LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
+void thread_launch () {
+  if (running_tcb->text) {
+    elf64_load(running_tcb->text);
+    map_new_page(LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
+  }
 }
 
 static void idle () {
@@ -94,7 +98,7 @@ static void idle () {
 }
 
 int idle_thread_create () {
-  idle_tcb = create_thread_internal(1, NULL, 0, (uint64_t)idle);
+  idle_tcb = create_thread_internal(NULL, 0, (uint64_t)idle);
   if (!idle_tcb) {
     panic("Couldn't create idle thread!");
   }

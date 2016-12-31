@@ -49,8 +49,7 @@ void reschedule_thread (tcb *thread);
 void yield (void);
 
 void thread_start (void);
-void user_thread_start (void);
-void user_thread_launch (void);
+void thread_launch (void);
 void __attribute__((noreturn)) thread_exit (void);
 
 int clone_thread (uint64_t fork_rsp);

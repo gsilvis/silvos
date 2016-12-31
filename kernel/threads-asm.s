@@ -18,11 +18,7 @@
 
 .GLOBAL thread_start
 thread_start:
-        iretq
-
-.GLOBAL user_thread_start
-user_thread_start:
-        call user_thread_launch
+	call thread_launch
         iretq
 
 .GLOBAL schedule
