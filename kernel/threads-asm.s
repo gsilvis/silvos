@@ -36,6 +36,11 @@ schedule:
         pop_callee_save_reg
         ret
 
+.section .bss
+.comm fork_ret,4,4
+
+.text
+
 .GLOBAL fork
 fork:
 	call fork_entry_point
@@ -56,4 +61,16 @@ fork_entry_point:
 	call clone_thread
 	mov %eax,(fork_ret)
 	pop_callee_save_reg
+	ret
+
+finish_fork:
+	testl	%edi, %edi
+	pushq	%rbx
+	movl	%edi, %ebx
+	/* if the fork_ret was not zero, we are in the parent and can just return */
+	jne     finish_fork_child
+	call	apply_pagemap
+finish_fork_child:
+	movl	%ebx, %eax
+	popq	%rbx
 	ret

@@ -37,20 +37,23 @@ typedef struct {
 } tcb;
 
 extern tcb *running_tcb;
+extern void *schedule_rsp;
+extern pagetable schedule_pt;
 
 int user_thread_create (void *text, size_t length);
-void schedule_helper (void);
-void __attribute__((noreturn)) thread_exit (void);
-void thread_start (void);
-void user_thread_start (void);
-void user_thread_launch (void);
-void schedule (void);
 int idle_thread_create (void);
-int clone_thread (uint64_t fork_rsp);
-int finish_fork (int thread_id);
+
+void schedule (void);
+void schedule_helper (void);
 void reschedule_thread (tcb *thread);
 void yield (void);
 
+void thread_start (void);
+void user_thread_start (void);
+void user_thread_launch (void);
+void __attribute__((noreturn)) thread_exit (void);
+
+int clone_thread (uint64_t fork_rsp);
 
 #define wait_event(wq, cond)                       \
 do {                                               \
