@@ -1,0 +1,9 @@
+THREAD 0x01: Parent, depth 0
+THREAD 0x02: Child, depth 1
+THREAD 0x01: Parent, depth 0
+THREAD 0x01: Parent, depth 0
+THREAD 0x03: Child, depth 1
+THREAD 0x03: Parent, depth 1
+THREAD 0x04: Child, depth 1
+THREAD 0x05: Child, depth 2
+THREAD 0x01: I'm the original
