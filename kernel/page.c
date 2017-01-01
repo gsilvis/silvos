@@ -40,6 +40,21 @@ pagetable new_pt (void) {
   return pml4;
 }
 
+/* Dereference one step of a page table.  If mode contains 'PAGE_MASK_PRESENT',
+ * create that level if it does not exist.  Else, return NULL if it does not exist */
+static pagetable dereference_page_table (pagetable pt, uint64_t index, uint64_t mode) {
+  if (pt[index] & PAGE_MASK_PRESENT) {
+    return (pagetable)phys_to_virt(PAGE_PADDR_FROM_ENTRY(pt[index]));
+  }
+  if (!(mode & PAGE_MASK_PRESENT)) {
+    return NULL;
+  }
+  void *page_phys = allocate_phys_page();
+  memset(page_phys, 0x00, PAGE_4K_SIZE);
+  pt[index] = virt_to_phys((uint64_t)page_phys) | mode;
+  return (pagetable)page_phys;
+}
+
 /* Get a pointer to the pt entry for a specified virtual address.
  *
  * If mode contains 'PAGE_MASK_PRESENT', create intermediate page table entries
@@ -47,37 +62,19 @@ pagetable new_pt (void) {
  *
  * Otherwise, if an intermediate page table entry is missing, return NULL
  */
-static uint64_t *get_page_entry (uint64_t virt, uint64_t mode) {
-  pagetable pml4 = (pagetable) PAGE_VIRT_PML4_OF(virt);
-  pagetable pdpt = (pagetable) PAGE_VIRT_PDPT_OF(virt);
-  pagetable pd = (pagetable) PAGE_VIRT_PD_OF(virt);
-  pagetable pt = (pagetable) PAGE_VIRT_PT_OF(virt);
-
-  if (mode & PAGE_MASK_PRESENT) {
-    if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-      pml4[PAGE_HT_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
-      memset(pdpt, 0x00, PAGE_4K_SIZE);
-    }
-    if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-      pdpt[PAGE_1G_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
-      memset(pd, 0x00, PAGE_4K_SIZE);
-    }
-    if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-      pd[PAGE_2M_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
-      memset(pt, 0x00, PAGE_4K_SIZE);
-    }
-  } else {
-    if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-      return NULL;
-    }
-    if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-      return NULL;
-    }
-    if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-      return NULL;
-    }
+static uint64_t *get_page_entry (pagetable pml4, uint64_t virt, uint64_t mode) {
+  pagetable pdpt = dereference_page_table(pml4, PAGE_HT_OF(virt), mode);
+  if (!pdpt) {
+    return NULL;
   }
-
+  pagetable pd = dereference_page_table(pdpt, PAGE_1G_OF(virt), mode);
+  if (!pd) {
+    return NULL;
+  }
+  pagetable pt = dereference_page_table(pd, PAGE_2M_OF(virt), mode);
+  if (!pt) {
+    return NULL;
+  }
   return &pt[PAGE_4K_OF(virt)];
 }
 
@@ -91,7 +88,7 @@ int unmap_page (uint64_t virt) {
     return ret;
   }
 
-  uint64_t *pt_entry = get_page_entry(virt, PAGE_MASK__FAKE);
+  uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__FAKE);
   if (!pt_entry) {
     /* TODO: Bug-logging if we remove a page that's not mapped. */
     return -1;
@@ -112,7 +109,7 @@ int map_new_page (uint64_t virt, uint64_t mode) {
   if (pm->num_entries == NUMMAPS) {
     return -3;
   }
-  uint64_t *pt_entry = get_page_entry(virt, PAGE_MASK__USER);
+  uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__USER);
   *pt_entry = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
   /* We checked that the pagemap wasn't full before, so this can't fail. */
   pm_add_ent(pm, virt, *pt_entry);
@@ -135,7 +132,7 @@ void apply_pagemap (void) {
   pagemap *pm = &running_tcb->pm;
   for (uint8_t i = 0; i < pm->num_entries; ++i) {
     pagemap_ent ent = pm->entries[i];
-    uint64_t *pt_entry = get_page_entry(ent.virt, PAGE_MASK__USER);
+    uint64_t *pt_entry = get_page_entry(running_tcb->pt, ent.virt, PAGE_MASK__USER);
     *pt_entry = ent.phys;
   }
 }
