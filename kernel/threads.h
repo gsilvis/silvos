@@ -21,15 +21,10 @@ enum fpu_state {
   THREAD_FPU_STATE_ACTIVE,    /* there's an FPU buf allocated */
 };
 
-
 typedef struct {
   struct list_head wait_queue;
-
-  /* These are referenced in ASM in threads-asm.s, so their offsets
-     must be well-known */
   void *rsp;        /* Kernel stack pointer, when yielded */
   pagetable pt;
-
   uint8_t thread_id;
   enum thread_state state;
   void *stack_top;  /* For TSS usage */
@@ -46,12 +41,10 @@ int user_thread_create (void *text, size_t length);
 int idle_thread_create (void);
 
 void schedule (void);
-void schedule_helper (void);
 void reschedule_thread (tcb *thread);
 void yield (void);
 
 void thread_start (void);
-void thread_launch (void);
 void __attribute__((noreturn)) thread_exit (void);
 
 int clone_thread (uint64_t fork_rsp);
