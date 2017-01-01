@@ -42,42 +42,6 @@ static inline uint64_t PAGE_1G_ALIGN(uint64_t mem) { return mem & ~PAGE_1G_MASK;
 static inline uint64_t PAGE_HT_ALIGN(uint64_t mem) { return mem & ~PAGE_HT_MASK; }
 
 static const uint64_t PAGE_PT_NUM_ENTRIES = 512;
-static const uint64_t PAGE_PT_SELF_MAP = 510;
-
-static inline uint64_t PAGE_MAKE_CANONICAL_ADDR(uint64_t mem) {
-  uint64_t lead = ((1L << 47) & mem) ? ~PAGE_VM_MASK : 0;
-  return lead | mem;
-}
-
-static inline uint64_t PAGE_VIRT_PT_OF(uint64_t mem) {
-  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_2M_MASK) >> 9;
-  uint64_t upper = (PAGE_PT_SELF_MAP << 39);
-  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
-}
-
-static inline uint64_t PAGE_VIRT_PD_OF(uint64_t mem) {
-  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_1G_MASK) >> 18;
-  uint64_t upper = (PAGE_PT_SELF_MAP << 39)
-                 | (PAGE_PT_SELF_MAP << 30);
-  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
-}
-
-static inline uint64_t PAGE_VIRT_PDPT_OF(uint64_t mem) {
-  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_HT_MASK) >> 27;
-  uint64_t upper = (PAGE_PT_SELF_MAP << 39)
-                 | (PAGE_PT_SELF_MAP << 30)
-                 | (PAGE_PT_SELF_MAP << 21);
-  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
-}
-
-static inline uint64_t PAGE_VIRT_PML4_OF(uint64_t mem) {
-  uint64_t lower = (mem & PAGE_VM_MASK & ~PAGE_VM_MASK) >> 36;
-  uint64_t upper = (PAGE_PT_SELF_MAP << 39)
-                 | (PAGE_PT_SELF_MAP << 30)
-                 | (PAGE_PT_SELF_MAP << 21)
-                 | (PAGE_PT_SELF_MAP << 12);
-  return PAGE_MAKE_CANONICAL_ADDR(lower | upper);
-}
 
 static inline uint64_t PAGE_PADDR_FROM_ENTRY(uint64_t entry) {
   return PAGE_4K_ALIGN(entry) & ~PAGE_MASK_NX;

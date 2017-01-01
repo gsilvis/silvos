@@ -35,7 +35,6 @@ pagetable initial_pt (void) {
 pagetable new_pt (void) {
   pagetable pml4 = (pagetable)allocate_phys_page();
   memset(pml4, 0x00, PAGE_4K_SIZE);
-  pml4[PAGE_PT_SELF_MAP] = virt_to_phys((uint64_t)pml4) | PAGE_MASK__KERNEL;
   pml4[PAGE_PT_NUM_ENTRIES-1] = virt_to_phys((uint64_t)kernel_pdpt) | PAGE_MASK__KERNEL;
   return pml4;
 }
