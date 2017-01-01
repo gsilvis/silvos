@@ -23,19 +23,13 @@ thread_start:
 
 .GLOBAL schedule
 schedule:
-        push_callee_save_reg
-	mov (running_tcb), %rbx
-	test %rbx, %rbx
-	jz dont_save_rsp
-        mov %rsp,0x10(%rbx) /* saved rsp is first in the tcb after queue */
-dont_save_rsp:
-        call schedule_helper
-	mov (running_tcb), %rbx
-        mov 0x10(%rbx),%rsp
-        mov 0x18(%rbx),%rdi
-        call insert_pt
-        pop_callee_save_reg
-        ret
+	push_callee_save_reg
+	mov %rsp,%rdi
+	call start_context_switch
+	mov %rax,%rsp  /* Switch stacks here! */
+	call finish_context_switch
+	pop_callee_save_reg
+	ret
 
 .section .bss
 .comm fork_ret,4,4

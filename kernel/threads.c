@@ -117,11 +117,24 @@ static tcb *choose_task (void) {
   return result ? result : idle_tcb;
 }
 
-void schedule_helper (void) {
+/* Begin context-switch process.  This takes in the old rsp and returns the new
+ * rsp, so that we can switch stacks in pure assembly.  This function should
+ * only be called in threads-asm.s */
+void *start_context_switch (void *old_rsp) {
+  if (running_tcb) {
+    running_tcb->rsp = old_rsp;
+  }
   running_tcb = choose_task();
-  hpet_reset_timeout(); /* Reset pre-emption timer */
-  set_new_rsp(running_tcb->stack_top);
+  return running_tcb->rsp;
+}
+
+/* Finish context-switch process.  No arguments needed here.  This function
+ * should only be called in threads-asm.s */
+void finish_context_switch (void) {
+  hpet_reset_timeout();
   fpu_switch_thread();
+  set_new_rsp(running_tcb->stack_top);
+  insert_pt(running_tcb->pt);
 }
 
 void thread_exit (void) {
