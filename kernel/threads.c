@@ -162,8 +162,8 @@ int clone_thread (uint64_t fork_rsp) {
   if (!new_tcb) {
     return -1;
   }
-
   clone_pagemap(&new_tcb->pm, &running_tcb->pm);
+  new_tcb->pt = duplicate_pagetable(running_tcb->pt);
   /* Clone kernel stack starting at fork_entry_point. */
   uint64_t stack_depth = (uint64_t) running_tcb->stack_top - fork_rsp;
   memcpy(((char *)new_tcb->stack_top) - stack_depth,

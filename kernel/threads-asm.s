@@ -43,7 +43,6 @@ fork:
 	 * so fork_ret will contain 0 for the child. */
 	mov (fork_ret),%edi
 	movq $0,(fork_ret)
-	call finish_fork
 	ret
 
 fork_entry_point:
@@ -56,16 +55,4 @@ fork_entry_point:
 	call clone_thread
 	mov %eax,(fork_ret)
 	pop_callee_save_reg
-	ret
-
-finish_fork:
-	testl	%edi, %edi
-	pushq	%rbx
-	movl	%edi, %ebx
-	/* if the fork_ret was not zero, we are in the parent and can just return */
-	jne     finish_fork_child
-	call	apply_pagemap
-finish_fork_child:
-	movl	%ebx, %eax
-	popq	%rbx
 	ret

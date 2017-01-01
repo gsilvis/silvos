@@ -115,6 +115,49 @@ int map_new_page (uint64_t virt, uint64_t mode) {
   return 0;
 }
 
+static void copy_page (pagetable dest_pml4, pagetable src_pml4, uint64_t virt) {
+  /* TODO: COW.  Note that COWing a COW'd page is subtle */
+  uint64_t *src_entry = get_page_entry(src_pml4, virt, PAGE_MASK__FAKE);
+  if (!src_entry) {
+    return;
+  }
+  uint64_t entry = *src_entry;
+  if (!(entry & PAGE_MASK_PRESENT)) {
+    return;
+  }
+  void *new_page = allocate_phys_page();
+  memcpy(new_page, (void *)phys_to_virt(PAGE_PADDR_FROM_ENTRY(entry)), PAGE_4K_SIZE);
+  uint64_t *dest_entry = get_page_entry(dest_pml4, virt, PAGE_MASK__USER);
+  *dest_entry = virt_to_phys((uint64_t)new_page) | PAGE_FLAGS_FROM_ENTRY(entry);
+}
+
+pagetable duplicate_pagetable (pagetable src_pml4) {
+  pagetable pml4 = new_pt();
+  for (uint16_t a = 0; a < 511; a++) {
+    pagetable src_pdpt = dereference_page_table(src_pml4, a, 0);
+    if (!src_pdpt) {
+      continue;
+    }
+    for (uint16_t b = 0; b < 512; b++) {
+      pagetable src_pd = dereference_page_table(src_pdpt, b, 0);
+      if (!src_pd) {
+        continue;
+      }
+      for (uint16_t c = 0; c < 512; c++) {
+	pagetable src_pt = dereference_page_table(src_pd, c, 0);
+	if (!src_pt) {
+	  continue;
+	}
+        for (uint16_t d = 0; d < 512; d++) {
+          uint64_t addr = a*PAGE_HT_SIZE + b*PAGE_1G_SIZE +
+                          c*PAGE_2M_SIZE + d*PAGE_4K_SIZE;
+          copy_page(pml4, src_pml4, addr);
+        }
+      }
+    }
+  }
+  return pml4;
+}
 
 void clone_pagemap (pagemap *dst, pagemap *src) {
   /* TODO: Copy-on-write. */
