@@ -55,8 +55,7 @@ void *alloc_block (int bsize) {
     }
   }
   if (b == -1) {
-    /* Didn't find any free memory */
-    return NULL;
+    panic("Out of memory.");
   }
   struct list_head *to_return = list_pop_front(&free_blocks[b]);
   uint64_t index = get_index(b, to_return);

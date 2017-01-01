@@ -17,6 +17,7 @@ uint64_t memtop;
 
 void free_block (int bsize, uint64_t index);
 void *alloc_block (int bsize);
+uint64_t get_index (int bsize, void *ptr);
 void initialize_allocator (void);
 void *allocate_phys_page (void);
 void free_phys_page (void *page);
