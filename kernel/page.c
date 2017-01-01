@@ -40,49 +40,45 @@ pagetable new_pt (void) {
   return pml4;
 }
 
-void insert_page (uint64_t phys, uint64_t virt, uint64_t mode) {
+/* Get a pointer to the pt entry for a specified virtual address.
+ *
+ * If mode contains 'PAGE_MASK_PRESENT', create intermediate page table entries
+ * along the way, with that mode.
+ *
+ * Otherwise, if an intermediate page table entry is missing, return NULL
+ */
+static uint64_t *get_page_entry (uint64_t virt, uint64_t mode) {
   pagetable pml4 = (pagetable) PAGE_VIRT_PML4_OF(virt);
   pagetable pdpt = (pagetable) PAGE_VIRT_PDPT_OF(virt);
   pagetable pd = (pagetable) PAGE_VIRT_PD_OF(virt);
   pagetable pt = (pagetable) PAGE_VIRT_PT_OF(virt);
 
-  if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pml4[PAGE_HT_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | PAGE_MASK__USER;
-    memset(pdpt, 0x00, PAGE_4K_SIZE);
-  }
-  if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pdpt[PAGE_1G_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | PAGE_MASK__USER;
-    memset(pd, 0x00, PAGE_4K_SIZE);
-  }
-  if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-    pd[PAGE_2M_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | PAGE_MASK__USER;
-    memset(pt, 0x00, PAGE_4K_SIZE);
-  }
-
-  pt[PAGE_4K_OF(virt)] = phys | mode;
-}
-
-void remove_page (uint64_t virt) {
-  /* TODO: Bug-logging if we remove a page that's not mapped. */
-  pagetable pml4 = (pagetable) PAGE_VIRT_PML4_OF(virt);
-  pagetable pdpt = (pagetable) PAGE_VIRT_PDPT_OF(virt);
-  pagetable pd = (pagetable) PAGE_VIRT_PD_OF(virt);
-  pagetable pt = (pagetable) PAGE_VIRT_PT_OF(virt);
-
-  if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return;
-  }
-  if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return;
-  }
-  if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return;
-  }
-  if (!(pt[PAGE_4K_OF(virt)] & PAGE_MASK_PRESENT)) {
-    return;
+  if (mode & PAGE_MASK_PRESENT) {
+    if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
+      pml4[PAGE_HT_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
+      memset(pdpt, 0x00, PAGE_4K_SIZE);
+    }
+    if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
+      pdpt[PAGE_1G_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
+      memset(pd, 0x00, PAGE_4K_SIZE);
+    }
+    if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
+      pd[PAGE_2M_OF(virt)] = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
+      memset(pt, 0x00, PAGE_4K_SIZE);
+    }
+  } else {
+    if (!(pml4[PAGE_HT_OF(virt)] & PAGE_MASK_PRESENT)) {
+      return NULL;
+    }
+    if (!(pdpt[PAGE_1G_OF(virt)] & PAGE_MASK_PRESENT)) {
+      return NULL;
+    }
+    if (!(pd[PAGE_2M_OF(virt)] & PAGE_MASK_PRESENT)) {
+      return NULL;
+    }
   }
 
-  pt[PAGE_4K_OF(virt)] = PAGE_MASK__FAKE;
+  return &pt[PAGE_4K_OF(virt)];
 }
 
 int unmap_page (uint64_t virt) {
@@ -95,7 +91,12 @@ int unmap_page (uint64_t virt) {
     return ret;
   }
 
-  remove_page(virt);
+  uint64_t *pt_entry = get_page_entry(virt, PAGE_MASK__FAKE);
+  if (!pt_entry) {
+    /* TODO: Bug-logging if we remove a page that's not mapped. */
+    return -1;
+  }
+  *pt_entry = PAGE_MASK__FAKE;
   return 0;
 }
 
@@ -111,12 +112,13 @@ int map_new_page (uint64_t virt, uint64_t mode) {
   if (pm->num_entries == NUMMAPS) {
     return -3;
   }
-  uint64_t phys = virt_to_phys((uint64_t)allocate_phys_page());
+  uint64_t *pt_entry = get_page_entry(virt, PAGE_MASK__USER);
+  *pt_entry = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
   /* We checked that the pagemap wasn't full before, so this can't fail. */
-  pm_add_ent(pm, virt, phys | mode);
-  insert_page(phys, virt, mode);
+  pm_add_ent(pm, virt, *pt_entry);
   return 0;
 }
+
 
 void clone_pagemap (pagemap *dst, pagemap *src) {
   /* TODO: Copy-on-write. */
@@ -133,7 +135,7 @@ void apply_pagemap (void) {
   pagemap *pm = &running_tcb->pm;
   for (uint8_t i = 0; i < pm->num_entries; ++i) {
     pagemap_ent ent = pm->entries[i];
-    insert_page(PAGE_PADDR_FROM_ENTRY(ent.phys), ent.virt,
-        PAGE_FLAGS_FROM_ENTRY(ent.phys));
+    uint64_t *pt_entry = get_page_entry(ent.virt, PAGE_MASK__USER);
+    *pt_entry = ent.phys;
   }
 }
