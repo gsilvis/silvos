@@ -14,14 +14,16 @@
 #include <stdint.h>
 #include <stddef.h>
 
-tcb tcbs[NUMTHREADS];
+tcb *running_tcb = 0;
 
-int32_t total_threads = -1;  /* The idle thread doesn't count. */
+static tcb tcbs[NUMTHREADS];
+static int32_t total_threads = -1;  /* The idle thread doesn't count. */
+static tcb *idle_tcb = 0;
 
 /* After calling this, you must set up the kernel stack contents, rsp, and fpu
  * state if not INACTIVE. Returns null on failure.  If you want the thread to
  * ever be scheduled, you must call 'reschedule_thread' on it. */
-tcb *create_thread (void* text, size_t length) {
+static tcb *create_thread (void* text, size_t length) {
   static uint8_t thread_id = 0;
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
@@ -43,62 +45,62 @@ tcb *create_thread (void* text, size_t length) {
   return 0;
 }
 
-/* Returns 0 on success, negative on failure */
-int user_thread_create (void *text, size_t length) {
-  if (elf64_check(text, length)) {
-    return -2; /* Bad elf! */
-  }
+static tcb* create_thread_internal (void *text, size_t length, uint64_t entry) {
+  int kernel = !text;
+
   tcb *new_tcb = create_thread(text, length);
   if (!new_tcb) {
-    return -1;
+    return 0;
   }
 
   uint64_t *kernel_stack = (uint64_t *)new_tcb->stack_top;
   /* Initialize stack */
   /* Stack frame one:  user_thread_start */
-  kernel_stack[-1] = 0x1B;                         /* %ss */
-  kernel_stack[-2] = (uint64_t)LOC_USER_STACKTOP;  /* %rsp */
+  kernel_stack[-1] = kernel ? 0x10 : 0x1B;                         /* %ss */
+  kernel_stack[-2] = kernel ? (uint64_t)kernel_stack : (uint64_t)LOC_USER_STACKTOP;  /* %rsp */
   kernel_stack[-3] = 0x200;                        /* EFLAGS */
-  kernel_stack[-4] = 0x4B;                         /* %cs */
-  kernel_stack[-5] = elf64_get_entry(text);        /* %rip */
+  kernel_stack[-4] = kernel ? 0x40 : 0x4B;                         /* %cs */
+  kernel_stack[-5] = entry;        /* %rip */
   /* Stack frame two:  schedule */
-  kernel_stack[-6] = (uint64_t)user_thread_start;  /* %rip */
+  kernel_stack[-6] = (uint64_t)thread_start;  /* %rip */
   /* 6 callee-save registers */
   new_tcb->rsp = &kernel_stack[-12];
+  return new_tcb;
+}
+
+/* Returns 0 on success, negative on failure */
+int user_thread_create (void *text, size_t length) {
+  if (elf64_check(text, length)) {
+    return -2; /* Bad elf! */
+  }
+  tcb *new_tcb = create_thread_internal(text, length, elf64_get_entry(text));
+  if (!new_tcb) {
+    return -1;
+  }
+
   reschedule_thread(new_tcb);
-  return -1; /* No thread available! */
+  return 0;
 }
 
-void user_thread_launch () {
-  elf64_load(running_tcb->text);
-  map_new_page(LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
+void thread_launch () {
+  if (running_tcb->text) {
+    elf64_load(running_tcb->text);
+    map_new_page(LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
+  }
 }
 
-void idle () {
+static void idle () {
   while (1) {
     hlt();
   }
 }
 
-tcb *idle_tcb = 0;
-
 int idle_thread_create () {
-  idle_tcb = create_thread(NULL, 0);
+  idle_tcb = create_thread_internal(NULL, 0, (uint64_t)idle);
   if (!idle_tcb) {
-    return -1;
+    panic("Couldn't create idle thread!");
   }
-  /* Set up stack */
-  uint64_t *idle_stack = (uint64_t *)idle_tcb->stack_top;
-  /* Stack frame one: thread_start */
-  idle_stack[-1] = 0x10;                    /* %ss */
-  idle_stack[-2] = (uint64_t) idle_stack;   /* %rsp */
-  idle_stack[-3] = 0x200;                   /* EFLAGS */
-  idle_stack[-4] = 0x40;                    /* %cs */
-  idle_stack[-5] = (uint64_t) idle;         /* %rip */
-  /* Stack frame two: schedule */
-  idle_stack[-6] = (uint64_t) thread_start; /* %rip */
-  /* 6 callee-save registers */
-  idle_tcb->rsp = &idle_stack[-12];
+
   idle_tcb->fpu_state = THREAD_FPU_STATE_FORBIDDEN;
   return 0;
 }
@@ -106,7 +108,7 @@ int idle_thread_create () {
 LIST_HEAD(schedule_queue);
 
 /* Round-robin scheduling. */
-tcb *choose_task (void) {
+static tcb *choose_task (void) {
   if (total_threads == 0) {
     /* All threads have exited.  Power off. */
     qemu_debug_shutdown();
@@ -115,21 +117,11 @@ tcb *choose_task (void) {
   return result ? result : idle_tcb;
 }
 
-tcb *running_tcb = 0;
-
-void *schedule_rsp;
-pagetable schedule_pt;
-
 void schedule_helper (void) {
-  if (running_tcb) {
-    running_tcb->rsp = schedule_rsp;
-  }
   running_tcb = choose_task();
   hpet_reset_timeout(); /* Reset pre-emption timer */
   set_new_rsp(running_tcb->stack_top);
   fpu_switch_thread();
-  schedule_rsp = running_tcb->rsp;
-  schedule_pt = running_tcb->pt;
 }
 
 void thread_exit (void) {
@@ -152,8 +144,6 @@ void yield (void) {
   schedule();
 }
 
-int fork_ret = 0;
-
 int clone_thread (uint64_t fork_rsp) {
   tcb *new_tcb = create_thread(running_tcb->text, running_tcb->text_length);
   if (!new_tcb) {
@@ -173,13 +163,4 @@ int clone_thread (uint64_t fork_rsp) {
   }
   reschedule_thread(new_tcb);
   return new_tcb->thread_id;
-}
-
-int finish_fork (int thread_id) {
-  if (thread_id) {
-    /* Parent case: nothing to do, yet. */
-    return thread_id;
-  }
-  apply_pagemap();
-  return thread_id;
 }

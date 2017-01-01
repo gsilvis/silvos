@@ -24,11 +24,15 @@ enum fpu_state {
 
 typedef struct {
   struct list_head wait_queue;
+
+  /* These are referenced in ASM in threads-asm.s, so their offsets
+     must be well-known */
+  void *rsp;        /* Kernel stack pointer, when yielded */
+  pagetable pt;
+
   uint8_t thread_id;
   enum thread_state state;
-  void *rsp;        /* Kernel stack pointer, when yielded */
   void *stack_top;  /* For TSS usage */
-  pagetable pt;
   void *text;
   size_t text_length;
   enum fpu_state fpu_state;
@@ -39,18 +43,18 @@ typedef struct {
 extern tcb *running_tcb;
 
 int user_thread_create (void *text, size_t length);
-void schedule_helper (void);
-void __attribute__((noreturn)) thread_exit (void);
-void thread_start (void);
-void user_thread_start (void);
-void user_thread_launch (void);
-void schedule (void);
 int idle_thread_create (void);
-int clone_thread (uint64_t fork_rsp);
-int finish_fork (int thread_id);
+
+void schedule (void);
+void schedule_helper (void);
 void reschedule_thread (tcb *thread);
 void yield (void);
 
+void thread_start (void);
+void thread_launch (void);
+void __attribute__((noreturn)) thread_exit (void);
+
+int clone_thread (uint64_t fork_rsp);
 
 #define wait_event(wq, cond)                       \
 do {                                               \

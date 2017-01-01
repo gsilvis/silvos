@@ -18,23 +18,29 @@
 
 .GLOBAL thread_start
 thread_start:
-        iretq
-
-.GLOBAL user_thread_start
-user_thread_start:
-        call user_thread_launch
+	call thread_launch
         iretq
 
 .GLOBAL schedule
 schedule:
         push_callee_save_reg
-        mov %rsp,(schedule_rsp)
+	mov (running_tcb), %rbx
+	test %rbx, %rbx
+	jz dont_save_rsp
+        mov %rsp,0x10(%rbx) /* saved rsp is first in the tcb after queue */
+dont_save_rsp:
         call schedule_helper
-        mov (schedule_rsp),%rsp
-        mov (schedule_pt),%rdi
+	mov (running_tcb), %rbx
+        mov 0x10(%rbx),%rsp
+        mov 0x18(%rbx),%rdi
         call insert_pt
         pop_callee_save_reg
         ret
+
+.section .bss
+.comm fork_ret,4,4
+
+.text
 
 .GLOBAL fork
 fork:
@@ -56,4 +62,16 @@ fork_entry_point:
 	call clone_thread
 	mov %eax,(fork_ret)
 	pop_callee_save_reg
+	ret
+
+finish_fork:
+	testl	%edi, %edi
+	pushq	%rbx
+	movl	%edi, %ebx
+	/* if the fork_ret was not zero, we are in the parent and can just return */
+	jne     finish_fork_child
+	call	apply_pagemap
+finish_fork_child:
+	movl	%ebx, %eax
+	popq	%rbx
 	ret
