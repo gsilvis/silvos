@@ -30,7 +30,6 @@ static tcb *create_thread (void* text, size_t length) {
       tcbs[i].wait_queue.next = &tcbs[i].wait_queue;
       tcbs[i].wait_queue.prev = &tcbs[i].wait_queue;
       tcbs[i].thread_id = thread_id++;
-      tcbs[i].pm.num_entries = 0;
       tcbs[i].pt = new_pt();
       tcbs[i].text = text;
       tcbs[i].text_length = length;
@@ -162,7 +161,6 @@ int clone_thread (uint64_t fork_rsp) {
   if (!new_tcb) {
     return -1;
   }
-  clone_pagemap(&new_tcb->pm, &running_tcb->pm);
   new_tcb->pt = duplicate_pagetable(running_tcb->pt);
   /* Clone kernel stack starting at fork_entry_point. */
   uint64_t stack_depth = (uint64_t) running_tcb->stack_top - fork_rsp;

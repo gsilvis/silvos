@@ -4,7 +4,6 @@
 #include "page-constants.h"
 
 #include "alloc.h"
-#include "pagemap.h"
 #include "threads.h"
 #include "util.h"
 
@@ -81,12 +80,6 @@ int unmap_page (uint64_t virt) {
   if (virt & PAGE_4K_MASK) {
     return -1;
   }
-  pagemap *pm = &running_tcb->pm;
-  int ret;
-  if ((ret = pm_remove_ent(pm, virt))) {
-    return ret;
-  }
-
   uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__FAKE);
   if (!pt_entry) {
     /* TODO: Bug-logging if we remove a page that's not mapped. */
@@ -100,18 +93,11 @@ int map_new_page (uint64_t virt, uint64_t mode) {
   if (virt & PAGE_4K_MASK) {
     return -1;
   }
-  pagemap *pm = &running_tcb->pm;
-  /* Don't map the same page twice */
-  if (pm_is_mapped(pm, virt)) {
+  uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__USER);
+  if ((*pt_entry) & PAGE_MASK_PRESENT) {
     return -2;
   }
-  if (pm->num_entries == NUMMAPS) {
-    return -3;
-  }
-  uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__USER);
   *pt_entry = virt_to_phys((uint64_t)allocate_phys_page()) | mode;
-  /* We checked that the pagemap wasn't full before, so this can't fail. */
-  pm_add_ent(pm, virt, *pt_entry);
   return 0;
 }
 
@@ -157,24 +143,4 @@ pagetable duplicate_pagetable (pagetable src_pml4) {
     }
   }
   return pml4;
-}
-
-void clone_pagemap (pagemap *dst, pagemap *src) {
-  /* TODO: Copy-on-write. */
-  for (uint8_t i = 0; i < src->num_entries; ++i) {
-    void *new_page = allocate_phys_page();
-    memcpy(new_page, (void *)phys_to_virt(PAGE_PADDR_FROM_ENTRY(src->entries[i].phys)), PAGE_4K_SIZE);
-    dst->entries[i].virt = src->entries[i].virt;
-    dst->entries[i].phys = virt_to_phys((uint64_t) new_page) | (src->entries[i].phys & PAGE_4K_MASK);
-  }
-  dst->num_entries = src->num_entries;
-}
-
-void apply_pagemap (void) {
-  pagemap *pm = &running_tcb->pm;
-  for (uint8_t i = 0; i < pm->num_entries; ++i) {
-    pagemap_ent ent = pm->entries[i];
-    uint64_t *pt_entry = get_page_entry(running_tcb->pt, ent.virt, PAGE_MASK__USER);
-    *pt_entry = ent.phys;
-  }
 }

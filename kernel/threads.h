@@ -3,7 +3,6 @@
 
 #include "list.h"
 #include "page.h"
-#include "pagemap.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -32,7 +31,6 @@ typedef struct {
   size_t text_length;
   enum fpu_state fpu_state;
   char (*fpu_buf)[512];
-  pagemap pm;
 } tcb;
 
 extern tcb *running_tcb;
