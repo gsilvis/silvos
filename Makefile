@@ -77,6 +77,8 @@ temp_drive:
 
 test: $(patsubst %, test/%, $(TEST_PROGS))
 
+.PRECIOUS: $(patsubst %, userland/%/output.txt, $(TEST_PROGS))
+
 ## This rule enforces that coverage.log requires output.txt to be built
 ## But doesn't do anything else
 userland/%/coverage.log: userland/%/output.txt
@@ -89,6 +91,7 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot
 		-device isa-debug-exit,iobase=0xf4,iosize=0x04 \
 		-nographic \
 		-display none \
+		-m 128 \
 		| true
 
 test/%: userland/%/expected.txt userland/%/output.txt
