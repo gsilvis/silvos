@@ -84,7 +84,7 @@ int user_thread_create (void *text, size_t length) {
 void thread_launch () {
   if (running_tcb->text) {
     elf64_load(running_tcb->text);
-    map_new_page(LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
+    map_new_page(running_tcb->pt, LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
   }
 }
 
@@ -138,6 +138,7 @@ void finish_context_switch (void) {
 
 void thread_exit (void) {
   fpu_exit_thread();
+  free_pagetable(running_tcb->pt);
   running_tcb->state = TS_NONEXIST;
   total_threads--;
   schedule();

@@ -3,6 +3,7 @@
 #include "elf.h"
 #include "memory-map.h"
 #include "page.h"
+#include "threads.h"
 #include "util.h"
 
 #include <stdint.h>
@@ -73,7 +74,7 @@ void elf64_load (uint8_t *elf) {
         flags |= PAGE_MASK_WRITE;
       }
       /* I don't believe there's anything useful to do with the PF_R flag */
-      map_new_page(page, PAGE_MASK__USER);
+      map_new_page(running_tcb->pt, page, PAGE_MASK__USER);
     }
     memcpy((void *)seg->p_vaddr, (void *)&elf[seg->p_offset], seg->p_filesz);
     memset((void *)seg->p_vaddr + seg->p_filesz, 0, seg->p_memsz - seg->p_filesz);

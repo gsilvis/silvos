@@ -76,11 +76,11 @@ static uint64_t *get_page_entry (pagetable pml4, uint64_t virt, uint64_t mode) {
   return &pt[PAGE_4K_OF(virt)];
 }
 
-int unmap_page (uint64_t virt) {
+int unmap_page (pagetable pml4, uint64_t virt) {
   if (virt & PAGE_4K_MASK) {
     return -1;
   }
-  uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__FAKE);
+  uint64_t *pt_entry = get_page_entry(pml4, virt, PAGE_MASK__FAKE);
   if (!pt_entry) {
     /* TODO: Bug-logging if we remove a page that's not mapped. */
     return -1;
@@ -92,11 +92,11 @@ int unmap_page (uint64_t virt) {
   return 0;
 }
 
-int map_new_page (uint64_t virt, uint64_t mode) {
+int map_new_page (pagetable pml4, uint64_t virt, uint64_t mode) {
   if (virt & PAGE_4K_MASK) {
     return -1;
   }
-  uint64_t *pt_entry = get_page_entry(running_tcb->pt, virt, PAGE_MASK__USER);
+  uint64_t *pt_entry = get_page_entry(pml4, virt, PAGE_MASK__USER);
   if ((*pt_entry) & PAGE_MASK_PRESENT) {
     return -2;
   }
@@ -146,4 +146,30 @@ pagetable duplicate_pagetable (pagetable src_pml4) {
     }
   }
   return pml4;
+}
+
+void free_pagetable (pagetable pml4) {
+  for (uint16_t a = 0; a < 511; a++) {
+    pagetable pdpt = dereference_page_table(pml4, a, 0);
+    if (!pdpt) {
+      continue;
+    }
+    for (uint16_t b = 0; b < 512; b++) {
+      pagetable pd = dereference_page_table(pdpt, b, 0);
+      if (!pd) {
+        continue;
+      }
+      for (uint16_t c = 0; c < 512; c++) {
+        pagetable pt = dereference_page_table(pd, c, 0);
+        if (!pt) {
+          continue;
+        }
+        for (uint16_t d = 0; d < 512; d++) {
+          uint64_t addr = a*PAGE_HT_SIZE + b*PAGE_1G_SIZE +
+                          c*PAGE_2M_SIZE + d*PAGE_4K_SIZE;
+          unmap_page(pml4, addr);
+        }
+      }
+    }
+  }
 }
