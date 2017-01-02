@@ -156,10 +156,13 @@ void yield (void) {
   schedule();
 }
 
-int clone_thread (uint64_t fork_rsp) {
+int fork_pid = 0;
+
+void clone_thread (uint64_t fork_rsp) {
   tcb *new_tcb = create_thread(running_tcb->text, running_tcb->text_length);
   if (!new_tcb) {
-    return -1;
+    fork_pid = -1;
+    return;
   }
   new_tcb->pt = duplicate_pagetable(running_tcb->pt);
   /* Clone kernel stack starting at fork_entry_point. */
@@ -173,5 +176,12 @@ int clone_thread (uint64_t fork_rsp) {
     memcpy(&new_tcb->fpu_buf, &running_tcb->fpu_buf, sizeof(running_tcb->fpu_buf));
   }
   reschedule_thread(new_tcb);
-  return new_tcb->thread_id;
+  fork_pid = new_tcb->thread_id;
+}
+
+int fork (void) {
+  fork_entry_point();
+  int res = fork_pid;
+  fork_pid = 0;
+  return res;
 }

@@ -31,20 +31,7 @@ schedule:
 	pop_callee_save_reg
 	ret
 
-.section .bss
-.comm fork_ret,4,4
-
-.text
-
-.GLOBAL fork
-fork:
-	call fork_entry_point
-	/* Both parent and child return here. The parent returns immediately,
-	 * so fork_ret will contain 0 for the child. */
-	mov (fork_ret),%edi
-	movq $0,(fork_ret)
-	ret
-
+.GLOBAL fork_entry_point
 fork_entry_point:
 	push_callee_save_reg
 	/* We will copy everything above us to the child's new kernel stack.
@@ -53,6 +40,5 @@ fork_entry_point:
 	 * followed by the return address into fork, then the syscall stack. */
 	mov %rsp,%rdi
 	call clone_thread
-	mov %eax,(fork_ret)
 	pop_callee_save_reg
 	ret
