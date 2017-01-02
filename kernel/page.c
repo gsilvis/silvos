@@ -85,6 +85,9 @@ int unmap_page (uint64_t virt) {
     /* TODO: Bug-logging if we remove a page that's not mapped. */
     return -1;
   }
+  if ((*pt_entry) & PAGE_MASK_PRESENT) {
+    free_phys_page((void *)phys_to_virt(PAGE_PADDR_FROM_ENTRY(*pt_entry)));
+  }
   *pt_entry = PAGE_MASK__FAKE;
   return 0;
 }
@@ -130,10 +133,10 @@ pagetable duplicate_pagetable (pagetable src_pml4) {
         continue;
       }
       for (uint16_t c = 0; c < 512; c++) {
-	pagetable src_pt = dereference_page_table(src_pd, c, 0);
-	if (!src_pt) {
-	  continue;
-	}
+        pagetable src_pt = dereference_page_table(src_pd, c, 0);
+        if (!src_pt) {
+          continue;
+        }
         for (uint16_t d = 0; d < 512; d++) {
           uint64_t addr = a*PAGE_HT_SIZE + b*PAGE_1G_SIZE +
                           c*PAGE_2M_SIZE + d*PAGE_4K_SIZE;

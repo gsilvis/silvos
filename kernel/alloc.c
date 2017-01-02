@@ -33,6 +33,7 @@ void free_block (int bsize, uint64_t index) {
   uint64_t gig_offset = index / per_gig;
   index = index % per_gig;
   for (; bsize > 0; bsize--, index /= 2) {
+    per_gig = 0x1 << bsize;
     if (bit_array_get((uint8_t *)&bit_arrays[gig_offset], per_gig + index/2)) {
       bit_array_set((uint8_t *)&bit_arrays[gig_offset], per_gig + index/2, 0);
       /* insert into free list */
@@ -122,7 +123,5 @@ void *allocate_phys_page (void) {
 }
 
 void free_phys_page (void *page) {
-  uint64_t index = (uint64_t)page;
-  index = index >> 12;
-  free_block(18, index);
+  free_block(18, get_index(18, page));
 }
