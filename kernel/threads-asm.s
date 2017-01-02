@@ -31,13 +31,14 @@ schedule:
 	pop_callee_save_reg
 	ret
 
+/* fork_entry_point and schedule's stack frames must look the same: when
+ * forking, the stack is copied while in fork_entry_point, but the child
+ * resumes into schedule instead.  Both parent and child return into 'fork',
+ * which determines the return value, and returns to userland. */
+
 .GLOBAL fork_entry_point
 fork_entry_point:
 	push_callee_save_reg
-	/* We will copy everything above us to the child's new kernel stack.
-	 * This means the child will exit insert_pt (in schedule) with an exact
-	 * copy of the current stack; above us is all callee-save registers
-	 * followed by the return address into fork, then the syscall stack. */
 	mov %rsp,%rdi
 	call clone_thread
 	pop_callee_save_reg

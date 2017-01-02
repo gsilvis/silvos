@@ -156,6 +156,13 @@ void yield (void) {
   schedule();
 }
 
+/* 'fork_pid' holds the return value of 'clone_thread', so that it makes it
+ * back to 'fork' in both the parent and the child.  We can't just return it,
+ * because in the child, we return from 'schedule' instead of
+ * 'fork_entry_point'.  The parent always returns immediately, so it gets the
+ * real return value (the child PID).  The child returns later, and gets the
+ * value that 'fork' puts in fork_pid, which is 0. */
+
 int fork_pid = 0;
 
 void clone_thread (uint64_t fork_rsp) {
@@ -180,7 +187,7 @@ void clone_thread (uint64_t fork_rsp) {
 }
 
 int fork (void) {
-  fork_entry_point();
+  fork_entry_point(); /* This call returns twice */
   int res = fork_pid;
   fork_pid = 0;
   return res;
