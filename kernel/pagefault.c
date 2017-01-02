@@ -25,6 +25,9 @@ void pagefault_handler (uint64_t addr) {
   if (is_copying) {
     longjmp(for_copying, -1);
   }
+  if (!try_remap_cow(running_tcb->pt, PAGE_4K_ALIGN(addr))) {
+    return;
+  }
   com_puts("Kernel: ");
   com_put_tid();
   com_puts(" page fault at ");

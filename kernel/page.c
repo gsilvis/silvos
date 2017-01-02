@@ -4,6 +4,7 @@
 #include "page-constants.h"
 
 #include "alloc.h"
+#include "malloc.h"
 #include "threads.h"
 #include "util.h"
 
@@ -61,6 +62,9 @@ static pagetable dereference_page_table (pagetable pt, uint64_t index, uint64_t 
  * Otherwise, if an intermediate page table entry is missing, return NULL
  */
 static uint64_t *get_page_entry (pagetable pml4, uint64_t virt, uint64_t mode) {
+  if (PAGE_HT_OF(virt) == 511) {
+    return NULL;
+  }
   pagetable pdpt = dereference_page_table(pml4, PAGE_HT_OF(virt), mode);
   if (!pdpt) {
     return NULL;
@@ -74,6 +78,48 @@ static uint64_t *get_page_entry (pagetable pml4, uint64_t virt, uint64_t mode) {
     return NULL;
   }
   return &pt[PAGE_4K_OF(virt)];
+}
+
+struct cow {
+  struct list_head list;
+  uint64_t addr;
+  uint64_t count; /* How many extra readers there are */
+};
+
+LIST_HEAD(cows);
+
+/* Returns the new number of extra readers */
+uint64_t cow_up (uint64_t addr) {
+  for (struct list_head *i = cows.next; i != &cows; i = i->next) {
+    struct cow *c = (struct cow *)i;
+    if (c->addr == addr) {
+      c->count++;
+      return c->count;
+    }
+  }
+  struct cow *c = (struct cow *)malloc(sizeof(struct cow));
+  if (!c)  panic("AHH!");
+  c->addr = addr;
+  c->count = 1;
+  list_push_back(&c->list, &cows);
+  return c->count;
+}
+
+/* Returns the old number of extra readers */
+uint64_t cow_down (uint64_t addr) {
+  for (struct list_head *i = cows.next; i != &cows; i = i->next) {
+    struct cow *c = (struct cow *)i;
+    if (c->addr == addr) {
+      c->count--;
+      if (c->count > 0) {
+        return c->count + 1;
+      }
+      list_remove(&c->list);
+      free(c);
+      return 1;
+    }
+  }
+  return 0;
 }
 
 int unmap_page (uint64_t virt) {
@@ -102,7 +148,6 @@ int map_new_page (uint64_t virt, uint64_t mode) {
 }
 
 static void copy_page (pagetable dest_pml4, pagetable src_pml4, uint64_t virt) {
-  /* TODO: COW.  Note that COWing a COW'd page is subtle */
   uint64_t *src_entry = get_page_entry(src_pml4, virt, PAGE_MASK__FAKE);
   if (!src_entry) {
     return;
@@ -111,12 +156,17 @@ static void copy_page (pagetable dest_pml4, pagetable src_pml4, uint64_t virt) {
   if (!(entry & PAGE_MASK_PRESENT)) {
     return;
   }
-  void *new_page = allocate_phys_page();
-  memcpy(new_page, (void *)phys_to_virt(PAGE_PADDR_FROM_ENTRY(entry)), PAGE_4K_SIZE);
-  uint64_t *dest_entry = get_page_entry(dest_pml4, virt, PAGE_MASK__USER);
-  *dest_entry = virt_to_phys((uint64_t)new_page) | PAGE_FLAGS_FROM_ENTRY(entry);
+  if (entry & PAGE_MASK_WRITE || entry & PAGE_MASK_COW) {
+    entry &= ~PAGE_MASK_WRITE;
+    entry |= PAGE_MASK_COW;
+    *get_page_entry(src_pml4, virt, PAGE_MASK__USER) = entry;
+    cow_up(PAGE_PADDR_FROM_ENTRY(entry));
+  }
+  *get_page_entry(dest_pml4, virt, PAGE_MASK__USER) = entry;
 }
 
+/* Make a new pagetable that references the same memory as the old pagetable,
+ * copy-on-write-ing pages as necessary */
 pagetable duplicate_pagetable (pagetable src_pml4) {
   pagetable pml4 = new_pt();
   for (uint16_t a = 0; a < 511; a++) {
@@ -143,4 +193,27 @@ pagetable duplicate_pagetable (pagetable src_pml4) {
     }
   }
   return pml4;
+}
+
+int try_remap_cow (pagetable pt, uint64_t addr) {
+  uint64_t *pt_entry = get_page_entry(pt, addr, PAGE_MASK__FAKE);
+  if (!pt_entry) {
+    return -1;
+  }
+  if (!(*pt_entry & PAGE_MASK_COW)) {
+    return -2;
+  }
+  uint64_t phys_addr = PAGE_PADDR_FROM_ENTRY(*pt_entry);
+  uint64_t flags = PAGE_PADDR_FROM_ENTRY(*pt_entry);
+  flags &= ~PAGE_MASK_COW;
+  flags |= PAGE_MASK_WRITE;
+  int res = cow_down(phys_addr);
+  if (res == 0) {
+    *pt_entry = phys_addr | flags;
+  } else {
+    void *new_phys_page = allocate_phys_page();
+    memcpy(new_phys_page, (void *)phys_to_virt(phys_addr), PAGE_4K_SIZE);
+    *pt_entry = virt_to_phys((uint64_t)new_phys_page) | flags;
+  }
+  return 0;
 }

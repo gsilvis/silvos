@@ -12,6 +12,7 @@ static const uint64_t PAGE_MASK_ACCESS  = 0x0000000000000020; /* set by hardware
 static const uint64_t PAGE_MASK_DIRTY   = 0x0000000000000040; /* set by hardware */
 static const uint64_t PAGE_MASK_SIZE    = 0x0000000000000080;
 static const uint64_t PAGE_MASK_GLOBAL  = 0x0000000000000100;
+static const uint64_t PAGE_MASK_COW     = 0x0000000000000200; /* Copy on write; ignored by cpu */
 static const uint64_t PAGE_MASK_PAT     = 0x0000000000001000; /* For 2M+ pages only */
 static const uint64_t PAGE_MASK_NX      = 0x8000000000000000;
 
