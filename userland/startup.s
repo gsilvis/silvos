@@ -1,4 +1,4 @@
 .GLOBAL _start
 _start:
-        call main
-        int $0x38
+	call main
+	int $0x38

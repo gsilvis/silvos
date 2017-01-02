@@ -36,7 +36,7 @@ _start:
 	call init_page_table
 
 	/* Enable PAE */
-        /* Also enable SMEP */
+	/* Also enable SMEP */
 	movl %cr4,%edi
 	orl $0x00100020,%edi
 	movl %edi,%cr4

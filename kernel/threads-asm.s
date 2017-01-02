@@ -1,25 +1,25 @@
 .macro push_callee_save_reg
-        push %rbx
-        push %rbp
-        push %r12
-        push %r13
-        push %r14
-        push %r15
+	push %rbx
+	push %rbp
+	push %r12
+	push %r13
+	push %r14
+	push %r15
 .endm
 
 .macro pop_callee_save_reg
-        pop %r15
-        pop %r14
-        pop %r13
-        pop %r12
-        pop %rbp
-        pop %rbx
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %rbp
+	pop %rbx
 .endm
 
 .GLOBAL thread_start
 thread_start:
 	call thread_launch
-        iretq
+	iretq
 
 .GLOBAL schedule
 schedule:

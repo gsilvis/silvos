@@ -6,27 +6,27 @@
  * registers in these routines. */
 
 .macro push_caller_save_reg
-        push %rax
-        push %rcx
-        push %rdx
-        push %rsi
-        push %rdi
-        push %r8
-        push %r9
-        push %r10
-        push %r11
+	push %rax
+	push %rcx
+	push %rdx
+	push %rsi
+	push %rdi
+	push %r8
+	push %r9
+	push %r10
+	push %r11
 .endm
 
 .macro pop_caller_save_reg
-        pop %r11
-        pop %r10
-        pop %r9
-        pop %r8
-        pop %rdi
-        pop %rsi
-        pop %rdx
-        pop %rcx
-        pop %rax
+	pop %r11
+	pop %r10
+	pop %r9
+	pop %r8
+	pop %rdi
+	pop %rsi
+	pop %rdx
+	pop %rcx
+	pop %rax
 .endm
 
 /* Syscalls */
@@ -44,27 +44,27 @@ syscall_isr:
 
 .GLOBAL kbd_isr
 kbd_isr:
-        push_caller_save_reg
-        call master_eoi
-        call read_key
-        pop_caller_save_reg
-        iretq
+	push_caller_save_reg
+	call master_eoi
+	call read_key
+	pop_caller_save_reg
+	iretq
 
 .GLOBAL timer_isr
 timer_isr:
-        push_caller_save_reg
-        call master_eoi
-        call yield
-        pop_caller_save_reg
-        iretq
+	push_caller_save_reg
+	call master_eoi
+	call yield
+	pop_caller_save_reg
+	iretq
 
 .GLOBAL rtc_isr
 rtc_isr:
-        push_caller_save_reg
-        call slave_eoi
-        call hpet_sleepers_awake
-        pop_caller_save_reg
-        iretq
+	push_caller_save_reg
+	call slave_eoi
+	call hpet_sleepers_awake
+	pop_caller_save_reg
+	iretq
 
 /* Faults */
 
@@ -78,12 +78,12 @@ nm_isr:
 .GLOBAL fault_isr
 fault_isr:
 	push_caller_save_reg
-        call thread_exit
+	call thread_exit
 
 .GLOBAL df_isr
 df_isr:
-        hlt
-        jmp df_isr
+	hlt
+	jmp df_isr
 
 .GLOBAL pf_isr
 pf_isr:
