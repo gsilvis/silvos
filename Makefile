@@ -7,6 +7,7 @@ TEST_PROGS := $(patsubst userland/%/expected.txt, %, $(wildcard userland/*/expec
 USERLAND_PROGS := $(patsubst userland/%/main.c, %, $(wildcard userland/*/main.c))
 
 # Ideally, the kernel should compile and pass all tests with all of these
+ifeq ($(origin KERNEL_OPT), undefined)
 #KERNEL_OPT := -O0
 #KERNEL_OPT := -O1
 KERNEL_OPT := -O2
@@ -14,6 +15,7 @@ KERNEL_OPT := -O2
 #KERNEL_OPT := -Os
 KERNEL_OPT += -g
 #KERNEL_OPT += -flto
+endif
 
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel $(KERNEL_OPT)
 KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel -mno-mmx -mno-sse -mno-sse2 $(KERNEL_OPT)
@@ -26,7 +28,6 @@ USER_LDFLAGS := -nostdlib -lgcc
 
 CC := x86_64-elf-gcc
 AS := x86_64-elf-as
-OBJCOPY := x86_64-elf-objcopy
 
 # this instructs GNU make to use bash as our shell
 SHELL = /bin/bash
@@ -108,7 +109,7 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot user
 		| true
 
 test/%: userland/%/expected.txt userland/%/output.txt
-	diff $^
+	diff <(sort $(word 1,$^)) <(sort $(word 2,$^))
 
 
 clean:
