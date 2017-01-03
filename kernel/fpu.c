@@ -32,6 +32,19 @@ void switch_fp_buf (tcb *new_tcb) {
   previous_tcb = new_tcb;
 }
 
+void copy_fp_buf (tcb *target_tcb, tcb *source_tcb) {
+  target_tcb->fpu_state = source_tcb->fpu_state;
+  if (source_tcb->fpu_state != THREAD_FPU_STATE_ACTIVE) {
+    return;
+  }
+  target_tcb->fpu_buf = allocate_phys_page();
+  if (source_tcb == previous_tcb) {
+    __asm__("fxsave64 %0" : : "m"(*target_tcb->fpu_buf));
+  } else {
+    memcpy(target_tcb->fpu_buf, source_tcb->fpu_buf, sizeof(*target_tcb->fpu_buf));
+  }
+}
+
 void disable_fpu (void) {
   uint64_t cr0;
   __asm__("mov %%cr0,%0" : "=r"(cr0) : : );
