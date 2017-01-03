@@ -44,7 +44,6 @@ void yield (void);
 
 void thread_start (void);
 void __attribute__((noreturn)) thread_exit (void);
-void __attribute__((returns_twice)) fork_entry_point (void);
 
 void clone_thread (uint64_t fork_rsp);
 
