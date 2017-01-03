@@ -8,7 +8,7 @@
 static inline syscall_arg __syscall(unsigned long syscallno, syscall_arg arg1, syscall_arg arg2) {
   syscall_arg out;
   __asm__ volatile("int $0x36"
-                   : "=a" (out)
+                   : "=a" (out), "=c" (arg2)
                    : "a" (syscallno), "b" (arg1), "c" (arg2)
                    : "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "memory");
   return out;
@@ -44,11 +44,11 @@ static inline char getch (void) {
   return (char)__syscall0(SYSCALL_GETCH);
 }
 
-static inline int read (long long sector, char dest[512]) {
+static inline int read (long long sector, char *dest) {
   return (int)__syscall2(SYSCALL_READ, sector, (syscall_arg)dest);
 }
 
-static inline int write (long long sector, const void *src) {
+static inline int write (long long sector, const char *src) {
   return (int)__syscall2(SYSCALL_WRITE, sector, (syscall_arg)src);
 }
 

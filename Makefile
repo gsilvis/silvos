@@ -79,11 +79,14 @@ test: $(patsubst %, test/%, $(TEST_PROGS))
 
 .PRECIOUS: $(patsubst %, userland/%/output.txt, $(TEST_PROGS))
 
+userland/%/test_disk:
+	dd if=/dev/zero of=$@ bs=512 count=16
+
 ## This rule enforces that coverage.log requires output.txt to be built
 ## But doesn't do anything else
 userland/%/coverage.log: userland/%/output.txt
 
-userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot
+userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot userland/%/test_disk
 	qemu-system-x86_64 -kernel bootloader.multiboot \
 		-d in_asm -D >( grep -E "^(Trace.*\[ffffffff|IN:|0xffffff)" | uniq > $(subst output.txt,coverage.log,$@)) \
 		-initrd george.multiboot,$< \
@@ -92,6 +95,7 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot
 		-nographic \
 		-display none \
 		-m 128 \
+		-hda $(subst output.txt,test_disk,$@) \
 		| true
 
 test/%: userland/%/expected.txt userland/%/output.txt
@@ -110,4 +114,5 @@ clean:
 		bootloader.multiboot \
 		bootloader/*.o \
 		userland/*/output.txt \
-		userland/*/coverage.log
+		userland/*/coverage.log \
+		userland/*/test_disk
