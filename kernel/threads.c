@@ -178,11 +178,7 @@ void clone_thread (uint64_t fork_rsp) {
   memcpy(((char *)new_tcb->stack_top) - stack_depth,
          ((char *)running_tcb->stack_top) - stack_depth, stack_depth);
   new_tcb->rsp = ((char*)new_tcb->stack_top) - stack_depth;
-  new_tcb->fpu_state = running_tcb->fpu_state;
-  if (new_tcb->fpu_state == THREAD_FPU_STATE_ACTIVE) {
-    new_tcb->fpu_buf = allocate_phys_page();
-    memcpy(&new_tcb->fpu_buf, &running_tcb->fpu_buf, sizeof(running_tcb->fpu_buf));
-  }
+  copy_fp_buf(new_tcb, running_tcb);
   reschedule_thread(new_tcb);
   fork_pid = new_tcb->thread_id;
 }
