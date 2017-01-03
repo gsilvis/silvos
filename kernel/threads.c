@@ -183,8 +183,7 @@ void clone_thread (uint64_t fork_rsp) {
   fork_pid = new_tcb->thread_id;
 }
 
-int fork (void) {
-  fork_entry_point(); /* This call returns twice */
+int fork_get_return_val (void) {
   int res = fork_pid;
   fork_pid = 0;
   return res;

@@ -31,6 +31,16 @@ schedule:
 	pop_callee_save_reg
 	ret
 
+/* fork must be written in assembly, so we know that no stack pointers are put
+ * in registers or on the stack---those will break when we move to a new stack.
+ */
+
+.GLOBAL fork
+fork:
+	call fork_entry_point
+	call fork_get_return_val
+	ret
+
 /* fork_entry_point and schedule's stack frames must look the same: when
  * forking, the stack is copied while in fork_entry_point, but the child
  * resumes into schedule instead.  Both parent and child return into 'fork',
