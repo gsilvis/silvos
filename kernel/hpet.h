@@ -43,7 +43,7 @@ static const uint64_t HPET_CAPABILITIES_CLK_PERIOD      = 0xFFFFFFFF00000000;  /
 static const uint64_t HPET_GENERAL_CONFIG_ENABLE        = 0x01;
 static const uint64_t HPET_GENERAL_CONFIG_LEGACY_ROUTE  = 0x02;
 
-struct HPET_Registers *hpet_reg;
+volatile struct HPET_Registers *hpet_reg;
 
 int hpet_initialize (void);
 void hpet_reset_timeout (void);

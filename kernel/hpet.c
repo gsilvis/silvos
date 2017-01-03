@@ -86,7 +86,7 @@ void hpet_nanosleep (uint64_t usecs) {
    * sleeping for small enough amounts of time that they get control back
    * immediately. */
   schedule();
-};
+}
 
 void hpet_sleepers_awake() {
   while (1) {
