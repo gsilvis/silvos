@@ -6,8 +6,17 @@ TEST_PROGS := $(patsubst userland/%/expected.txt, %, $(wildcard userland/*/expec
 
 USERLAND_PROGS := $(patsubst userland/%/main.c, %, $(wildcard userland/*/main.c))
 
-KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g -mcmodel=kernel
-KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel
+# Ideally, the kernel should compile and pass all tests with all of these
+#KERNEL_OPT := -O0
+#KERNEL_OPT := -O1
+KERNEL_OPT := -O2
+#KERNEL_OPT := -O3
+#KERNEL_OPT := -Os
+KERNEL_OPT += -g
+#KERNEL_OPT += -flto
+
+KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel $(KERNEL_OPT)
+KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel -mno-mmx -mno-sse -mno-sse2 $(KERNEL_OPT)
 
 BOOTLOADER_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 BOOTLOADER_LDFLAGS := -nostdlib -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
