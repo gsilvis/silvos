@@ -40,4 +40,8 @@ void main (void) {
   if (j[5] != 'y')  return;
   if (j[6] != 'e')  return;
   DEBUG("OK");
+
+  char *not_my_page = (char *)0xE0000000;
+  if (-1 != write(0, &not_my_page[0]))  DEBUG("bad1");
+  if (-1 != read(0, &not_my_page[0]))  DEBUG("bad2");
 }
