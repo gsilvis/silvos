@@ -108,7 +108,12 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot user
 		-hda $(subst output.txt,test_disk,$@) \
 		| true
 
+# FIXME: Don't sort before diffing expected and output.
+# For now the diffing is sorting the inputs due to race
+# conditions. This is a big hack, and prevents us from
+# writing tests that SHOULD test for well-ordered outputs.
 test/%: userland/%/expected.txt userland/%/output.txt
+#	diff $^
 	diff <(sort $(word 1,$^)) <(sort $(word 2,$^))
 
 
