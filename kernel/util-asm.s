@@ -1,7 +1,8 @@
 
 .GLOBAL setjmp
 setjmp:
-	movq $1f,(%rdi)
+	movq (%rsp),%rax
+	mov %rax,0x00(%rdi)
 	mov %rsp,0x08(%rdi)
 	mov %rbx,0x10(%rdi)
 	mov %rbp,0x18(%rdi)
@@ -10,11 +11,10 @@ setjmp:
 	mov %r14,0x30(%rdi)
 	mov %r15,0x38(%rdi)
 	mov $0,%rax
-1:	ret
+	ret
 
 .GLOBAL longjmp
 longjmp:
-	mov %rsi,%rax
 	mov 0x38(%rdi),%r15
 	mov 0x30(%rdi),%r14
 	mov 0x28(%rdi),%r13
@@ -22,4 +22,7 @@ longjmp:
 	mov 0x18(%rdi),%rbp
 	mov 0x10(%rdi),%rbx
 	mov 0x08(%rdi),%rsp
-	jmp *(%rdi)
+	mov 0x00(%rdi),%rax
+	mov %rax,(%rsp)
+	mov %rsi,%rax
+	ret

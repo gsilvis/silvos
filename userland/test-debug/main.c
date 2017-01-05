@@ -8,4 +8,6 @@ void main (void) {
   if (60 != DEBUG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!???")) {
     DEBUG("bad");
   }
+  if (debug((char *)0xFFFFFFFF80000000, 128))  DEBUG("bad-kernel");
+  if (debug((char *)0xC0000000, 10))  DEBUG("bad-pagefault");
 }
