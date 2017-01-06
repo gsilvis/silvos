@@ -1,10 +1,4 @@
-/* This file runs in 32-bit mode.  To make sure we don't try and call 64-bit
- * code, don't include any SILVOS headers. Here are the fake "imports" */
-
-/* Standard library imports */
 #include <stdint.h>
-
-/* Data that we must access from here */
 
 uint8_t gdt[][8] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* Null */
@@ -13,18 +7,9 @@ uint8_t gdt[][8] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x9B, 0xA0, 0x00}, /* 64-b ring 0 code */
 };
 
-/* Useful constants */
-
 #define PAGE_NUM_ENTRIES 512
 #define PAGE_MASK_KERNEL 0x00000003
 #define PAGE_MASK_SIZE   0x00000080
-
-/* Functions available in start32-asm.s */
-
-void initialize_segment_selectors(void);
-void enable_ia32e(void);
-
-/* End "imports" */
 
 typedef uint64_t pagetable[PAGE_NUM_ENTRIES] __attribute__((aligned(0x1000)));
 
