@@ -31,6 +31,12 @@ int strncmp (const char *a, const char *b, size_t n) {
   return 0;
 }
 
+uint64_t strlen (const char *s) {
+  uint64_t i = 0;
+  while (s[i]) i++;
+  return i;
+}
+
 void __attribute__ ((noreturn)) qemu_debug_shutdown (void) {
   /* This works, as long as you include the following argument to QEMU:
    *    -device isa-debug-exit,iobase=0xf4,iosize=0x04
