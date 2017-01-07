@@ -1,6 +1,7 @@
 #include "com.h"
 
 #include "pagefault.h"
+#include "printf.h"
 #include "threads.h"
 #include "util.h"
 
@@ -28,36 +29,19 @@ void com_puts (const char *text) {
   }
 }
 
-void com_put_tid (void) {
-  const char header[] = "THREAD 0x";
-  for (size_t i = 0; header[i]; i++) {
-    com_putch(header[i]);
-  }
-  const char hex[] = "0123456789ABCDEF";
-  uint8_t t = running_tcb->thread_id;
-  com_putch(hex[0x0F & (t >> 4)]);
-  com_putch(hex[0x0F & t]);
-}
-
 uint32_t com_debug_thread (char *text, uint32_t len) {
   /* TODO: check that user text is nice (doesn't contain control characters,
    * for intance) */
-  char tmp[60];
+  char tmp[61];
   if (len > 60) {
     len = 60;
   }
   if (copy_from_user(&tmp[0], text, len)) {
     return 0;
   }
-  com_put_tid();
-  com_putch(':');
-  com_putch(' ');
+  tmp[len] = 0;
+  printf("THREAD 0x%02x: %s\n", running_tcb->thread_id, tmp);
 
-  for (size_t i = 0; (i < len) && tmp[i]; i++) {
-    com_putch(tmp[i]);
-  }
-
-  com_putch('\n');
   return len;
 }
 

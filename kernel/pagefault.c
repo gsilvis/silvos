@@ -1,12 +1,12 @@
 #include "pagefault.h"
 
-#include "com.h"
-#include "util.h"
 #include "memory-map.h"
+#include "printf.h"
 #include "threads.h"
+#include "util.h"
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 int check_addr (const void *low, const void *high) {
   if ((uint64_t)low > (uint64_t)high) {
@@ -25,17 +25,13 @@ void pagefault_handler (uint64_t addr) {
   if (is_copying) {
     longjmp(for_copying, -1);
   }
-  com_puts("Kernel: ");
-  com_put_tid();
-  com_puts(" page fault at ");
-  char pf_addr[] = "0x0000000000000000";
-  const char hex[] = "0123456789ABCDEF";
-  for (int i = 0; i < 16; ++i) {
-    pf_addr[sizeof(pf_addr) - 2 - i] = hex[0x0F & (addr >> (4 * i))];
+  if (running_tcb) {
+    printf("Kernel page fault at %p, running thread is %x.\n", (void *)addr, running_tcb->thread_id);
+    thread_exit();
+  } else {
+    printf("Kernel page fault at %p, no running thread! Panic!\n", (void *)addr);
+    qemu_debug_shutdown("Page fault with no running thread!);
   }
-  com_puts(pf_addr);
-  com_putch('\n');
-  thread_exit();
 }
 
 
