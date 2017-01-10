@@ -1,7 +1,7 @@
 #include "pagefault.h"
 
+#include "com.h"
 #include "memory-map.h"
-#include "printf.h"
 #include "threads.h"
 #include "util.h"
 
@@ -26,11 +26,11 @@ void pagefault_handler (uint64_t addr) {
     longjmp(for_copying, -1);
   }
   if (running_tcb) {
-    printf("Kernel page fault at %p, running thread is %x.\n", (void *)addr, running_tcb->thread_id);
+    com_printf("Kernel page fault at %p, running thread is 0x%02X.\n", (void *)addr, running_tcb->thread_id);
     thread_exit();
   } else {
-    printf("Kernel page fault at %p, no running thread! Panic!\n", (void *)addr);
-    qemu_debug_shutdown("Page fault with no running thread!);
+    com_printf("Kernel page fault at %p, no running thread! Panic!\n", (void *)addr);
+    panic("Page fault with no running thread!");
   }
 }
 

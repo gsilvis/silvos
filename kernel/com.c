@@ -5,6 +5,7 @@
 #include "threads.h"
 #include "util.h"
 
+#include <stdarg.h>
 #include <stddef.h>
 
 static const uint16_t PORT = 0x3f8;
@@ -40,9 +41,16 @@ uint32_t com_debug_thread (char *text, uint32_t len) {
     return 0;
   }
   tmp[len] = 0;
-  printf("THREAD 0x%02x: %s\n", running_tcb->thread_id, tmp);
+  com_printf("THREAD 0x%02X: %s\n", running_tcb->thread_id, tmp);
 
   return len;
 }
 
-
+int com_printf (const char *fmt, ...) {
+  int ret;
+  va_list argp;
+  va_start(argp, fmt);
+  ret = vprintf(com_putch, fmt, argp);
+  va_end(argp);
+  return ret;
+}

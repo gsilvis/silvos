@@ -1,13 +1,12 @@
 #include "printf.h"
 
-#include "com.h"
 #include "util.h"
 
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#define emit(c) do { com_putch(c); ++ret; } while(0)
+#define emit(c) do { my_putch(c); ++ret; } while(0)
 #define emits(s) do { const char *_c = (s); \
                       while (*_c) { emit(*(_c++)); } } while(0)
 
@@ -214,9 +213,7 @@ static const char *serialize(format *fspec) {
   return fspec->work + index;
 }
 
-int printf (const char *fmt, ...) {
-  va_list argp;
-  va_start(argp, fmt);
+int vprintf (void (*my_putch)(char), const char *fmt, va_list argp) {
   int ret = 0;
   int i = 0;
 
