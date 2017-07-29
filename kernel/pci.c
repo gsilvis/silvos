@@ -13,7 +13,12 @@ typedef struct pci_handler_s {
 } pci_handler;
 
 static pci_handler pci_handlers[] = {
-  { PCI_CLASS_IDE_CONTROLLER, ide_device_register, "IDE Controller"},
+  { PCI_CLASS_IDE_CONTROLLER, ide_device_register, "IDE Controller" },
+  { PCI_CLASS_HOST_BRIDGE, NULL, "Host Bridge" },
+  { PCI_CLASS_ISA_BRIDGE, NULL, "ISA Bridge" },
+  { PCI_CLASS_OTHER_BRIDGE, NULL, "Other Bridge" },
+  { PCI_CLASS_VGA_CONTROLLER, NULL, "VGA Controller" },
+  { PCI_CLASS_ETHERNET_CONTROLLER, NULL, "Ethernet Controller" },
   { 0, NULL, NULL },
 };
 
@@ -40,6 +45,9 @@ void initialize_device (uint8_t bus, uint8_t device, uint8_t function, uint16_t 
     }
   }
   puts(name);
+  if (initializer == NULL) {
+    puts(" (Unhandled)");
+  }
   puts("\r\n");
   if (initializer != NULL) {
     initializer(bus, device, function);

@@ -15,6 +15,11 @@
 #define PCI_VENDOR_INVALID 0xFFFF
 
 #define PCI_CLASS_IDE_CONTROLLER 0x0101
+#define PCI_CLASS_HOST_BRIDGE 0x0600
+#define PCI_CLASS_ISA_BRIDGE 0x0601
+#define PCI_CLASS_OTHER_BRIDGE 0x0680
+#define PCI_CLASS_VGA_CONTROLLER 0x0300
+#define PCI_CLASS_ETHERNET_CONTROLLER 0x0200
 
 static inline void pci_set_addr (uint8_t register_num,
                                  uint8_t function_num,
