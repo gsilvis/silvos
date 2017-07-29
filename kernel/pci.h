@@ -8,6 +8,14 @@
 #define PCI_ADDRESS 0x0CF8
 #define PCI_DATA    0x0CFC
 
+#define PCI_NUM_BUS 256
+#define PCI_NUM_DEV 32
+#define PCI_NUM_FUNCTION 8
+
+#define PCI_VENDOR_INVALID 0xFFFF
+
+#define PCI_CLASS_IDE_CONTROLLER 0x0101
+
 static inline void pci_set_addr (uint8_t register_num,
                                  uint8_t function_num,
                                  uint8_t device_num,
