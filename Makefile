@@ -8,9 +8,9 @@ USERLAND_PROGS := $(patsubst userland/%/main.c, %, $(wildcard userland/*/main.c)
 
 # Ideally, the kernel should compile and pass all tests with all of these
 ifeq ($(origin KERNEL_OPT), undefined)
-#KERNEL_OPT := -O0
+KERNEL_OPT := -O0
 #KERNEL_OPT := -O1
-KERNEL_OPT := -O2
+#KERNEL_OPT := -O2
 #KERNEL_OPT := -O3
 #KERNEL_OPT := -Os
 KERNEL_OPT += -g
@@ -105,7 +105,7 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot user
 		-nographic \
 		-display none \
 		-m 128 \
-		-hda $(subst output.txt,test_disk,$@) \
+		-drive file=$(subst output.txt,test_disk,$@),index=0,media=disk,format=raw \
 		| true
 
 # FIXME: Don't sort before diffing expected and output.
