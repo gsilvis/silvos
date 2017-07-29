@@ -4,10 +4,45 @@
 #include "vga.h"
 #include "ide.h"
 
-void initialize_device (uint8_t bus, uint8_t device, uint8_t function) {
+typedef void (*pci_device_init)(uint8_t bus, uint8_t device, uint8_t function);
+
+typedef struct pci_handler_s {
+  uint16_t class_subclass;
+  pci_device_init init;
+  const char *name;
+} pci_handler;
+
+static pci_handler pci_handlers[] = {
+  { PCI_CLASS_IDE_CONTROLLER, ide_device_register, "IDE Controller"},
+  { 0, NULL, NULL },
+};
+
+void initialize_device (uint8_t bus, uint8_t device, uint8_t function, uint16_t vendor) {
   uint16_t class_subclass = pci_read(2, function, device, bus) >> 16;
-  if (class_subclass == PCI_CLASS_IDE_CONTROLLER) {
-    ide_device_register(bus, device, function);
+  puts("PCI ");
+  put_byte(bus);
+  putc(':');
+  put_byte(device);
+  putc('.');
+  put_byte(function);
+  puts(" (class: ");
+  put_short(class_subclass);
+  puts(" vendor: ");
+  put_short(vendor);
+  puts(") ");
+  const char *name = "Unknown";
+  pci_device_init initializer = NULL;
+  for (pci_handler *h = pci_handlers; h->name != NULL; h++) {
+    if (class_subclass == h->class_subclass) {
+      initializer  = h->init;
+      name = h->name;
+      break;
+    }
+  }
+  puts(name);
+  puts("\r\n");
+  if (initializer != NULL) {
+    initializer(bus, device, function);
   }
 }
 
@@ -17,7 +52,7 @@ void check_device (uint8_t bus, uint8_t device) {
   if (vendor == PCI_VENDOR_INVALID) {
     return;
   }
-  initialize_device(bus, device, function);
+  initialize_device(bus, device, function, vendor);
   uint8_t header_type = (pci_read(3, function, device, bus) >> 16) & 0xFF;
   if (0x80 & header_type) {
     /* Multi-function device */
@@ -26,7 +61,7 @@ void check_device (uint8_t bus, uint8_t device) {
       if (vendor == PCI_VENDOR_INVALID) {
         continue;
       }
-      initialize_device(bus, device, function);
+      initialize_device(bus, device, function, vendor);
     }
   }
 }
