@@ -1,1 +1,5 @@
+THREAD 0x01: Hello!!
+THREAD 0x01: Goodbye
+THREAD 0x01: Goodbye
+THREAD 0x01: Hello!!
 THREAD 0x01: OK

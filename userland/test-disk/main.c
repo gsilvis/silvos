@@ -21,10 +21,14 @@ void main (void) {
   k[4] = 'b';
   k[5] = 'y';
   k[6] = 'e';
+  debug(j, 7);
+  debug(k, 7);
   if (write(0, &j[0]))  return;
   if (write(1, &k[0]))  return;
   if (read(0, &k[0]))  return;
   if (read(1, &j[0]))  return;
+  debug(j, 7);
+  debug(k, 7);
   if (k[0] != 'H')  return;
   if (k[1] != 'e')  return;
   if (k[2] != 'l')  return;
