@@ -16,7 +16,6 @@ prdt_entry *prdt;
 uint8_t *ide_buf;
 
 void ide_device_register (uint8_t bus, uint8_t device, uint8_t function) {
-  puts("Found IDE device.\r\n");
   /* For now, assume that these are all ports.  If the low bit is not set, then
    * they are actually memory addresses. */
   bar0 = pci_read(4, function, device, bus) & 0xFFFC;
@@ -36,56 +35,29 @@ void ide_device_register (uint8_t bus, uint8_t device, uint8_t function) {
   if (bar3 == 0x00) {
     bar3 = IDE_DEFAULT_BAR0;
   }
-  put_int(bar0);
-  puts("\r\n");
-  put_int(bar1);
-  puts("\r\n");
-  put_int(bar2);
-  puts("\r\n");
-  put_int(bar3);
-  puts("\r\n");
-  put_int(bar4);
-  puts("\r\n");
-  puts("\r\n\r\n");
   outb(bar0 + ATA_REG_HDDEVSEL, 0xA0);
   inb(bar0 + 0x07);
   inb(bar0 + 0x07);
   inb(bar0 + 0x07);
   inb(bar0 + 0x07);
-  put_byte(inb(bar0 + 0x07));
-  puts(" ");
-  put_short(inw(bar0));
-  puts("\r\n");
 
   outb(bar0 + ATA_REG_HDDEVSEL, 0xB0);
   inb(bar0 + 0x07);
   inb(bar0 + 0x07);
   inb(bar0 + 0x07);
   inb(bar0 + 0x07);
-  put_byte(inb(bar0 + 0x07));
-  puts(" ");
-  put_short(inw(bar0));
-  puts("\r\n");
 
   outb(bar2 + ATA_REG_HDDEVSEL, 0xA0);
   inb(bar2 + 0x07);
   inb(bar2 + 0x07);
   inb(bar2 + 0x07);
   inb(bar2 + 0x07);
-  put_byte(inb(bar2 + 0x07));
-  puts(" ");
-  put_short(inw(bar0));
-  puts("\r\n");
 
   outb(bar2 + ATA_REG_HDDEVSEL, 0xB0);
   inb(bar2 + 0x07);
   inb(bar2 + 0x07);
   inb(bar2 + 0x07);
   inb(bar2 + 0x07);
-  put_byte(inb(bar2 + 0x07));
-  puts(" ");
-  put_short(inw(bar0));
-  puts("\r\n");
 
   prdt = (prdt_entry *)allocate_phys_page();
   ide_buf = (uint8_t *)allocate_phys_page();

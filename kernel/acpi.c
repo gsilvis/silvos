@@ -38,17 +38,16 @@ int acpi_parse_rsdp (void) {
 }
 
 int acpi_parse_table (struct ACPISDTHeader *table) {
+  puts("ACPI ");
   for (int i = 0; i < 4; i++) {
     putc(table->Signature[i]);
   }
+  putc(' ');
   if (acpi_checksum((uint8_t *)table, table->Length)) {
-    putc('\r');
-    putc('\n');
+    puts("Invalid Checksum!\r\n");
     return -1; /* Bad checksum */
   }
-  putc('!');
-  putc('\r');
-  putc('\n');
+  puts("Init\r\n");
   if (!strncmp(table->Signature, "RSDT", 4)) {
     rsdt = (struct RSDT *)table;
     uint32_t num_entries = (rsdt->h.Length - sizeof(rsdt->h)) / 4;
