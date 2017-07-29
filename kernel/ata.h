@@ -44,13 +44,9 @@
 #define ATA_REG_COMMAND    0x07 /* write-only */
 #define ATA_REG_STATUS     0x07 /* read-only */
 
-#define ATA_REG2_SECCOUNT1  0x08
-#define ATA_REG2_LBA3       0x09
-#define ATA_REG2_LBA4       0x0A
-#define ATA_REG2_LBA5       0x0B
-#define ATA_REG2_CONTROL    0x0C
-#define ATA_REG2_ALTSTATUS  0x0C
-#define ATA_REG2_DEVADDRESS 0x0D
+#define ATA_REG2_CONTROL    0x02 /* write-only */
+#define ATA_REG2_ALTSTATUS  0x02 /* read-only */
+#define ATA_REG2_DEVADDRESS 0x03 /* not generally useful */
 
 #define ATA_BUSMASTER_REG_PRIMARY_COMMAND    0x00
 /* 0x01 unused */

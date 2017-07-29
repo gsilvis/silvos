@@ -7,9 +7,9 @@
 #define IDE_ATAPI      0x01
 
 #define IDE_DEFAULT_BAR0 0x01F0
-#define IDE_DEFAULT_BAR1 0x03F6
+#define IDE_DEFAULT_BAR1 0x03F4
 #define IDE_DEFAULT_BAR2 0x0170
-#define IDE_DEFAULT_BAR3 0x0376
+#define IDE_DEFAULT_BAR3 0x0374
 
 typedef struct {
   uint32_t prd_phys_addr;

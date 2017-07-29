@@ -9,41 +9,32 @@
 
 #include <stdint.h>
 
-uint8_t ide_bus;
-uint8_t ide_device;
-uint8_t ide_function;
-
 uint16_t bar0, bar1, bar2, bar3, bar4;
 
 prdt_entry *prdt;
 
 uint8_t *ide_buf;
 
-uint32_t ide_get_reg (uint8_t reg) {
-  return pci_read(reg, ide_function, ide_device, ide_bus);
-}
-
 void ide_device_register (uint8_t bus, uint8_t device, uint8_t function) {
   puts("Found IDE device.\r\n");
-  ide_bus = bus;
-  ide_device = device;
-  ide_function = function;
-  bar0 = pci_read(4, function, device, bus);
-  bar1 = pci_read(5, function, device, bus);
-  bar2 = pci_read(6, function, device, bus);
-  bar3 = pci_read(7, function, device, bus);
-  bar4 = pci_read(8, function, device, bus) - 1;
-  if ((bar0 & 0xFFFFFFFE) == 0x00) {
+  /* For now, assume that these are all ports.  If the low bit is not set, then
+   * they are actually memory addresses. */
+  bar0 = pci_read(4, function, device, bus) & 0xFFFC;
+  bar1 = pci_read(5, function, device, bus) & 0xFFFC;
+  bar2 = pci_read(6, function, device, bus) & 0xFFFC;
+  bar3 = pci_read(7, function, device, bus) & 0xFFFC;
+  bar4 = pci_read(8, function, device, bus) & 0xFFFC;
+  if (bar0 == 0x00) {
     bar0 = IDE_DEFAULT_BAR0;
   }
-  if ((bar1 & 0xFFFFFFFE) == 0x00) {
-    bar1 = IDE_DEFAULT_BAR1;
+  if (bar1 == 0x00) {
+    bar1 = IDE_DEFAULT_BAR0;
   }
-  if ((bar2 & 0xFFFFFFFE) == 0x00) {
-    bar2 = IDE_DEFAULT_BAR2;
+  if (bar2 == 0x00) {
+    bar2 = IDE_DEFAULT_BAR0;
   }
-  if ((bar3 & 0xFFFFFFFE) == 0x00) {
-    bar3 = IDE_DEFAULT_BAR3;
+  if (bar3 == 0x00) {
+    bar3 = IDE_DEFAULT_BAR0;
   }
   put_int(bar0);
   puts("\r\n");
