@@ -2,7 +2,7 @@
 #define __SILVOS_ATA_H
 
 #define ATA_SR_ERR     0x01    /* Error */
-#define ATA_SR_IDX     0x02    /* Inlex */
+#define ATA_SR_IDX     0x02    /* Index */
 #define ATA_SR_CORR    0x04    /* Corrected data */
 #define ATA_SR_DRQ     0x08    /* Data request ready */
 #define ATA_SR_DSC     0x10    /* Drive seek complete */
@@ -43,5 +43,37 @@
 #define ATA_REG_HDDEVSEL   0x06
 #define ATA_REG_COMMAND    0x07 /* write-only */
 #define ATA_REG_STATUS     0x07 /* read-only */
+
+#define ATA_REG2_SECCOUNT1  0x08
+#define ATA_REG2_LBA3       0x09
+#define ATA_REG2_LBA4       0x0A
+#define ATA_REG2_LBA5       0x0B
+#define ATA_REG2_CONTROL    0x0C
+#define ATA_REG2_ALTSTATUS  0x0C
+#define ATA_REG2_DEVADDRESS 0x0D
+
+#define ATA_BUSMASTER_REG_PRIMARY_COMMAND    0x00
+/* 0x01 unused */
+#define ATA_BUSMASTER_REG_PRIMARY_STATUS     0x02
+/* 0x03 unused */
+#define ATA_BUSMASTER_REG_PRIMARY_PRDT       0x04
+/* 0x05  continued */
+/* 0x06  continued */
+/* 0x07  continued */
+#define ATA_BUSMASTER_REG_SECONDARY_COMMAND  0x08
+/* 0x09 unused */
+#define ATA_BUSMASTER_REG_SECONDARY_STATUS   0x0A
+/* 0x0B unused */
+#define ATA_BUSMASTER_REG_SECONDARY_PRDT     0x0C
+/* 0x0D  continued */
+/* 0x0E  continued */
+/* 0x0F  continued */
+
+#define ATA_BUSMASTER_CMD_START  0x01
+#define ATA_BUSMASTER_CMD_RW     0x08 /* 1 == read, 0 == write */
+
+#define ATA_BUSMASTER_SR_DMA       0x01
+#define ATA_BUSMASTER_SR_FAIL      0x02
+#define ATA_BUSMASTER_SR_SENT_IRQ  0x04
 
 #endif
