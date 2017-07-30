@@ -18,14 +18,18 @@ KERNEL_OPT += -g
 #KERNEL_OPT += -flto
 endif
 
+ifeq ($(origin USER_OPT), undefined)
+USER_OPT := -O2
+endif
+
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel $(KERNEL_OPT)
 KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel -mno-mmx -mno-sse -mno-sse2 $(KERNEL_OPT)
 
 BOOTLOADER_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 BOOTLOADER_LDFLAGS := -nostdlib -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
 
-USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2
-USER_LDFLAGS := -nostdlib -lgcc
+USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 $(USER_OPT)
+USER_LDFLAGS := -nostdlib -lgcc $(USER_OPT)
 
 TEST_CFLAGS := -std=c99 -Wall -Wextra -DUNIT_TEST -Ikernel
 

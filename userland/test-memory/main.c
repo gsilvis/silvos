@@ -1,11 +1,11 @@
 #include "userland.h"
 #define DEBUG(str) debug(str, sizeof(str))
 
-inline unsigned char* getpage(unsigned int i) {
+static inline unsigned char* getpage(unsigned int i) {
   return (unsigned char*) ((1 << i) * 4096L);
 }
 
-inline unsigned char getent(unsigned int i, unsigned int j, int pid) {
+static inline unsigned char getent(unsigned int i, unsigned int j, int pid) {
   return ((i * 37) ^ j ^ pid) & 0xff;
 }
 

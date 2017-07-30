@@ -9,6 +9,8 @@ int test_fork() {
     DEBUG("Fork failed!");
     exit();
   } else if (ret == 0) {
+    /* Temporary fix to flakiness in this test */
+    nanosleep(1000);
     ++depth;
     char child_msg[] = "Child, depth 0";
     child_msg[sizeof(child_msg)-2] = '0' + depth;
