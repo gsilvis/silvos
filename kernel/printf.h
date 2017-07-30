@@ -8,6 +8,6 @@
  * Default lengths are assumed to be 32 bits wide. Note in particular the lack
  * of floating-point support and therefore the length specifier L. We also do
  * not support precision modifiers. */
-int vprintf (void (*my_putch)(char), const char *fmt, va_list argp);
+int kvprintf (void (*my_putch)(char), const char *fmt, va_list argp);
 
 #endif

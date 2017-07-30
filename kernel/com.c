@@ -50,7 +50,7 @@ int com_printf (const char *fmt, ...) {
   int ret;
   va_list argp;
   va_start(argp, fmt);
-  ret = vprintf(com_putch, fmt, argp);
+  ret = kvprintf(com_putch, fmt, argp);
   va_end(argp);
   return ret;
 }

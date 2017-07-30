@@ -175,8 +175,8 @@ static const char *serialize(format *fspec) {
       fspec->work[1] = 0;
       return fspec->work;
     case 'x':
-      alphabet = hex_lower;
     case 'p':
+      alphabet = hex_lower;
     case 'X':
       mask_step = 16;
       arg = fspec->arg.uarg;
@@ -199,7 +199,7 @@ static const char *serialize(format *fspec) {
       }
       break;
     default:
-      panic("Unexpected format specified found after parsing format string!");
+      panic("Unexpected format specifier found after parsing format string!");
   }
 
   int index = sizeof(fspec->work) - 1;
@@ -213,7 +213,7 @@ static const char *serialize(format *fspec) {
   return fspec->work + index;
 }
 
-int vprintf (void (*my_putch)(char), const char *fmt, va_list argp) {
+int kvprintf (void (*my_putch)(char), const char *fmt, va_list argp) {
   int ret = 0;
   int i = 0;
 
