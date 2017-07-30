@@ -1,8 +1,8 @@
 #include "pci.h"
 
-#include "util.h"
-#include "vga.h"
 #include "ide.h"
+#include "vga.h"
+#include "util.h"
 
 typedef void (*pci_device_init)(uint8_t bus, uint8_t device, uint8_t function);
 
@@ -24,17 +24,6 @@ static pci_handler pci_handlers[] = {
 
 void initialize_device (uint8_t bus, uint8_t device, uint8_t function, uint16_t vendor) {
   uint16_t class_subclass = pci_read(2, function, device, bus) >> 16;
-  puts("PCI ");
-  put_byte(bus);
-  putc(':');
-  put_byte(device);
-  putc('.');
-  put_byte(function);
-  puts(" (class: ");
-  put_short(class_subclass);
-  puts(" vendor: ");
-  put_short(vendor);
-  puts(") ");
   const char *name = "Unknown";
   pci_device_init initializer = NULL;
   for (pci_handler *h = pci_handlers; h->name != NULL; h++) {
@@ -44,11 +33,9 @@ void initialize_device (uint8_t bus, uint8_t device, uint8_t function, uint16_t 
       break;
     }
   }
-  puts(name);
-  if (initializer == NULL) {
-    puts(" (Unhandled)");
-  }
-  puts("\r\n");
+  vga_printf("PCI %02x:%02x.%02x (class: %04hx vendor: %04hx) %s%s\r\n",
+             bus, device, function, class_subclass, vendor,
+             name, initializer == NULL ? " (Unhandled)" : "");
   if (initializer != NULL) {
     initializer(bus, device, function);
   }

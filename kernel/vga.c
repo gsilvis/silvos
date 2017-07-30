@@ -1,5 +1,8 @@
 #include "vga.h"
 
+#include "printf.h"
+
+#include <stdarg.h>
 #include <stdint.h>
 
 #define VGA 0xFFFFFF80000B8000
@@ -60,27 +63,11 @@ void puts (const char *s) {
   }
 }
 
-void puti (uint32_t i) {
-  char d = i % 10 + '0';
-  uint32_t rest = i / 10;
-  if (rest) {
-    puti(rest);
-  }
-  putc(d);
-}
-
-void put_byte (uint8_t d) {
-  const char *out = "0123456789ABCDEF";
-  putc(out[0x0F & (d >> 4)]);
-  putc(out[0x0F & (d)]);
-}
-
-void put_short (uint16_t d) {
-  put_byte((uint8_t)(d >> 8));
-  put_byte((uint8_t)(d));
-}
-
-void put_int (uint32_t d) {
-  put_short((uint16_t)(d >> 16));
-  put_short((uint16_t)(d));
+int vga_printf (const char *fmt, ...) {
+  int ret;
+  va_list argp;
+  va_start(argp, fmt);
+  ret = kvprintf(putc, fmt, argp);
+  va_end(argp);
+  return ret;
 }

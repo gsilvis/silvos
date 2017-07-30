@@ -4,12 +4,10 @@
 #include <stdint.h>
 
 void putc (char c);
+void puts (const char *c);
 void clear_screen (void);
-void puts (const char *s);
-void puti (uint32_t i);
 
-void put_byte (uint8_t d);
-void put_short (uint16_t d);
-void put_int (uint32_t d);
+/* Make sure to put a \r\n at the end of your vga_printfs! */
+int vga_printf (const char *fmt, ...);
 
 #endif
