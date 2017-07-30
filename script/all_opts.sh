@@ -2,8 +2,11 @@
 
 set -eu
 
-for oflag in -O0 -O1 -O2 -O3 -Os; do
+for oflag in -O0 -O2 -O3 -Os; do
   for ltoflag in -flto ''; do
-    KERNEL_OPT="$oflag -g $ltoflag " make clean test
+    for uoflag in -O0 -O2; do
+      make clean
+      USER_OPT="$uoflag" KERNEL_OPT="$oflag -g $ltoflag " make -j $(nproc) test
+     done
   done
 done
