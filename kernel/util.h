@@ -22,10 +22,14 @@ static inline void bit_array_set(bit_array a, uint64_t i, int b) {
   }
 }
 
-
+#ifdef UNIT_TEST
+#include <string.h>
+#else
 void memset (void *ptr, char byte, size_t count);
 void memcpy (void *dest, const void *src, size_t count);
 int strncmp (const char *s1, const char *s2, size_t n);
+size_t strlen (const char *s);
+#endif
 void __attribute__ ((noreturn)) qemu_debug_shutdown (void);
 void __attribute__ ((noreturn)) panic (const char *s);
 void blab (void);

@@ -3,6 +3,7 @@ KERNEL_OBJS := \
 	$(patsubst kernel/%.s, kernel/%.o, $(wildcard kernel/*.s))
 
 TEST_PROGS := $(patsubst userland/%/expected.txt, %, $(wildcard userland/*/expected.txt))
+UNIT_TESTS := $(patsubst tests/%/expected.txt, %, $(wildcard tests/*/expected.txt))
 
 USERLAND_PROGS := $(patsubst userland/%/main.c, %, $(wildcard userland/*/main.c))
 
@@ -26,6 +27,9 @@ BOOTLOADER_LDFLAGS := -nostdlib -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x10
 USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -O2
 USER_LDFLAGS := -nostdlib -lgcc
 
+TEST_CFLAGS := -std=c99 -Wall -Wextra -DUNIT_TEST -Ikernel
+
+TEST_CC := $(CC)
 CC := x86_64-elf-gcc
 AS := x86_64-elf-as
 
@@ -70,6 +74,16 @@ userland/%/main.o: userland/%/main.c
 userland/%.bin: userland/%/main.o userland/startup.o
 	$(CC) $^ -o $@ $(USER_LDFLAGS)
 
+# Standalone tests, link against one kernel .c file.
+tests/%/%.o: kernel/%.c
+	$(TEST_CC) -c $^ -o $@ $(TEST_CFLAGS)
+
+tests/%/main.o: tests/%/main.c
+	$(TEST_CC) -c $^ -o $@ $(TEST_CFLAGS)
+
+tests/%.bin: tests/%/main.o tests/%/%.o
+	$(TEST_CC) $^ -o $@
+
 ## Special User Objects
 
 userland/startup.o: userland/startup.s
@@ -85,9 +99,12 @@ temp_drive:
 
 # Testing
 
-test: $(patsubst %, test/%, $(TEST_PROGS))
+test: user-tests unit-tests
+user-tests: $(patsubst %, userland-test/%, $(TEST_PROGS))
+unit-tests: $(patsubst %, tests/%, $(UNIT_TESTS))
 
 .PRECIOUS: $(patsubst %, userland/%/output.txt, $(TEST_PROGS))
+.PRECIOUS: $(patsubst %, tests/%/output.txt, $(UNIT_TESTS))
 
 userland/%/test_disk:
 	dd if=/dev/zero of=$@ bs=512 count=16
@@ -112,10 +129,16 @@ userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot user
 # For now the diffing is sorting the inputs due to race
 # conditions. This is a big hack, and prevents us from
 # writing tests that SHOULD test for well-ordered outputs.
-test/%: userland/%/expected.txt userland/%/output.txt
-#	diff $^
+userland-test/%: userland/%/expected.txt userland/%/output.txt
 	diff <(sort $(word 1,$^)) <(sort $(word 2,$^))
+#	diff $^
 
+# Non-userland tests won't have this problem
+tests/%/output.txt: tests/%.bin
+	./$^ > $@
+
+tests/%: tests/%/expected.txt tests/%/output.txt
+	diff $^
 
 clean:
 	rm -f \
@@ -125,9 +148,12 @@ clean:
 		userland/*.bin \
 		userland/*.o \
 		userland/*/*.o \
+		tests/*.bin \
+		tests/*/*.o \
 		temp_drive \
 		bootloader.multiboot \
 		bootloader/*.o \
 		userland/*/output.txt \
 		userland/*/coverage.log \
-		userland/*/test_disk
+		userland/*/test_disk \
+		tests/*/output.txt \

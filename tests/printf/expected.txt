@@ -1,0 +1,32 @@
+Hello, World!
+Ed balls
+The magic number is 42
+100% chance of failure
+Some longs: 1099511627776 -1099511627776
+I speak hex: 0x42 0x1234567890abcdef
+I CAN SHOUT: 0xAAAA 0xA1AEA1AEA1AE
+0777 is the best permission
+Number of times I've printfed a short: 1
+|          short|
+|loooooooooooooooooooooooooooooong|
+|              1|
+|              0|
+|             10|
+|            +10|
+|             -1|
+|000000000000010|
+|+00000000000010|
+|-00000000000042|
+| 00000000000010|
+|     0xdeadbeef|
+|short          |
+|1              |
+|0              |
+|10             |
+|+10            |
+|-1             |
+|10             |
+|+10            |
+|-42            |
+| 10            |
+|0xdeadbeef     |

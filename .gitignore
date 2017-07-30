@@ -6,3 +6,4 @@ userland/*.bin
 userland/*/output.txt
 userland/*/coverage.log
 userland/*/test_disk
+tests/*/output.txt
