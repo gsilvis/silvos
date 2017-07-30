@@ -9,5 +9,14 @@ void main (void) {
   nanosleep(5);
   DEBUG("Sleeping for no time at all...");
   nanosleep(0);
+  for (int i = 0; i < 8; i++) {
+    if (fork() == 0) {
+      DEBUG("sleeping child...");
+      nanosleep(10000);
+      DEBUG("child awake...");
+      exit();
+    }
+  }
+  nanosleep(1000);
   DEBUG("Done.");
 }
