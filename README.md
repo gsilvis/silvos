@@ -5,7 +5,9 @@ sufficient.
 
 To run, execute:
 
-    ./script/TEST-QEMU.sh & ./script/TEST-GDB.sh
+    ./script/QEMU.sh userland/calc.bin
+
+Or whatever other userland program(s) you would like.
 
 # Contributors
 
