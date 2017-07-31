@@ -28,14 +28,29 @@ uint64_t get_index (int bsize, void *ptr) {
   return virt_to_phys((uint64_t)ptr) >> (30 - bsize);
 }
 
+uint64_t get_bit_index (int bsize, uint64_t index) {
+  /* Two checks that could be useful for debugging. */
+#if 0
+  if (index >= 1u << bsize) {
+    panic("Bad bit index.");
+  }
+#endif
+  uint64_t result = ((1 << bsize) + index)/2;
+#if 0
+  if (result >= 0x8000 * 8) {
+    panic("Too big!");
+  }
+#endif
+  return result;
+}
+
 void free_block (int bsize, uint64_t index) {
   uint64_t per_gig = 0x1 << bsize;
   uint64_t gig_offset = index / per_gig;
   index = index % per_gig;
   for (; bsize > 0; bsize--, index /= 2) {
-    per_gig = 0x1 << bsize;
-    if (bit_array_get((uint8_t *)&bit_arrays[gig_offset], per_gig + index/2)) {
-      bit_array_set((uint8_t *)&bit_arrays[gig_offset], per_gig + index/2, 0);
+    if (bit_array_get((uint8_t *)&bit_arrays[gig_offset], get_bit_index(bsize, index))) {
+      bit_array_set((uint8_t *)&bit_arrays[gig_offset], get_bit_index(bsize, index), 0);
       /* insert into free list */
       list_push_front(get_freelist(bsize, index, gig_offset), &free_blocks[bsize]);
       return;
@@ -62,13 +77,13 @@ void *alloc_block (int bsize) {
   uint64_t index = get_index(b, to_return);
   uint64_t gig_offset = index / (0x1 << b);
   index = index % (0x1 << b);
-  bit_array_set((uint8_t *)&bit_arrays[gig_offset], (0x1 << b) + index/2, 1);
+  bit_array_set((uint8_t *)&bit_arrays[gig_offset], get_bit_index(b, index), 1);
   b++; index *= 2;
   for (; b <= bsize; b++, index *= 2) {
     /* make buddy blocks free */
     struct list_head *to_add = get_freelist(b, index + 1, gig_offset);
     list_push_front(to_add, &free_blocks[b]);
-    bit_array_set((uint8_t *)&bit_arrays[gig_offset], (0x1 << b) + index/2, 0);
+    bit_array_set((uint8_t *)&bit_arrays[gig_offset], get_bit_index(b, index), 0);
   }
   return (void *)to_return;
 }
