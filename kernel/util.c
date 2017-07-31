@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include "threads.h"
 #include "vga.h"
 
 #include <stdint.h>
@@ -46,9 +47,22 @@ void __attribute__ ((noreturn)) qemu_debug_shutdown (void) {
   panic("Shutdown failed!");
 }
 
+static int panic_count = 0;
 void __attribute__ ((noreturn)) panic (const char *s) {
-  puts("\r\nKERNEL PANIC: ");
-  puts(s);
+  panic_count++;
+  if (panic_count == 1) {
+    vga_printf("\r\nKERNEL PANIC: %s\r\n", s);
+    vga_printf("Generating backtrace to COM...\r\n");
+    com_print_backtrace();
+  } else if (panic_count == 2) {
+    /* Double panic! No time for anything fancy. */
+    puts("\r\nDOUBLE KERNEL PANIC: ");
+    puts(s);
+  } else if (panic_count == 3) {
+    puts("\r\nTRIPLE KERNEL PANIC!");
+  } else {
+    /* Seriously? I give up. */
+  }
   while (1) {
     hlt();
   }

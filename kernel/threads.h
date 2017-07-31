@@ -46,6 +46,7 @@ void thread_start (void);
 void __attribute__((noreturn)) thread_exit (void);
 
 void clone_thread (uint64_t fork_rsp);
+void com_print_backtrace (void);
 
 #define wait_event(wq, cond)                       \
 do {                                               \
