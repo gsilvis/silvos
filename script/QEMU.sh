@@ -25,7 +25,7 @@ while true; do
       echo "  -d, --drive=FILE    Drive to use (default=temp_drive)"
       echo "  -S, --wait          Pause CPU on startup"
       echo "  -s, --serial=FILE   Output serial to FILE instead of stdout"
-      echo "  -c, --coverage=FILE Output unique hit IP values to FILE"
+      echo "  -c, --coverage=FILE Output unique hit kernel mode %rip values to FILE"
       echo "      --nographic     Don't display the graphics (default is SDL or curses)"
       exit 1
       shift;;
@@ -34,16 +34,16 @@ while true; do
       shift;;
     -s|--serial)
       SERIAL="file:$2"
-      shift; shift;;
+      shift 2;;
     --nographic)
       NOGRAPHIC=1
       shift;;
     -d|--drive)
       DRIVE="$2"
-      shift; shift;;
+      shift 2;;
     -c|--coverage)
       COVERAGE="$2"
-      shift; shift;;
+      shift 2;;
     --) shift; break;;
     *) break ;;
   esac
@@ -51,7 +51,8 @@ done
 
 MODULES="$(join_by , george.multiboot "$@")"
 
-QEMU_ARGS=" -kernel bootloader.multiboot -initrd $MODULES"
+QEMU_ARGS=" -kernel bootloader.multiboot"
+QEMU_ARGS+=" -initrd $MODULES"
 QEMU_ARGS+=" -m 128"
 QEMU_ARGS+=" -drive file=$DRIVE,index=0,media=disk,format=raw"
 QEMU_ARGS+=" -serial $SERIAL"
