@@ -99,7 +99,7 @@ george.disk: george.multiboot menu.lst
 	./script/MKDISK.sh
 
 temp_drive:
-	dd if=/dev/zero of=$@ bs=512 count=16
+	dd if=/dev/zero of=$@ bs=512 count=16 status=none
 
 # Testing
 
@@ -111,23 +111,19 @@ unit-tests: $(patsubst %, tests/%, $(UNIT_TESTS))
 .PRECIOUS: $(patsubst %, tests/%/output.txt, $(UNIT_TESTS))
 
 userland/%/test_disk:
-	dd if=/dev/zero of=$@ bs=512 count=16
+	dd if=/dev/zero of=$@ bs=512 count=16 status=none
 
 ## This rule enforces that coverage.log requires output.txt to be built
 ## But doesn't do anything else
 userland/%/coverage.log: userland/%/output.txt
 
 userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot userland/%/test_disk
-	qemu-system-x86_64 -kernel bootloader.multiboot \
-		-d in_asm -D >( grep -E "^(Trace.*\[ffffffff|IN:|0xffffff)" | uniq > $(subst output.txt,coverage.log,$@)) \
-		-initrd george.multiboot,$< \
-		-serial file:$@ \
-		-device isa-debug-exit,iobase=0xf4,iosize=0x04 \
-		-nographic \
-		-display none \
-		-m 128 \
-		-drive file=$(subst output.txt,test_disk,$@),index=0,media=disk,format=raw \
-		| true
+	./script/QEMU.sh \
+		--serial $@ \
+		--nographic \
+		--coverage $(subst output.txt,coverage.log,$@) \
+		--drive $(subst output.txt,test_disk,$@) \
+		$< || true
 
 # FIXME: Don't sort before diffing expected and output.
 # For now the diffing is sorting the inputs due to race

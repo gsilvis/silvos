@@ -5,7 +5,17 @@ sufficient.
 
 To run, execute:
 
-    ./script/TEST-QEMU.sh & ./script/TEST-GDB.sh
+    ./script/QEMU.sh userland/calc.bin
+
+If you want to try GDB debugging, run:
+
+   ./script/QEMU.sh -S userland/calc.bin
+
+And then in a separate terminal, attach with:
+
+  ./script/GDB.sh
+
+Or whatever other userland program(s) you would like.
 
 # Contributors
 

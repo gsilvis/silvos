@@ -1,3 +1,5 @@
+#!/bin/sh
+
 gdb \
   -ex "set confirm off" \
   -ex "file bootloader.multiboot" \
