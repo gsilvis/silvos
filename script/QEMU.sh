@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPTIONS=$(getopt -n "$0" -o hSs:d:c: --long "help,wait,serial:,nographic,drive:,coverage:" -- "$@")
+OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,nographic,drive:,coverage:,no-reboot,enable-kvm" -- "$@")
 
 if [ $? -ne 0 ]; then
   echo "Failed to parse args"
@@ -12,6 +12,8 @@ eval set -- "$OPTIONS"
 function join_by { local IFS="$1"; shift; echo "$*"; }
 
 PAUSE=0
+KVM=0
+NOREBOOT=0
 SERIAL=stdio
 NOGRAPHIC=0
 DRIVE=temp_drive
@@ -31,6 +33,12 @@ while true; do
       shift;;
     -S|--wait)
       PAUSE=1
+      shift;;
+    -k|--enable-kvm)
+      KVM=1
+      shift;;
+    --no-reboot)
+      NOREBOOT=1
       shift;;
     -s|--serial)
       SERIAL="file:$2"
@@ -69,6 +77,14 @@ if [ "$NOGRAPHIC" -gt 0 ]; then
 # If DISPLAY isn't set, use -curses
 elif [ -z "$DISPLAY" ]; then
   QEMU_ARGS+=" -curses"
+fi
+
+if [ "$NOREBOOT" -gt 0 ]; then
+  QEMU_ARGS+=" -no-reboot"
+fi
+
+if [ "$KVM" -gt 0 ]; then
+  QEMU_ARGS+=" --enable-kvm"
 fi
 
 #echo "$QEMU_ARGS" >&1
