@@ -21,11 +21,15 @@ extern int _end;
 pagetable initial_pt (void) {
   /* Set up the shared kernel pt */
   kernel_pdpt = (pagetable)allocate_phys_page();
-  for (uint64_t j = 0x00; j < PAGE_PT_NUM_ENTRIES - 2; j++) {
-    kernel_pdpt[j] = (j * PAGE_1G_SIZE) | PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
+  for (uint64_t i = 0; i < PAGE_PT_NUM_ENTRIES - 2; i++) {
+    pagetable pd = (pagetable)allocate_phys_page();
+    for (uint64_t j = 0; j < PAGE_PT_NUM_ENTRIES; j++) {
+      pd[j] = (PAGE_2M_SIZE * j + PAGE_1G_SIZE * i) | PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
+    }
+    kernel_pdpt[i] = virt_to_phys((uint64_t)&pd[0]) | PAGE_MASK__KERNEL;
   }
-  kernel_pdpt[PAGE_PT_NUM_ENTRIES-2] = PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
-  kernel_pdpt[PAGE_PT_NUM_ENTRIES-1] = PAGE_1G_SIZE | PAGE_MASK__KERNEL | PAGE_MASK_SIZE;
+  kernel_pdpt[PAGE_PT_NUM_ENTRIES-2] = kernel_pdpt[0];
+  kernel_pdpt[PAGE_PT_NUM_ENTRIES-1] = kernel_pdpt[1];
   return new_pt();
 }
 
