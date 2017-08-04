@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,nographic,drive:,coverage:,no-reboot,enable-kvm" -- "$@")
+OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,no-graphic,drive:,coverage:,no-reboot,enable-kvm,no-gdb" -- "$@")
 
 if [ $? -ne 0 ]; then
   echo "Failed to parse args"
@@ -17,6 +17,7 @@ NOREBOOT=0
 SERIAL=stdio
 NOGRAPHIC=0
 DRIVE=temp_drive
+GDB=1
 
 while true; do
   case "$1" in
@@ -28,7 +29,10 @@ while true; do
       echo "  -S, --wait          Pause CPU on startup"
       echo "  -s, --serial=FILE   Output serial to FILE instead of stdout"
       echo "  -c, --coverage=FILE Output unique hit kernel mode %rip values to FILE"
-      echo "      --nographic     Don't display the graphics (default is SDL or curses)"
+      echo "  -k, --enable-kvm    Enable hardware acceleration via KVM"
+      echo "      --no-graphic    Don't display the graphics (default is SDL or curses)"
+      echo "      --no-reboot     Don't reboot the machine on hardware faults"
+      echo "      --no-gdb        Don't expose a gdb stub (useful if running in parallel)"
       exit 1
       shift;;
     -S|--wait)
@@ -43,7 +47,7 @@ while true; do
     -s|--serial)
       SERIAL="file:$2"
       shift 2;;
-    --nographic)
+    --no-graphic)
       NOGRAPHIC=1
       shift;;
     -d|--drive)
@@ -52,6 +56,9 @@ while true; do
     -c|--coverage)
       COVERAGE="$2"
       shift 2;;
+    --no-gdb)
+      GDB=0
+      shift;;
     --) shift; break;;
     *) break ;;
   esac
@@ -66,7 +73,9 @@ QEMU_ARGS+=" -drive file=$DRIVE,index=0,media=disk,format=raw"
 QEMU_ARGS+=" -serial $SERIAL"
 QEMU_ARGS+=" -device isa-debug-exit,iobase=0xf4,iosize=0x04"
 # Expose standard gdb on :1234
-QEMU_ARGS+=" -s"
+if [ "$GDB" -gt 0 ]; then
+  QEMU_ARGS+=" -s"
+fi
 # Pause on startup (require 'c' on console, or 'c' in GDB to start)
 if [ "$PAUSE" -gt 0 ]; then
   QEMU_ARGS+=" -S"
