@@ -58,14 +58,30 @@ typedef struct {
   uint32_t unused;
 } multiboot_module;
 
-void kernel_main (uint32_t mboot_struct_addr) {
+extern int _end;
+
+void kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
+  if (mboot_magic != 0x2BADB002) {
+    panic("Bad multiboot magic!");
+  }
   uint32_t *mboot_struct =
       (uint32_t *)phys_to_virt((uint64_t)mboot_struct_addr);
-  memtop = ((uint64_t)mboot_struct[2]) * 1024;
-  memtop += 0x100000;
+  uint64_t memtop = ((uint64_t)mboot_struct[2]) * 1024 + 0x100000;
   clear_screen();
   puts("Welcome to GeorgeOS, Multiboot Edition!\r\n");
-  initialize_allocator();
+
+  /* Find the end of the last multiboot module */
+  uint64_t lowest_safe_physical_address = (uint64_t)&_end - 0xFFFFFFFF80000000;
+  multiboot_module *mod_list =
+      (multiboot_module *)phys_to_virt((uint64_t)mboot_struct[6]);
+  for (uint32_t i = 0; i < mboot_struct[5]; i++) {
+    uint64_t module_end = mod_list[i].end;
+    if (module_end > lowest_safe_physical_address) {
+      lowest_safe_physical_address = module_end;
+    }
+  }
+
+  initialize_allocator(lowest_safe_physical_address, memtop);
   insert_pt(initial_pt());
   initialize_idt();
   insert_idt();
@@ -73,8 +89,6 @@ void kernel_main (uint32_t mboot_struct_addr) {
   remap_pic();
 
   idle_thread_create();
-  multiboot_module *mod_list =
-      (multiboot_module *)phys_to_virt((uint64_t)mboot_struct[6]);
   for (uint32_t i = 0; i < mboot_struct[5]; i++) {
     user_thread_create((void *)phys_to_virt((uint64_t)mod_list[i].start),
                        mod_list[i].end - mod_list[i].start);

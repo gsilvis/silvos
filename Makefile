@@ -36,6 +36,7 @@ TEST_CFLAGS := -std=c99 -Wall -Wextra -DUNIT_TEST -Ikernel
 TEST_CC := $(CC)
 CC := x86_64-elf-gcc
 AS := x86_64-elf-as
+OBJCOPY := x86_64-elf-objcopy
 
 # this instructs GNU make to use bash as our shell
 SHELL = /bin/bash
@@ -45,8 +46,12 @@ SHELL = /bin/bash
 all: bootloader.multiboot george.multiboot temp_drive \
 	$(patsubst %, userland/%.bin, $(USERLAND_PROGS))
 
-george.multiboot: $(KERNEL_OBJS)
+george.multiboot.elf64: $(KERNEL_OBJS)
 	$(CC) -T kernel/kernel.ld $^ -o $@ $(KERN_LDFLAGS)
+
+george.multiboot: george.multiboot.elf64
+	$(OBJCOPY) $^ -F elf32-i386 $@
+
 
 # Kernel Objects
 
@@ -146,6 +151,7 @@ clean:
 	rm -f \
 		kernel/*.o \
 		george.multiboot \
+		george.multiboot.elf64 \
 		george.disk \
 		userland/*.bin \
 		userland/*.o \

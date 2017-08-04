@@ -1,56 +1,50 @@
 OUTPUT_FORMAT(elf64-x86-64)
-OUTPUT_ARCH(i386:x86-64)
 
 ENTRY(_start)
 
+KERNEL_BASE = 0xFFFFFFFF80000000;
+
 SECTIONS
 {
-    . = 0xFFFFFFFF80200000;
+    . = 1M + SIZEOF_HEADERS;
 
-    _multiboot_header = .;
-    .multiboot BLOCK(4K) : ALIGN(4K)
-    {
-        LONG(0x1BADB002)
-        LONG(0x00008003)
-        LONG(0x00000000 - 0x1BADB002 - 0x00008003)
-        LONG(_multiboot_header - 0xFFFFFFFF80000000)
-        LONG(0x00200000)
-        LONG(_data_end - 0xFFFFFFFF80000000)
-        LONG(_end - 0xFFFFFFFF80000000)
-        LONG(_start - 0xFFFFFFFF80000000)
+    .init : AT(ADDR(.init)) {
+        *(.multiboot)
     }
 
-    .text BLOCK(4K) : ALIGN(4K)
-    {
+    .inittext : AT(ADDR(.inittext)) {
+        *(.inittext)
+    }
+
+    .initdata : AT(ADDR(.initdata)) {
+        *(.initdata)
+    }
+
+    .initpt : AT(ADDR(.initpt)) {
+        *(.initpt)
+    }
+
+    . += KERNEL_BASE;
+
+    .text : AT(ADDR(.text) - KERNEL_BASE) {
         *(.text)
     }
 
-    .rodata BLOCK(4K) : ALIGN(4K)
-    {
+    .rodata : AT(ADDR(.rodata) - KERNEL_BASE) {
         *(.rodata)
     }
 
-    .eh_frame BLOCK(4K) : ALIGN(4K)
-    {
-        _eh_frame_start = .;
-        *(.eh_frame)
-        _eh_frame_end = .;
+    .eh_frame : AT(ADDR(.eh_frame) - KERNEL_BASE) {
+      _eh_frame_start = .;
+      *(.eh_frame)
+      _eh_frame_end = .;
     }
 
-    .eh_frame_hdr BLOCK(4K) : ALIGN(4K)
-    {
-        _eh_frame_hdr_start = .;
-        *(.eh_frame_hdr)
-    }
-
-    .data BLOCK(4K) : ALIGN(4K)
-    {
+    .data : AT(ADDR(.data) - KERNEL_BASE) {
         *(.data)
     }
-    _data_end = .;
 
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
+    .bss : AT(ADDR(.bss) - KERNEL_BASE) {
         *(COMMON)
         *(.bss)
     }

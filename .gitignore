@@ -1,5 +1,6 @@
 *.o
 george.multiboot
+george.multiboot.elf64
 bootloader.multiboot
 temp_drive
 userland/*.bin

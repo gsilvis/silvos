@@ -6,8 +6,6 @@
 
 #include <stdint.h>
 
-extern int _end;
-
 /* Buddy allocator, inspired by the linux kernel's version.  Can allocate pages
  * of sizes 4K - 1G */
 
@@ -88,10 +86,10 @@ void *alloc_block (int bsize) {
   return (void *)to_return;
 }
 
-void initialize_allocator (void) {
+void initialize_allocator (uint64_t usable_mem_low, uint64_t usable_mem_high) {
   /* Allocate bit-arrays, initialize as "all memory used" */
-  uint64_t num_gigs = (memtop - 1) / 0x40000000 + 1;
-  uint64_t curr = ((uint64_t)&_end) - 0xFFFFFFFF80000000;
+  uint64_t num_gigs = (usable_mem_high - 1) / 0x40000000 + 1;
+  uint64_t curr = usable_mem_low;
   /* curr is the current /physical/ memory address */
   if (curr & 0x7FFF) {
     curr &= 0xFFFFFFFFFFFF8000;
@@ -115,7 +113,7 @@ void initialize_allocator (void) {
       continue;
     }
     uint64_t blksize = (0x1 << (30-bsize));
-    if (curr + blksize > memtop) {
+    if (curr + blksize > usable_mem_high) {
       break;
     }
     free_block(bsize, index);
@@ -124,7 +122,7 @@ void initialize_allocator (void) {
   }
   for (; bsize < 19; bsize++, index *= 2) {
     uint64_t blksize = (0x1 << (30-bsize));
-    if (curr + blksize > memtop) {
+    if (curr + blksize > usable_mem_high) {
       continue;
     }
     free_block(bsize, index);

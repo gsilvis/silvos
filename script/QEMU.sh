@@ -69,10 +69,11 @@ while true; do
   esac
 done
 
-MODULES="$(join_by , george.multiboot "$@")"
-
-QEMU_ARGS=" -kernel bootloader.multiboot"
-QEMU_ARGS+=" -initrd $MODULES"
+QEMU_ARGS=" -kernel george.multiboot"
+if [ $# -gt 0 ]; then
+  MODULES="$(join_by , "$@")"
+  QEMU_ARGS+=" -initrd $MODULES"
+fi
 QEMU_ARGS+=" -m 128"
 QEMU_ARGS+=" -drive file=$DRIVE,index=0,media=disk,format=raw"
 QEMU_ARGS+=" -serial $SERIAL"
