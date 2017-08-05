@@ -4,32 +4,17 @@ language: c
 services:
     - docker
 
-before_install:
-    - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-
 script:
-    - docker pull cstanfill/silvos:travis-$TRAVIS_BUILD_ID
-    - docker run -t -e KERNEL_OPT -e USER_OPT --rm cstanfill/silvos:travis-$TRAVIS_BUILD_ID /bin/sh -c "cd /root/silvos; make clean && make test"
+    - travis_retry docker pull cstanfill/silvos:latest
+    - travis_retry docker build -t silvos .
+    - docker run -e KERNEL_OPT -e USER_OPT --rm -t silvos /bin/sh -c "cd /root/silvos; make clean; make test"
 
-jobs:
-    include:
-        - stage: build
-          script:
-              - travis_retry docker build -t cstanfill/silvos:travis-$TRAVIS_BUILD_ID .
-              - docker push cstanfill/silvos:travis-$TRAVIS_BUILD_ID
-        - stage: test
-          env: USER_OPT=-O0 KERNEL_OPT=-O0
-        - stage: test
-          env: USER_OPT=-O0 KERNEL_OPT=-O2
-        - stage: test
-          env: USER_OPT=-O0 KERNEL_OPT=-O3
-        - stage: test
-          env: USER_OPT=-O0 KERNEL_OPT="-O3 -flto"
-        - stage: test
-          env: USER_OPT=-O2 KERNEL_OPT=-O0
-        - stage: test
-          env: USER_OPT=-O2 KERNEL_OPT=-O2
-        - stage: test
-          env: USER_OPT=-O2 KERNEL_OPT=-O3
-        - stage: test
-          env: USER_OPT=-O2 KERNEL_OPT="-O3 -flto"
+env:
+    - USER_OPT=-O0 KERNEL_OPT=-O0
+    - USER_OPT=-O0 KERNEL_OPT=-O2
+    - USER_OPT=-O0 KERNEL_OPT=-O3
+    - USER_OPT=-O0 KERNEL_OPT="-O3 -flto"
+    - USER_OPT=-O2 KERNEL_OPT=-O0
+    - USER_OPT=-O2 KERNEL_OPT=-O2
+    - USER_OPT=-O2 KERNEL_OPT=-O3
+    - USER_OPT=-O2 KERNEL_OPT="-O3 -flto"
