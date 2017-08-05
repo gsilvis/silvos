@@ -5,7 +5,11 @@
 #include "memory-map.h"
 #include "threads.h"
 
-uint64_t timeslice;
+/* The duration of a timeslice in femtoseconds - this is 50 ms */
+static const uint64_t TIMESLICE_DURATION = 50000000000000;
+
+/* timeslice_tics contains the number of HPET tics in one timeslice */
+static uint64_t timeslice_tics;
 
 int hpet_initialize (void) {
   if (!hpet) {
@@ -17,7 +21,7 @@ int hpet_initialize (void) {
   hpet_reg = (struct HPET_Registers *)phys_to_virt(hpet->base.Address);
   hpet_reg->general_config |=
       HPET_GENERAL_CONFIG_ENABLE | HPET_GENERAL_CONFIG_LEGACY_ROUTE;
-  timeslice = 50000000000000 / (hpet_reg->capabilities >> 32);
+  timeslice_tics = TIMESLICE_DURATION / (hpet_reg->capabilities >> 32);
   /* PIT and RTC are now inactive */
   /* Set timers 0 and 1 to edge-triggered */
   for (int i = 0; i < 2; i++) {
@@ -36,7 +40,7 @@ int hpet_initialize (void) {
 
 void hpet_reset_timeout (void) {
   uint64_t cur = hpet_reg->main_counter;
-  hpet_reg->timers[0].comparator = cur + timeslice;
+  hpet_reg->timers[0].comparator = cur + timeslice_tics;
 }
 
 
@@ -50,8 +54,9 @@ struct sleeper {
 
 LIST_HEAD(sleep_queue);
 
-void hpet_nanosleep (uint64_t usecs) {
-  uint64_t ticks = usecs * 1000000000 / (hpet_reg->capabilities >> 32);
+void hpet_nanosleep (uint64_t nanosecs) {
+  uint64_t femtosecs = nanosecs * 1000000;
+  uint64_t ticks = femtosecs / (hpet_reg->capabilities >> 32);
   uint64_t cur = hpet_reg->main_counter;
   uint64_t deadline = cur + ticks;
   if (deadline < cur) {

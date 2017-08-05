@@ -64,8 +64,8 @@ static inline int debug (const char *string, int len) {
   return (int)__syscall2(SYSCALL_DEBUG, (syscall_arg)string, len);
 }
 
-static inline void nanosleep (long long usecs) {
-  __syscall1(SYSCALL_NANOSLEEP, usecs);
+static inline void nanosleep (long long nanosecs) {
+  __syscall1(SYSCALL_NANOSLEEP, nanosecs);
 }
 
 static inline int fork () {
