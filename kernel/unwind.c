@@ -3,8 +3,8 @@
 #include "com.h"
 #include "util.h"
 
-extern const char _eh_frame_start[];
-extern const char _eh_frame_end[];
+extern const uint8_t _eh_frame_start[];
+extern const uint8_t _eh_frame_end[];
 
 /* DWARF data structs */
 enum dwarf_rule {
@@ -49,14 +49,14 @@ typedef struct {
   const eh_cie *cie;
   uint64_t pc_begin;
   uint64_t pc_len;
-  const char *instrs;
+  const uint8_t *instrs;
   uint64_t instrs_len;
 } eh_fde;
 
 /* This is a struct used all over the place in the file to parse the eh_frame
  * section. It's a string slice with a logical head at the beginning. */
 typedef struct {
-  const char *data;
+  const uint8_t *data;
   uint64_t remaining;
 } head;
 
@@ -129,7 +129,7 @@ static int read_uleb128(head *in, uint64_t *out) {
 
   int shift = 0;
   while (in->remaining > 0) {
-    unsigned char c = in->data[0];
+    uint8_t c = in->data[0];
     in->data++;
     in->remaining--;
     *out = *out | ((uint64_t)c & 0x7F) << shift;
@@ -146,7 +146,7 @@ static int read_sleb128(head *in, int64_t *out) {
   *out = 0;
 
   while (in->remaining > 0) {
-    unsigned char c = in->data[0];
+    uint8_t c = in->data[0];
     in->data++;
     in->remaining--;
     *out = *out | ((uint64_t)c & 0x7F) << read;
