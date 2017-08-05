@@ -10,6 +10,7 @@
 #include "fpu.h"
 #include "loader.h"
 #include "hpet.h"
+#include "com.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -134,6 +135,11 @@ void finish_context_switch (void) {
   fpu_switch_thread();
   set_new_rsp(running_tcb->stack_top);
   insert_pt(running_tcb->pt);
+}
+
+void thread_exit_fault(void) {
+  com_printf("THREAD 0x%02X FAULTED\n", running_tcb->thread_id);
+  thread_exit();
 }
 
 void thread_exit (void) {

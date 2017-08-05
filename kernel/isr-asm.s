@@ -130,7 +130,7 @@ nm_isr:
 .GLOBAL fault_isr
 fault_isr:
 	push_caller_save_reg
-	call thread_exit
+	call thread_exit_fault
 
 .GLOBAL df_isr
 df_isr:
