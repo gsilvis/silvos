@@ -43,7 +43,7 @@ SHELL = /bin/bash
 
 # Primary targets
 
-all: bootloader.multiboot george.multiboot temp_drive \
+all: george.multiboot temp_drive \
 	$(patsubst %, userland/%.bin, $(USERLAND_PROGS))
 
 george.multiboot.elf64: $(KERNEL_OBJS)
@@ -59,20 +59,6 @@ kernel/%.o: kernel/%.c
 	$(CC) -c $^ -o $@ $(KERN_CFLAGS)
 
 kernel/%-asm.o: kernel/%-asm.s
-	$(AS) $^ -o $@
-
-# Bootloader
-
-bootloader.multiboot: bootloader/start32.o bootloader/start64.o bootloader/start-asm.o
-	$(CC) -T bootloader/bootloader.ld $^ -o $@ $(BOOTLOADER_LDFLAGS)
-
-bootloader/start32.o: bootloader/start32.c
-	$(CC) -m32 -c $^ -o $@ $(BOOTLOADER_CFLAGS)
-
-bootloader/start64.o: bootloader/start64.c
-	$(CC) -c $^ -o $@ $(BOOTLOADER_CFLAGS)
-
-bootloader/start-asm.o: bootloader/start-asm.s
 	$(AS) $^ -o $@
 
 # User Objects
@@ -123,7 +109,7 @@ userland/%/test_disk:
 userland/%/coverage.log: userland/%/output.txt
 
 # Runs without a GDB stub so make -j works properly.
-userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot userland/%/test_disk
+userland/%/output.txt: userland/%.bin george.multiboot userland/%/test_disk
 	./script/QEMU.sh \
 		--no-gdb \
 		--serial $@ \
@@ -159,8 +145,6 @@ clean:
 		tests/*.bin \
 		tests/*/*.o \
 		temp_drive \
-		bootloader.multiboot \
-		bootloader/*.o \
 		userland/*/output.txt \
 		userland/*/coverage.log \
 		userland/*/test_disk \
