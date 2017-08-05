@@ -117,10 +117,12 @@ userland/%/test_disk:
 ## But doesn't do anything else
 userland/%/coverage.log: userland/%/output.txt
 
+# Runs without a GDB stub so make -j works properly.
 userland/%/output.txt: userland/%.bin george.multiboot bootloader.multiboot userland/%/test_disk
 	./script/QEMU.sh \
+		--no-gdb \
 		--serial $@ \
-		--nographic \
+		--no-graphic \
 		--coverage $(subst output.txt,coverage.log,$@) \
 		--drive $(subst output.txt,test_disk,$@) \
 		$< || true
