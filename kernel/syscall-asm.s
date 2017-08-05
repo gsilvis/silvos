@@ -12,3 +12,7 @@ syscall_defns:
 	.quad com_debug_thread
 	.quad hpet_nanosleep
 	.quad fork
+
+.GLOBAL syscall_defns_len
+syscall_defns_len:
+	.quad (. - syscall_defns)>>3

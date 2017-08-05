@@ -35,9 +35,16 @@
 syscall_isr:
 	mov %rbx,%rdi
 	mov %rcx,%rsi
+	movq (syscall_defns_len), %r8
+	cmpq %r8, %rax
+	jae invalid_syscall
 	mov $syscall_defns, %r8
 	mov (%r8, %rax, 8), %rax
 	call *%rax
+	iretq
+
+invalid_syscall:
+	mov $-1, %rax
 	iretq
 
 /* Interrupts */
