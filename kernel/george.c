@@ -48,7 +48,7 @@ void initialize_idt (void) {
   register_isr(0x28, rtc_isr, 0);
 
   /* Syscalls */
-  register_isr(0x36, syscall_isr, 0);
+  register_user_isr(0x36, syscall_isr, 0);
 }
 
 typedef struct {

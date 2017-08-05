@@ -5,6 +5,9 @@ void create_idt (void);
 void register_isr (unsigned char num,
                    void (*handler)(void),
                    unsigned char ist);
+void register_user_isr (unsigned char num,
+                        void (*handler)(void),
+                        unsigned char ist);
 void insert_idt (void);
 
 #endif
