@@ -1,4 +1,7 @@
 .GLOBAL _start
 _start:
 	call main
-	int $0x38
+
+	/* call exit */
+	mov $0x02, %rax
+	int $0x36
