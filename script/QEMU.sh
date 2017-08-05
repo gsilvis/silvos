@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,no-graphic,drive:,coverage:,no-reboot,enable-kvm,no-gdb" -- "$@")
+OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,no-graphic,drive:,coverage:,no-reboot,enable-kvm,no-gdb,debug-qemu" -- "$@")
 
 if [ $? -ne 0 ]; then
   echo "Failed to parse args"
@@ -18,6 +18,7 @@ SERIAL=stdio
 NOGRAPHIC=0
 DRIVE=temp_drive
 GDB=1
+DEBUG_QEMU=0
 
 while true; do
   case "$1" in
@@ -33,6 +34,7 @@ while true; do
       echo "      --no-graphic    Don't display the graphics (default is SDL or curses)"
       echo "      --no-reboot     Don't reboot the machine on hardware faults"
       echo "      --no-gdb        Don't expose a gdb stub (useful if running in parallel)"
+      echo "      --debug-qemu    Run QEMU inside of GDB"
       exit 1
       shift;;
     -S|--wait)
@@ -58,6 +60,9 @@ while true; do
       shift 2;;
     --no-gdb)
       GDB=0
+      shift;;
+    --debug-qemu)
+      DEBUG_QEMU=1
       shift;;
     --) shift; break;;
     *) break ;;
@@ -98,10 +103,16 @@ fi
 
 #echo "$QEMU_ARGS" >&1
 
+if [ "$DEBUG_QEMU" -eq 0 ]; then
+  CMD=qemu-system-x86_64
+else
+  CMD="gdb --args qemu-system-x86_64"
+fi
+
 if [ -z "$COVERAGE" ]; then
-  qemu-system-x86_64 $QEMU_ARGS
+  $CMD $QEMU_ARGS
   exit $?
 else
-  qemu-system-x86_64 $QEMU_ARGS -d in_asm -D >( grep -E "^(Trace.*\[ffffffff|IN:|0xffffff)" | uniq > "$COVERAGE")
+  $CMD $QEMU_ARGS -d in_asm -D >( grep -E "^(Trace.*\[ffffffff|IN:|0xffffff)" | uniq > "$COVERAGE")
   exit $?
 fi
