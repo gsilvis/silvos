@@ -41,6 +41,7 @@ int idle_thread_create (void);
 void schedule (void);
 void reschedule_thread (tcb *thread);
 void yield (void);
+int fork (void);
 
 void thread_start (void);
 void __attribute__((noreturn)) thread_exit (void);
