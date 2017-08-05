@@ -29,22 +29,67 @@
 	pop %rax
 .endm
 
+.macro clear_caller_saved_reg_except_rax
+	xor %r11, %r11
+	xor %r10, %r10
+	xor %r9, %r9
+	xor %r8, %r8
+	xor %rdi, %rdi
+	xor %rsi, %rsi
+	xor %rdx, %rdx
+	xor %rcx, %rcx
+.endm
+
 /* Syscalls */
+
+/* Note: the syscall ABI is:
+ *
+ *  REG | INPUT | OUTPUT
+ *  --------------------
+ *  RAX | SYSNO | RETURN
+ *  RBX | ARG1  | SAVED
+ *  RCX | ARG2  | UNDEF
+ *  RDX | ----- | UNDEF
+ *  RBP | ----- | SAVED
+ *  RSI | ----- | UNDEF
+ *  RDI | ----- | UNDEF
+ *  RSP | ----- | SAVED
+ *  R8  | ----- | UNDEF
+ *  R9  | ----- | UNDEF
+ *  R10 | ----- | UNDEF
+ *  R11 | ----- | UNDEF
+ *  R12 | ----- | SAVED
+ *  R13 | ----- | SAVED
+ *  R14 | ----- | SAVED
+ *  R15 | ----- | SAVED
+ *
+ * This matches the SYSV x86_64 ABI for caller/callee saved registers,
+ * but not for arguments */
 
 .GLOBAL syscall_isr
 syscall_isr:
-	mov %rbx,%rdi
-	mov %rcx,%rsi
 	movq (syscall_defns_len), %r8
 	cmpq %r8, %rax
 	jae invalid_syscall
+
 	mov $syscall_defns, %r8
 	mov (%r8, %rax, 8), %rax
+
+	/* Translate syscall arguments into appropriate regs for handler */
+	mov %rbx,%rdi
+	mov %rcx,%rsi
 	call *%rax
+
+	/* Clear registers to prevent information leakage from kernel mode
+	 * to usermode. For *callee* saved registers, it would be an ABI
+	 * to not have preserved them, so we only need to clobber caller
+	 * saved registers */
+	clear_caller_saved_reg_except_rax
 	iretq
 
 invalid_syscall:
 	mov $-1, %rax
+	/* Note: caller saved registers don't need to be clobbered */
 	iretq
 
 /* Interrupts */

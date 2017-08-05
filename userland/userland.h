@@ -8,8 +8,8 @@
 static inline syscall_arg __syscall(unsigned long syscallno, syscall_arg arg1, syscall_arg arg2) {
   syscall_arg out;
   __asm__ volatile("int $0x36"
-                   : "=a" (out), "=c" (arg2)
-                   : "a" (syscallno), "b" (arg1), "c" (arg2)
+                   : "=a" (out), "+c" (arg2)
+                   : "a" (syscallno), "b" (arg1)
                    : "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "memory");
   return out;
 }
