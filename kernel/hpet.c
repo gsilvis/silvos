@@ -49,7 +49,6 @@ struct sleeper {
 };
 
 LIST_HEAD(sleep_queue);
-uint64_t current_deadline = 0xFFFFFFFFFFFFFFFF;
 
 void hpet_nanosleep (uint64_t usecs) {
   uint64_t ticks = usecs * 1000000000 / (hpet_reg->capabilities >> 32);
@@ -102,13 +101,17 @@ void hpet_sleepers_awake() {
       reschedule_thread(s->thread);
     }
     if (list_empty(&sleep_queue)) {
-      current_deadline = 0xFFFFFFFFFFFFFFFF;
-    } else {
-      struct sleeper *s = (struct sleeper *)i;
-      current_deadline = s->deadline;
+      return;
     }
+    struct sleeper *s = (struct sleeper *)i;
+    uint64_t current_deadline = s->deadline;
     hpet_reg->timers[1].comparator = current_deadline;
-    if (hpet_reg->main_counter < current_deadline) {
+    /* According to a very frustrated-sounding comment in the Linux kernel,
+     * some HPET implementations lag a bit before actually setting the timer.
+     * Even if the deadline is in the future, if it's too soon in the future,
+     * assume that the HPET still might not ever give as an interrupt for it.
+     * Sad. */
+    if (hpet_reg->main_counter + 8 < current_deadline) {
       return;
     }
     /* Dammit, the deadline passed in-between our last two reads of the main
