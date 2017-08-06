@@ -1,3 +1,17 @@
 THREAD 0x01: I didn't die, and...
 THREAD 0x02: I'M ALIVE
 THREAD 0x02: Yeah, he did it.
+THREAD 0x03: I'M ALIVE
+THREAD 0x03: Yeah, he did it.
+THREAD 0x04: I'M ALIVE
+THREAD 0x04: Yeah, he did it.
+THREAD 0x05: I'M ALIVE
+THREAD 0x05: Yeah, he did it.
+THREAD 0x06: I'M ALIVE
+THREAD 0x06: Yeah, he did it.
+THREAD 0x07: I'M ALIVE
+THREAD 0x07: Yeah, he did it.
+THREAD 0x08: I'M ALIVE
+THREAD 0x08: Yeah, he did it.
+THREAD 0x09: I'M ALIVE
+THREAD 0x09: Yeah, he did it.

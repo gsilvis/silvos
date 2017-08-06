@@ -16,10 +16,14 @@ void __attribute__ ((noreturn)) my_task() {
 }
 
 void main() {
-  if (palloc((const void *)NEW_STACK)) {
-    DEBUG("ALLOC FAIL");
+  long long stac = NEW_STACK;
+  for (int i = 0; i < 8; i++) {
+    if (palloc((const void *)stac)) {
+      DEBUG("ALLOC FAIL");
+    }
+    spawn_thread(my_task, (void *)(stac + 0x1000));
+    stac += 0x4000;
   }
-  spawn_thread(my_task, (void *)(NEW_STACK + 0x1000));
   bluh = 5;
   DEBUG("I didn't die, and...");
 }
