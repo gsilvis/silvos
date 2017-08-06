@@ -36,8 +36,9 @@ static inline void putch (char c) {
   __syscall1(SYSCALL_PUTCH, c);
 }
 
-static inline void exit (void) {
+static inline void __attribute ((noreturn)) exit (void) {
   __syscall0(SYSCALL_EXIT);
+  while (1); /* SYSCALL_EXIT does not return. */
 }
 
 static inline char getch (void) {
@@ -70,6 +71,10 @@ static inline void nanosleep (long long nanosecs) {
 
 static inline int fork () {
   return (int)__syscall0(SYSCALL_FORK);
+}
+
+static inline void spawn_thread (const void *code, void *stack) {
+  __syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
 }
 
 #endif

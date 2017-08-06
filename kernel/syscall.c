@@ -26,7 +26,7 @@
 #define TRAMPOLINE1(n) TRAMPOLINE_HELPER(n, res = n(a))
 #define TRAMPOLINE1_NORET(n) TRAMPOLINE_HELPER(n, n(a))
 #define TRAMPOLINE2(n) TRAMPOLINE_HELPER(n, res = n(a, b))
-#define TRAMPOLINE2_NORET(n) TRAMPOLINE(n, n(a, b))
+#define TRAMPOLINE2_NORET(n) TRAMPOLINE_HELPER(n, n(a, b))
 
 /* Trampoline definitions */
 
@@ -40,6 +40,7 @@ TRAMPOLINE1(palloc)
 TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
 TRAMPOLINE1_NORET(hpet_nanosleep)
+TRAMPOLINE2_NORET(spawn_within_vm_space)
 
 #pragma GCC diagnostic pop
 
@@ -58,6 +59,7 @@ syscall_func syscall_defns[] = {
   TRAMPOLINE_NAME(hpet_nanosleep),
   /* fork *can't* have any C in it's stack. */
   (syscall_func)fork,
+  TRAMPOLINE_NAME(spawn_within_vm_space),
 };
 
 uint64_t syscall_defns_len = sizeof(syscall_defns)/sizeof(syscall_func);

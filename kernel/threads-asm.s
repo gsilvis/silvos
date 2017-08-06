@@ -21,6 +21,10 @@ thread_start:
 	call thread_launch
 	iretq
 
+.GLOBAL thread_start_within_old_vm_space
+thread_start_within_old_vm_space:
+        iretq
+
 .GLOBAL schedule
 schedule:
 	push_callee_save_reg

@@ -1,0 +1,3 @@
+THREAD 0x01: I didn't die, and...
+THREAD 0x02: I'M ALIVE
+THREAD 0x02: Yeah, he did it.

@@ -14,7 +14,8 @@ typedef unsigned long long syscall_arg;
 #define SYSCALL_DEBUG       0x08
 #define SYSCALL_NANOSLEEP   0x09
 #define SYSCALL_FORK        0x0A
+#define SYSCALL_SPAWN       0x0B
 
-#define NUM_SYSCALLS        0x0B
+#define NUM_SYSCALLS        0x0C
 
 #endif

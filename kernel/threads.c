@@ -17,21 +17,34 @@
 
 tcb *running_tcb = 0;
 
+static vmcb vmcbs[NUMVMSPACES];
 static tcb tcbs[NUMTHREADS];
 static int32_t total_threads = -1;  /* The idle thread doesn't count. */
 static tcb *idle_tcb = 0;
 
+/* Get a new VM space, and allocate a pagetable for it. */
+static vmcb *get_new_vm_space (pagetable pt) {
+  for (int i = 0; i < NUMVMSPACES; i++) {
+    if (vmcbs[i].pt == 0) {
+      vmcbs[i].pt = pt;
+      return &vmcbs[i];
+    }
+  }
+  return 0;
+}
+
 /* After calling this, you must set up the kernel stack contents, rsp, and fpu
  * state if not INACTIVE. Returns null on failure.  If you want the thread to
  * ever be scheduled, you must call 'reschedule_thread' on it. */
-static tcb *create_thread (void* text, size_t length) {
+static tcb *create_thread (void *text, size_t length, vmcb *vm_space) {
   static uint8_t thread_id = 0;
   for (int i = 0; i < NUMTHREADS; i++) {
     if (tcbs[i].state == TS_NONEXIST) {
       tcbs[i].wait_queue.next = &tcbs[i].wait_queue;
       tcbs[i].wait_queue.prev = &tcbs[i].wait_queue;
       tcbs[i].thread_id = thread_id++;
-      tcbs[i].pt = new_pt();
+      tcbs[i].vm_control_block = vm_space;
+      vm_space->refcount++;
       tcbs[i].text = text;
       tcbs[i].text_length = length;
       char *kernel_stack = &((char *)allocate_phys_page())[4096];
@@ -45,10 +58,10 @@ static tcb *create_thread (void* text, size_t length) {
   return 0;
 }
 
-static tcb* create_thread_internal (void *text, size_t length, uint64_t entry) {
+static tcb* create_thread_internal (void *text, size_t length, uint64_t entry, vmcb* vm_space) {
   int kernel = !text;
 
-  tcb *new_tcb = create_thread(text, length);
+  tcb *new_tcb = create_thread(text, length, vm_space);
   if (!new_tcb) {
     return 0;
   }
@@ -73,7 +86,8 @@ int user_thread_create (void *text, size_t length) {
   if (elf64_check(text, length)) {
     return -2; /* Bad elf! */
   }
-  tcb *new_tcb = create_thread_internal(text, length, elf64_get_entry(text));
+  vmcb *new_vmcb = get_new_vm_space(new_pt());
+  tcb *new_tcb = create_thread_internal(text, length, elf64_get_entry(text), new_vmcb);
   if (!new_tcb) {
     return -1;
   }
@@ -85,7 +99,7 @@ int user_thread_create (void *text, size_t length) {
 void thread_launch () {
   if (running_tcb->text) {
     elf64_load(running_tcb->text);
-    map_new_page(running_tcb->pt, LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
+    map_new_page(running_tcb->vm_control_block->pt, LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
   }
 }
 
@@ -96,7 +110,8 @@ static void idle () {
 }
 
 int idle_thread_create () {
-  idle_tcb = create_thread_internal(NULL, 0, (uint64_t)idle);
+  vmcb *new_vmcb = get_new_vm_space(new_pt());
+  idle_tcb = create_thread_internal(NULL, 0, (uint64_t)idle, new_vmcb);
   if (!idle_tcb) {
     panic("Couldn't create idle thread!");
   }
@@ -134,7 +149,7 @@ void finish_context_switch (void) {
   hpet_reset_timeout();
   fpu_switch_thread();
   set_new_rsp(running_tcb->stack_top);
-  insert_pt(running_tcb->pt);
+  insert_pt(running_tcb->vm_control_block->pt);
 }
 
 void thread_exit_fault(void) {
@@ -144,7 +159,11 @@ void thread_exit_fault(void) {
 
 void thread_exit (void) {
   fpu_exit_thread();
-  free_pagetable(running_tcb->pt);
+  running_tcb->vm_control_block->refcount--;
+  if (running_tcb->vm_control_block->refcount == 0) {
+    free_pagetable(running_tcb->vm_control_block->pt);
+    running_tcb->vm_control_block->pt = 0;
+  }
   running_tcb->state = TS_NONEXIST;
   total_threads--;
   schedule();
@@ -173,12 +192,12 @@ void yield (void) {
 int fork_pid = 0;
 
 void clone_thread (uint64_t fork_rsp) {
-  tcb *new_tcb = create_thread(running_tcb->text, running_tcb->text_length);
+  vmcb *new_vmcb = get_new_vm_space(duplicate_pagetable(running_tcb->vm_control_block->pt));
+  tcb *new_tcb = create_thread(running_tcb->text, running_tcb->text_length, new_vmcb);
   if (!new_tcb) {
     fork_pid = -1;
     return;
   }
-  new_tcb->pt = duplicate_pagetable(running_tcb->pt);
   /* Clone kernel stack starting at fork_entry_point. */
   uint64_t stack_depth = (uint64_t) running_tcb->stack_top - fork_rsp;
   memcpy(((char *)new_tcb->stack_top) - stack_depth,
@@ -193,4 +212,25 @@ uint64_t fork_get_return_val (void) {
   int res = fork_pid;
   fork_pid = 0;
   return (uint64_t)res;
+}
+
+void spawn_within_vm_space (uint64_t rip, uint64_t rsp) {
+  tcb *new_tcb = create_thread(running_tcb->text, running_tcb->text_length,
+                               running_tcb->vm_control_block);
+  if (new_tcb == 0) {
+    panic("Could not create new thread.");
+  }
+  uint64_t *kernel_stack = (uint64_t *)new_tcb->stack_top;
+  /* Initialize stack */
+  /* Stack frame one:  thread_start_within_old_vm_space */
+  kernel_stack[-1] = 0x1B;  /* %ss */
+  kernel_stack[-2] = rsp;   /* %rsp */
+  kernel_stack[-3] = 0x200; /* EFLAGS */
+  kernel_stack[-4] = 0x4B;  /* %cs */
+  kernel_stack[-5] = rip;   /* %rip */
+  /* Stack frame two: schedule */
+  kernel_stack[-6] = (uint64_t)thread_start_within_old_vm_space;
+  /* 6 callee-save registers */
+  new_tcb->rsp = &kernel_stack[-12];
+  reschedule_thread(new_tcb);
 }

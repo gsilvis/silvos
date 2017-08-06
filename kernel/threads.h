@@ -7,7 +7,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define NUMTHREADS 16
+#define NUMTHREADS 64
+#define NUMVMSPACES 16
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
@@ -21,9 +22,14 @@ enum fpu_state {
 };
 
 typedef struct {
+  pagetable pt; /* 0 if unused */
+  uint8_t refcount;
+} vmcb;
+
+typedef struct {
   struct list_head wait_queue;
   void *rsp;        /* Kernel stack pointer, when yielded */
-  pagetable pt;
+  vmcb *vm_control_block;
   uint8_t thread_id;
   enum thread_state state;
   void *stack_top;  /* For TSS usage */
@@ -44,10 +50,12 @@ void yield (void);
 int fork (void);
 
 void thread_start (void);
+void thread_start_within_old_vm_space (void);
 void __attribute__((noreturn)) thread_exit (void);
 void __attribute__((noreturn)) thread_exit_fault (void);
 
 void clone_thread (uint64_t fork_rsp);
+void spawn_within_vm_space (uint64_t rip, uint64_t rsp);
 void com_print_backtrace (void);
 
 #define wait_event(wq, cond)                       \
