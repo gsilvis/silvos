@@ -78,5 +78,12 @@ do {                                   \
   reschedule_thread(t);                \
 } while (0)
 
+#define wake_up_all(wq)                \
+do {                                   \
+  tcb *t = (tcb *)list_pop_front(&wq); \
+  if (!t)  break;                      \
+  list_remove(&t->wait_queue);         \
+  reschedule_thread(t);                \
+} while (1)
 
 #endif

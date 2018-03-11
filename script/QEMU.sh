@@ -78,6 +78,7 @@ QEMU_ARGS+=" -m 128"
 QEMU_ARGS+=" -drive file=$DRIVE,index=0,media=disk,format=raw"
 QEMU_ARGS+=" -serial $SERIAL"
 QEMU_ARGS+=" -device isa-debug-exit,iobase=0xf4,iosize=0x04"
+QEMU_ARGS+=" -soundhw ac97"
 # Expose standard gdb on :1234
 if [ "$GDB" -gt 0 ]; then
   QEMU_ARGS+=" -s"

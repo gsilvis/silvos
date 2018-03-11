@@ -7,6 +7,7 @@
 #include "palloc.h"
 #include "com.h"
 #include "hpet.h"
+#include "ac97.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -41,6 +42,7 @@ TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
 TRAMPOLINE1_NORET(hpet_nanosleep)
 TRAMPOLINE2_NORET(spawn_within_vm_space)
+TRAMPOLINE1(ac97_enqueue_audio_out)
 
 #pragma GCC diagnostic pop
 
@@ -57,9 +59,9 @@ syscall_func syscall_defns[] = {
   TRAMPOLINE_NAME(pfree),
   TRAMPOLINE_NAME(com_debug_thread),
   TRAMPOLINE_NAME(hpet_nanosleep),
-  /* fork *can't* have any C in it's stack. */
-  (syscall_func)fork,
+  (syscall_func)fork, /* fork *can't* have any C in its stack. */
   TRAMPOLINE_NAME(spawn_within_vm_space),
+  TRAMPOLINE_NAME(ac97_enqueue_audio_out),
 };
 
 uint64_t syscall_defns_len = sizeof(syscall_defns)/sizeof(syscall_func);

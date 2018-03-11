@@ -1,5 +1,6 @@
 #include "pci.h"
 
+#include "ac97.h"
 #include "ide.h"
 #include "vga.h"
 #include "util.h"
@@ -19,7 +20,7 @@ static pci_handler pci_handlers[] = {
   { PCI_CLASS_IDE_CONTROLLER, ide_device_register, "IDE Controller" },
   { PCI_CLASS_ETHERNET_CONTROLLER, NULL, "Ethernet Controller" },
   { PCI_CLASS_VGA_CONTROLLER, NULL, "VGA Controller" },
-  { PCI_CLASS_AUDIO_CONTROLLER, NULL, "Audio Controller" },
+  { PCI_CLASS_AUDIO_CONTROLLER, ac97_device_register, "Audio Controller" },
   { PCI_CLASS_HOST_BRIDGE, NULL, "Host Bridge" },
   { PCI_CLASS_ISA_BRIDGE, NULL, "ISA Bridge" },
   { PCI_CLASS_OTHER_BRIDGE, NULL, "Other Bridge" },

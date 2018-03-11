@@ -15,7 +15,8 @@ typedef unsigned long long syscall_arg;
 #define SYSCALL_NANOSLEEP   0x09
 #define SYSCALL_FORK        0x0A
 #define SYSCALL_SPAWN       0x0B
+#define SYSCALL_AUDIO_OUT   0x0C
 
-#define NUM_SYSCALLS        0x0C
+#define NUM_SYSCALLS        0x0D
 
 #endif

@@ -18,8 +18,8 @@ void remap_pic (void) {
   outb(0xA1, 0x02);
   outb(0xA1, 0x01); /* 8086 mode */
 
-  outb(0x21, 0xF8); /* Block non-keyboard, non-timer lines */
-  outb(0xA1, 0xFE); /* block non-rtc lines */
+  outb(0x21, 0xF8); /* Block non-keyboard, non-timer, non-cascade lines */
+  outb(0xA1, 0xF6); /* Block non-rtc, non-audio lines */
 }
 
 void master_eoi (void) {

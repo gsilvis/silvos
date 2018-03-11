@@ -14,9 +14,6 @@ char buf[256];
 int buf_head;
 int buf_tail;
 
-#define CIRC_CNT(head,tail,size) (((head) - (tail)) & ((size)-1))
-#define CIRC_SPACE(head,tail,size) CIRC_CNT((tail),((head)+1),(size))
-
 char lshift;
 char rshift;
 

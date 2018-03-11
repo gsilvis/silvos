@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define CIRC_CNT(head,tail,size) (((head) - (tail)) & ((size)-1))
+#define CIRC_SPACE(head,tail,size) CIRC_CNT((tail),((head)+1),(size))
+
 /* Returns 0 if 0, and non-zero if 1 */
 static inline int bit_array_get(const uint8_t *a, uint64_t i) {
   uint8_t mask = 1 << (i%8);

@@ -118,6 +118,14 @@ rtc_isr:
 	pop_caller_save_reg
 	iretq
 
+.GLOBAL ac97_isr
+ac97_isr:
+        push_caller_save_reg
+        call ac97_handle_interrupt
+        call slave_eoi
+        pop_caller_save_reg
+        iretq
+
 /* Faults */
 
 .GLOBAL nm_isr

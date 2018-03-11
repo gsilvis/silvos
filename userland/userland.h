@@ -77,4 +77,8 @@ static inline void spawn_thread (const void *code, void *stack) {
   __syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
 }
 
+static inline int audio_out (const unsigned short* samples) {
+  return (int)__syscall1(SYSCALL_AUDIO_OUT, (syscall_arg)samples);
+}
+
 #endif
