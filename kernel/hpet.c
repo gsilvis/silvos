@@ -54,6 +54,15 @@ struct sleeper {
 
 LIST_HEAD(sleep_queue);
 
+void hpet_blocking_nanosleep (uint64_t nanosecs) {
+  uint64_t femtosecs = nanosecs * 1000000;
+  uint64_t ticks = femtosecs / (hpet_reg->capabilities >> 32);
+  uint64_t cur = hpet_reg->main_counter;
+  uint64_t deadline = cur + ticks;
+  while (hpet_reg->main_counter < deadline);
+  return;
+}
+
 void hpet_nanosleep (uint64_t nanosecs) {
   uint64_t femtosecs = nanosecs * 1000000;
   uint64_t ticks = femtosecs / (hpet_reg->capabilities >> 32);
