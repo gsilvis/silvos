@@ -207,6 +207,28 @@ static inline uint32_t APIC_ICR_HIGH_DESTINATION(uint32_t dest) {
   return dest << 24;
 }
 
+extern uint8_t trampoline_start;
+extern uint8_t trampoline_end;
+
+void apic_send_start_ipi (uint32_t dest) {
+  uint64_t trampoline_size = &trampoline_end - &trampoline_start;
+  memcpy((void*)phys_to_virt(0x1000), &trampoline_start, trampoline_size);
+  apic->interrupt_command[1].val = APIC_ICR_HIGH_DESTINATION(dest);
+  apic->interrupt_command[0].val = 0x00
+    | APIC_ICR_LOW_DELIVERY_MODE_INIT
+    | APIC_ICR_LOW_LEVEL_ASSERT;
+  while (apic->interrupt_command[0].val & APIC_ICR_LOW_DELIVERY_STATUS_SEND_PENDING) {
+    com_printf("slow!\n");
+  }
+  hpet_blocking_nanosleep(10 * 1000 * 1000);
+  apic->interrupt_command[1].val = APIC_ICR_HIGH_DESTINATION(dest);
+  apic->interrupt_command[0].val = 0x01  /* page starting at 0x1000 */
+    | APIC_ICR_LOW_DELIVERY_MODE_START_UP
+    | APIC_ICR_LOW_LEVEL_ASSERT;
+  /* I've seen claims that it is a good idea to do a /second/ startup IPI after
+   * another 10 millisecond sleep, but it's not necessary in QEMU at least. */
+}
+
 static void write_ioapic_redirection (uint32_t line, uint32_t low_flags, uint32_t high_flags) {
   ioapic->reg = IOAPIC_RED_TBL_LOW(line);
   ioapic->data = low_flags;

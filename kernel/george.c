@@ -104,6 +104,18 @@ void kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
   apic_init();
   ioapic_init();
   test_parse_eh_frame();
+
+  puts("About to send the IPIs?\r\n");
+  apic_send_start_ipi(1);
+  puts("Sent the IPIs?\r\n");
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */
+}
+
+void ap_main() {
+  puts("I woke up!\r\n");
+  insert_pt(new_pt());
+  while (1) {
+    hlt();
+  }
 }

@@ -40,6 +40,10 @@ SECTIONS
       _eh_frame_end = .;
     }
 
+    .trampoline : AT(ADDR(.trampoline) - KERNEL_BASE) {
+        *(.trampoline)
+    }
+
     .data : AT(ADDR(.data) - KERNEL_BASE) {
         *(.data)
     }
