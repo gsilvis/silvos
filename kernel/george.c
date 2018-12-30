@@ -44,9 +44,9 @@ void initialize_idt (void) {
     /* 0x14  #VE: Virtualization Exception */
 
   /* IRQ */
-  register_isr(0x20, timer_isr, 0);
-  register_isr(0x21, kbd_isr, 0);
-  register_isr(0x28, rtc_isr, 0);
+  register_isr(0x40, timer_isr, 0);
+  register_isr(0x41, kbd_isr, 0);
+  register_isr(0x48, rtc_isr, 0);
 
   /* Syscalls */
   register_user_isr(0x36, syscall_isr, 0);
@@ -102,6 +102,7 @@ void kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
   acpi_initialize();
   hpet_initialize();
   apic_init();
+  ioapic_init();
   test_parse_eh_frame();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */

@@ -4,7 +4,106 @@
 #include <stddef.h>
 
 #include "acpi.h"
+#include "com.h"
+#include "hpet.h"
+#include "memory-map.h"
+#include "util.h"
 #include "vga.h"
+
+/* ACPI registers contain 4 bytes of data but use 16 bytes of space.  Writing
+ * to or reading from the upper 12 bytes is always undefined behavior.  Reading
+ * or writing less than an entire 32-bit register at once is also undefined
+ * behavior.  So is using any FP, MMX, SSE etc instruction to read or write
+ * from them.  Be careful. */
+struct APICRegister {
+  uint32_t volatile val;
+  uint32_t unused[3];
+}  __attribute__ ((packed));
+
+/* 1024 bytes long (64 32-bit registers).  They are grouped into sets of 8
+ * registers to make the exact size a little clearer. */
+struct APIC {
+  struct APICRegister reserved_1[2];
+  struct APICRegister local_apic_id;
+  struct APICRegister local_apic_version_id;
+  struct APICRegister reserved_2[4];
+
+  struct APICRegister task_priority;
+  struct APICRegister arbitration_priority;
+  struct APICRegister processor_priority;
+  struct APICRegister end_of_interrupt;
+  struct APICRegister remote_read;
+  struct APICRegister logical_destination;
+  struct APICRegister destination_format;
+  struct APICRegister spurious_interrupt_vector;
+
+  struct APICRegister in_service[8];
+
+  struct APICRegister trigger_mode[8];
+
+  struct APICRegister interrupt_request[8];
+
+  struct APICRegister error_status;
+  struct APICRegister reserved_3[6];
+  struct APICRegister lvt_cmci;
+
+  struct APICRegister interrupt_command[2];
+  struct APICRegister lvt_timer;
+  struct APICRegister lvt_thermal_sensor;
+  struct APICRegister lvt_performance_monitoring_counters;
+  struct APICRegister lvt_lint0;
+  struct APICRegister lvt_lint1;
+  struct APICRegister lvt_error;
+
+  struct APICRegister timer_initial_count;
+  struct APICRegister timer_current_count;
+  struct APICRegister reserved_4[4];
+  struct APICRegister timer_divide_configuration;
+  struct APICRegister reserved_5[1];
+} __attribute__ ((packed));
+
+static const uint32_t APIC_SPURIOUS_VECTOR_ENABLE_APIC = 0x00000100;
+
+struct IOAPIC {
+  uint32_t volatile reg;
+  uint32_t unused[3];
+  uint32_t volatile data;
+} __attribute ((packed));
+
+static const uint32_t IOAPIC_REG_ID             = 0x0000;
+static const uint32_t IOAPIC_REG_VERSION        = 0x0001;
+static const uint32_t IOAPIC_REG_ARBITRATION_ID = 0x0002;
+
+static inline uint32_t IOAPIC_RED_TBL_LOW(uint8_t line) {
+  return 0x10 + line*2;
+}
+static inline uint32_t IOAPIC_RED_TBL_HIGH(uint8_t line) {
+  return 0x10 + line*2 + 1;
+}
+
+static struct APIC *apic;
+static struct IOAPIC *ioapic;
+
+struct isa_irq_remapping {
+  uint8_t isa_line;
+  uint8_t polarity_is_low; /* Normally ISA is active-high */
+  uint8_t trigger_is_level; /* Normally ISA is edge-triggered */
+  uint32_t remapped_apic_line;
+};
+static struct isa_irq_remapping remaps[16];
+static uint8_t nremaps = 0;
+
+static void ioapic_remap_irq (
+    uint8_t isa_line,
+    uint32_t remapped_apic_line,
+    uint8_t polarity_is_low,
+    uint8_t trigger_is_level) {
+  remaps[nremaps].isa_line = isa_line;
+  remaps[nremaps].remapped_apic_line = remapped_apic_line;
+  remaps[nremaps].polarity_is_low = polarity_is_low;
+  remaps[nremaps].trigger_is_level = trigger_is_level;
+  nremaps++;
+}
 
 enum MadtEntryType {
   MADT_ENTRY_LOCAL_APIC = 0,
@@ -29,6 +128,7 @@ static uint8_t analyze_madt_entry (uint8_t *entry) {
       break;
     case MADT_ENTRY_IO_APIC:
       vga_printf("IO APIC %hd at 0x%X with interrupt base %d\r\n", entry[2], entry_32[1], entry_32[2]);
+      ioapic = (struct IOAPIC*)phys_to_virt((uint64_t)entry_32[1]);
       break;
     case MADT_ENTRY_ISA_OVERRIDE: {
       uint8_t isa_line = entry[3];
@@ -37,6 +137,7 @@ static uint8_t analyze_madt_entry (uint8_t *entry) {
       uint8_t polarity_is_low = ((flags & 0x03) == 0x01);
       uint8_t trigger_is_level = ((flags & 0x0C) == 0x11);
       vga_printf("ISA IRQ Override from %hd to %d with flags 0x%hX (low=%d level=%d)\r\n", isa_line, remapped_apic_line, flags, polarity_is_low, trigger_is_level);
+      ioapic_remap_irq(isa_line, remapped_apic_line, polarity_is_low, trigger_is_level);
       break;
     }
     case MADT_ENTRY_NMI_OVERRIDE: {
@@ -57,6 +158,7 @@ static uint8_t analyze_madt_entry (uint8_t *entry) {
 
 void apic_init (void) {
   vga_printf("CPU-Local APIC is at 0x%X\r\n", madt->local_interrupt_controller_address);
+  apic = (struct APIC*)phys_to_virt((uint64_t)madt->local_interrupt_controller_address);
 
   const uint32_t total_length = madt->h.Length;
   uint8_t *slice = (uint8_t *)madt;
@@ -64,4 +166,91 @@ void apic_init (void) {
   while (offset < total_length) {
     offset += analyze_madt_entry(&slice[offset]);
   }
+
+  apic->spurious_interrupt_vector.val = 0xFF | APIC_SPURIOUS_VECTOR_ENABLE_APIC;
+}
+
+void ap_apic_init (void) {
+  apic->spurious_interrupt_vector.val = 0xFF | APIC_SPURIOUS_VECTOR_ENABLE_APIC;
+}
+
+void apic_eoi (void) {
+  apic->end_of_interrupt.val = 0;
+}
+
+/* Format for APIC ICR registers and for IOAPIC redirection table registers. */
+
+static const uint32_t APIC_ICR_LOW_DELIVERY_MODE_FIXED          = 0x00000000;
+static const uint32_t APIC_ICR_LOW_DELIVERY_MODE_LOW_PRIORITY   = 0x00000100;
+static const uint32_t APIC_ICR_LOW_DELIVERY_MODE_SMI            = 0x00000200;
+static const uint32_t APIC_ICR_LOW_DELIVERY_MODE_NMI            = 0x00000400;
+static const uint32_t APIC_ICR_LOW_DELIVERY_MODE_INIT           = 0x00000500;
+static const uint32_t APIC_ICR_LOW_DELIVERY_MODE_START_UP       = 0x00000600;
+
+static const uint32_t APIC_ICR_LOW_DESTINATION_MODE_LOGICAL     = 0x00000800;
+
+static const uint32_t APIC_ICR_LOW_DELIVERY_STATUS_SEND_PENDING = 0x00001000;
+
+static const uint32_t APIC_ICR_LOW_PIN_POLARITY_ACTIVE_LOW      = 0x00002000;
+
+static const uint32_t APIC_ICR_LOW_LEVEL_ASSERT                 = 0x00004000;
+
+static const uint32_t APIC_ICR_LOW_TRIGGER_LEVEL                = 0x00008000;
+
+static const uint32_t APIC_ICR_LOW_MASK_LINE                    = 0x00010000;
+
+static const uint32_t APIC_ICR_LOW_DEST_SHORTHAND_SELF          = 0x00040000;
+static const uint32_t APIC_ICR_LOW_DEST_SHORTHAND_ALL_AND_SELF  = 0x00080000;
+static const uint32_t APIC_ICR_LOW_DEST_SHORTHAND_ALL_OTHERS    = 0x000C0000;
+
+static inline uint32_t APIC_ICR_HIGH_DESTINATION(uint32_t dest) {
+  return dest << 24;
+}
+
+static void write_ioapic_redirection (uint32_t line, uint32_t low_flags, uint32_t high_flags) {
+  ioapic->reg = IOAPIC_RED_TBL_LOW(line);
+  ioapic->data = low_flags;
+  ioapic->reg = IOAPIC_RED_TBL_HIGH(line);
+  ioapic->data = high_flags;
+}
+
+static void map_line (uint8_t line) {
+  /* Map ISA line n to n+64 unless there is a remapping. */
+  for (uint8_t i = 0; i < nremaps; i++) {
+    if (remaps[i].isa_line == line) {
+      uint32_t low_flags = (line + 64)
+        | (remaps[i].polarity_is_low ? APIC_ICR_LOW_PIN_POLARITY_ACTIVE_LOW : 0)
+        | (remaps[i].trigger_is_level ? APIC_ICR_LOW_TRIGGER_LEVEL : 0)
+        | APIC_ICR_LOW_MASK_LINE;
+      uint32_t high_flags = APIC_ICR_HIGH_DESTINATION(0);
+      write_ioapic_redirection(remaps[i].remapped_apic_line, low_flags, high_flags);
+      return;
+    }
+  }
+  for (uint8_t i = 0; i < nremaps; i++) {
+    if (remaps[i].remapped_apic_line == line) {
+      return;
+    }
+  }
+  uint32_t low_flags = (line + 64) | APIC_ICR_LOW_MASK_LINE;
+  uint32_t high_flags = APIC_ICR_HIGH_DESTINATION(0);
+  write_ioapic_redirection(line, low_flags, high_flags);
+}
+
+void ioapic_mask_line (uint32_t line, uint8_t masked) {
+  ioapic->reg = IOAPIC_RED_TBL_LOW(line);
+  if (masked) {
+    ioapic->data |= APIC_ICR_LOW_MASK_LINE;
+  } else {
+    ioapic->data &= ~APIC_ICR_LOW_MASK_LINE;
+  }
+}
+
+void ioapic_init () {
+  for (uint8_t line = 0; line < 16; line++) {
+    map_line(line);
+  }
+  ioapic_mask_line(0x02, 0);
+  ioapic_mask_line(0x01, 0);
+  ioapic_mask_line(0x08, 0);
 }
