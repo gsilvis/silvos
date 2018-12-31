@@ -15,6 +15,7 @@
 #include "acpi.h"
 #include "hpet.h"
 #include "unwind.h"
+#include "apic.h"
 
 void initialize_idt (void) {
   create_idt();
@@ -100,6 +101,7 @@ void kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
   com_initialize();
   acpi_initialize();
   hpet_initialize();
+  apic_init();
   test_parse_eh_frame();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */

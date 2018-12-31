@@ -1,5 +1,6 @@
 #include "acpi.h"
 
+#include "apic.h"
 #include "memory-map.h"
 #include "util.h"
 #include "vga.h"
@@ -63,7 +64,7 @@ int acpi_parse_table (struct ACPISDTHeader *table) {
   } else if (!strncmp(table->Signature, "SSDT", 4)) {
     ssdt = table;
   } else if (!strncmp(table->Signature, "APIC", 4)) {
-    madt = table;
+    madt = (struct MADT *)table;
   } else if (!strncmp(table->Signature, "HPET", 4)) {
     hpet = (struct HPET *)table;
   }
@@ -74,7 +75,9 @@ int acpi_initialize (void) {
   int error = 0;
   if ((error = acpi_find_rsdp()))  return error;
   if ((error = acpi_parse_rsdp()))  return error;
-  if ((error = acpi_parse_table(&rsdt->h)))  return -1;
-  /* Check that all the actually required tables (none for now) are there */
+  if ((error = acpi_parse_table(&rsdt->h)))  return error;
+  /* Check that all the required tables are there */
+  if (!madt)  return -2;
+  if (!hpet)  return -3;
   return 0;
 }

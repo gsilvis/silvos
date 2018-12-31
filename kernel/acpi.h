@@ -65,6 +65,13 @@ struct HPET {
   uint8_t page_protection;
 } __attribute__ ((packed));
 
+struct MADT {
+  struct ACPISDTHeader h;
+  uint32_t local_interrupt_controller_address;
+  uint32_t flags;
+  /* More stuff */
+} __attribute__ ((packed));
+
 static const uint8_t HPET_PAGE_PROTECTION_NONE = 0;
 static const uint8_t HPET_PAGE_PROTECTION_4K   = 1;
 static const uint8_t HPET_PAGE_PROTECTION_64K  = 2;
@@ -75,7 +82,7 @@ struct FADT *fadt;
 struct HPET *hpet;
 struct ACPISDTHeader *dsdt;
 struct ACPISDTHeader *ssdt;
-struct ACPISDTHeader *madt;
+struct MADT *madt;
 
 
 int acpi_initialize (void);

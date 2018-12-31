@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,no-graphic,drive:,coverage:,no-reboot,enable-kvm,no-gdb,debug-qemu" -- "$@")
+OPTIONS=$(getopt -n "$0" -o hSks:d:c: --long "help,wait,serial:,no-graphic,drive:,coverage:,no-reboot,enable-kvm,no-gdb,debug-qemu,cpus:" -- "$@")
 
 if [ $? -ne 0 ]; then
   echo "Failed to parse args"
@@ -19,6 +19,7 @@ NOGRAPHIC=0
 DRIVE=temp_drive
 GDB=1
 DEBUG_QEMU=0
+CPUS=0
 
 while true; do
   case "$1" in
@@ -64,6 +65,9 @@ while true; do
     --debug-qemu)
       DEBUG_QEMU=1
       shift;;
+    --cpus)
+      CPUS="$2"
+      shift 2;;
     --) shift; break;;
     *) break ;;
   esac
@@ -85,6 +89,10 @@ fi
 # Pause on startup (require 'c' on console, or 'c' in GDB to start)
 if [ "$PAUSE" -gt 0 ]; then
   QEMU_ARGS+=" -S"
+fi
+
+if [ "$CPUS" -gt 0 ]; then
+  QEMU_ARGS+=" -smp $CPUS"
 fi
 
 if [ "$NOGRAPHIC" -gt 0 ]; then
