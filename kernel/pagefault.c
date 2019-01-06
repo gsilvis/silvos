@@ -21,10 +21,13 @@ int check_addr (const void *low, const void *high) {
 jmp_buf for_copying;
 int is_copying;
 
-void pagefault_handler (uint64_t addr) {
+void pagefault_handler_copy (void) {
   if (is_copying) {
     longjmp(for_copying, -1);
   }
+}
+
+void __attribute__((noreturn)) pagefault_handler_user (uint64_t addr) {
   if (running_tcb) {
     com_printf("Kernel page fault at %p, running thread is 0x%02X.\n", (void *)addr, running_tcb->thread_id);
     thread_exit();

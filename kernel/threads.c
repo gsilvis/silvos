@@ -21,6 +21,12 @@ static vmcb vmcbs[NUMVMSPACES];
 static tcb tcbs[NUMTHREADS];
 static tcb *idle_tcb = 0;
 
+void save_thread_registers (struct all_registers* all_registers) {
+  if (running_tcb != 0) {
+    running_tcb->saved_registers = all_registers;
+  }
+}
+
 /* Get a new VM space, and allocate a pagetable for it. */
 static vmcb *get_new_vm_space (pagetable pt) {
   for (int i = 0; i < NUMVMSPACES; i++) {
@@ -196,20 +202,11 @@ void promote (tcb *thread) {
   list_push_front(&thread->wait_queue, &schedule_queue);
 }
 
-/* 'fork_pid' holds the return value of 'clone_thread', so that it makes it
- * back to 'fork' in both the parent and the child.  We can't just return it,
- * because in the child, we return from 'schedule' instead of
- * 'fork_entry_point'.  The parent always returns immediately, so it gets the
- * real return value (the child PID).  The child returns later, and gets the
- * value that 'fork' puts in fork_pid, which is 0. */
-
-int fork_pid = 0;
-
 void clone_thread (uint64_t fork_rsp) {
   vmcb *new_vmcb = get_new_vm_space(duplicate_pagetable(running_tcb->vm_control_block->pt));
   tcb *new_tcb = create_thread(running_tcb->text, running_tcb->text_length, new_vmcb);
   if (!new_tcb) {
-    fork_pid = -1;
+    running_tcb->saved_registers->rax = -1;
     return;
   }
   /* Clone kernel stack starting at fork_entry_point. */
@@ -218,14 +215,16 @@ void clone_thread (uint64_t fork_rsp) {
          ((char *)running_tcb->stack_top) - stack_depth, stack_depth);
   new_tcb->rsp = ((char*)new_tcb->stack_top) - stack_depth;
   copy_fp_buf(new_tcb, running_tcb);
-  reschedule_thread(new_tcb);
-  fork_pid = new_tcb->thread_id;
-}
 
-uint64_t fork_get_return_val (void) {
-  int res = fork_pid;
-  fork_pid = 0;
-  return (uint64_t)res;
+  /* Set return value in new thread, by calculating the location of
+   * 'saved_registers' */
+  uint64_t saved_registers_offset = (uint64_t)running_tcb->saved_registers - (uint64_t)running_tcb->stack_top;
+  uint64_t new_registers_loc = (uint64_t)new_tcb->stack_top + saved_registers_offset;
+  new_tcb->saved_registers = (struct all_registers *)new_registers_loc;
+  new_tcb->saved_registers->rax = 0;
+
+  running_tcb->saved_registers->rax = new_tcb->thread_id;
+  reschedule_thread(new_tcb);
 }
 
 void spawn_within_vm_space (uint64_t rip, uint64_t rsp) {

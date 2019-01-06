@@ -1,135 +1,116 @@
+/* All interrupts push all registers, then save a pointer to them into
+ * 'current_tcb->saved_registers', of type 'struct all_registers *' (defined in
+ * thread.h) .
+ */
 
-/* Hardware interrupts must push all caller-save registers.   Syscall handlers
- * don't need to do anything.  (Callee-save registers are saved later.  For
- * hardware interrupts, this means all registers are saved.  The syscall ABI
- * lets the kernel clobber caller-save registers.)  Be careful about using any
- * registers in these routines. */
-
-.macro push_caller_save_reg
+/* This must stay in sync with 'struct all_registers' in threads.h */
+.macro push_general_purpose_reg
 	push %rax
+	push %rbx
 	push %rcx
 	push %rdx
+	push %rbp
 	push %rsi
 	push %rdi
 	push %r8
 	push %r9
 	push %r10
 	push %r11
+	push %r12
+	push %r13
+	push %r14
+	push %r15
 .endm
 
-.macro pop_caller_save_reg
+.macro pop_general_purpose_reg
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
 	pop %r11
 	pop %r10
 	pop %r9
 	pop %r8
 	pop %rdi
 	pop %rsi
+	pop %rbp
 	pop %rdx
 	pop %rcx
+	pop %rbx
 	pop %rax
-.endm
-
-.macro clear_caller_saved_reg_except_rax
-	xor %r11, %r11
-	xor %r10, %r10
-	xor %r9, %r9
-	xor %r8, %r8
-	xor %rdi, %rdi
-	xor %rsi, %rsi
-	xor %rdx, %rdx
-	xor %rcx, %rcx
 .endm
 
 /* Syscalls */
 
-/* Note: the syscall ABI is:
+/* The syscall ABI is:
  *
  *  REG | INPUT | OUTPUT
  *  --------------------
  *  RAX | SYSNO | RETURN
- *  RBX | ARG1  | SAVED
- *  RCX | ARG2  | UNDEF
- *  RDX | ----- | UNDEF
- *  RBP | ----- | SAVED
- *  RSI | ----- | UNDEF
- *  RDI | ----- | UNDEF
- *  RSP | ----- | SAVED
- *  R8  | ----- | UNDEF
- *  R9  | ----- | UNDEF
- *  R10 | ----- | UNDEF
- *  R11 | ----- | UNDEF
- *  R12 | ----- | SAVED
- *  R13 | ----- | SAVED
- *  R14 | ----- | SAVED
- *  R15 | ----- | SAVED
+ *  RBX | ARG1  | PRESERVED
+ *  RCX | ARG2  | PRESERVED
  *
- * This matches the SYSV x86_64 ABI for caller/callee saved registers,
- * but not for arguments */
+ * All other registers are unused and preserved.
+ */
 
 .GLOBAL syscall_isr
 syscall_isr:
-	movq (syscall_defns_len), %r8
-	cmpq %r8, %rax
-	jae invalid_syscall
-
-	mov $syscall_defns, %r8
-	mov (%r8, %rax, 8), %rax
-
-	/* Translate syscall arguments into appropriate regs for handler */
-	mov %rbx,%rdi
-	mov %rcx,%rsi
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
+	call get_syscall_handler
 	call *%rax
-
-	/* Clear registers to prevent information leakage from kernel mode
-	 * to usermode. For *callee* saved registers, it would be an ABI
-	 * to not have preserved them, so we only need to clobber caller
-	 * saved registers */
-	clear_caller_saved_reg_except_rax
-	iretq
-
-invalid_syscall:
-	mov $-1, %rax
-	/* Note: caller saved registers don't need to be clobbered */
+	pop_general_purpose_reg
 	iretq
 
 /* Interrupts */
 
 .GLOBAL kbd_isr
 kbd_isr:
-	push_caller_save_reg
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
 	call master_eoi
 	call read_key
-	pop_caller_save_reg
+	pop_general_purpose_reg
 	iretq
 
 .GLOBAL timer_isr
 timer_isr:
-	push_caller_save_reg
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
 	call master_eoi
 	call yield
-	pop_caller_save_reg
+	pop_general_purpose_reg
 	iretq
 
 .GLOBAL rtc_isr
 rtc_isr:
-	push_caller_save_reg
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
 	call slave_eoi
 	call hpet_sleepers_awake
-	pop_caller_save_reg
+	pop_general_purpose_reg
 	iretq
 
 /* Faults */
 
 .GLOBAL nm_isr
 nm_isr:
-	push_caller_save_reg
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
 	call fpu_activate
-	pop_caller_save_reg
+	pop_general_purpose_reg
 	iretq
 
 .GLOBAL fault_isr
 fault_isr:
-	push_caller_save_reg
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
 	call thread_exit_fault
 
 .GLOBAL df_isr
@@ -137,10 +118,17 @@ df_isr:
 	hlt
 	jmp df_isr
 
+/* pf_isr is special because it can happen in two ways.  First we handle the
+ * possibility that we crashed during 'copy_from_user' or 'copy_to_user'; if
+ * that was the cause, then 'pagefault_handler_copy' will not return.  Under no
+ * circumstances will 'pagefault_handler_copy' use the saved registers.
+ */
+
 .GLOBAL pf_isr
 pf_isr:
-	push_caller_save_reg
+	push_general_purpose_reg
+	call pagefault_handler_copy
+	mov %rsp,%rdi
+	call save_thread_registers
 	mov %cr2,%rdi
-	call pagefault_handler
-	pop_caller_save_reg
-	iretq
+	call pagefault_handler_user

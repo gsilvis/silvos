@@ -33,8 +33,34 @@ typedef struct {
   uint8_t refcount;
 } vmcb;
 
+/* This struct is in a very particular order: it looks exactly the same as an
+ * interrupt stack just after it finishes pushing all general purpose
+ * registers.
+ *
+ * This must stay in sync with 'push_general_purpose_reg' in isr-asm.s, and
+ * with 'pop_general_purpose_reg' in thread-asm.s
+ */
+struct all_registers {
+  uint64_t r15;
+  uint64_t r14;
+  uint64_t r13;
+  uint64_t r12;
+  uint64_t r11;
+  uint64_t r10;
+  uint64_t r9;
+  uint64_t r8;
+  uint64_t rdi;
+  uint64_t rsi;
+  uint64_t rbp;
+  uint64_t rdx;
+  uint64_t rcx;
+  uint64_t rbx;
+  uint64_t rax;
+};
+
 typedef struct {
   struct list_head wait_queue;
+  struct all_registers *saved_registers;
   void *rsp;        /* Kernel stack pointer, when yielded */
   vmcb *vm_control_block;
   uint8_t thread_id;
@@ -49,6 +75,10 @@ typedef struct {
 } tcb;
 
 extern tcb *running_tcb;
+
+/* Save the given registers to the TCB of the running task [if any].  This
+ * should be done before (nearly) anything else in an interrupt handler. */
+void save_thread_registers (struct all_registers *all_registers);
 
 int user_thread_create (void *text, size_t length);
 int idle_thread_create (void);

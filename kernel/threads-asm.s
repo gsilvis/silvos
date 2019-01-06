@@ -42,13 +42,12 @@ schedule:
 .GLOBAL fork
 fork:
 	call fork_entry_point
-	call fork_get_return_val
 	ret
 
 /* fork_entry_point and schedule's stack frames must look the same: when
  * forking, the stack is copied while in fork_entry_point, but the child
  * resumes into schedule instead.  Both parent and child return into 'fork',
- * which determines the return value, and returns to userland. */
+ * which then returns to userland. */
 
 .GLOBAL fork_entry_point
 fork_entry_point:
