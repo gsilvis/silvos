@@ -1,12 +1,13 @@
 #include "syscall.h"
 
-#include "threads.h"
-#include "vga.h"
-#include "kbd.h"
-#include "ide.h"
-#include "palloc.h"
 #include "com.h"
 #include "hpet.h"
+#include "ide.h"
+#include "ipc.h"
+#include "kbd.h"
+#include "palloc.h"
+#include "threads.h"
+#include "vga.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -41,6 +42,7 @@ TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
 TRAMPOLINE1_NORET(hpet_nanosleep)
 TRAMPOLINE2_NORET(spawn_within_vm_space)
+TRAMPOLINE1(sendrecv)
 
 #pragma GCC diagnostic pop
 
@@ -60,6 +62,7 @@ syscall_func syscall_defns[] = {
   /* fork *can't* have any C in it's stack. */
   (syscall_func)fork,
   TRAMPOLINE_NAME(spawn_within_vm_space),
+  TRAMPOLINE_NAME(sendrecv),
 };
 
 uint64_t syscall_defns_len = sizeof(syscall_defns)/sizeof(syscall_func);

@@ -1,6 +1,7 @@
 #ifndef __SILVOS_THREADS_H
 #define __SILVOS_THREADS_H
 
+#include "ipc.h"
 #include "list.h"
 #include "page.h"
 
@@ -21,6 +22,12 @@ enum fpu_state {
   THREAD_FPU_STATE_ACTIVE,    /* there's an FPU buf allocated */
 };
 
+enum ipc_state {
+  IPC_NOT_RECEIVING,
+  IPC_RECEIVING,      /* currently waiting for an ipc message */
+  IPC_RECEIVED,       /* in the middle of receiving an ipc handoff */
+};
+
 typedef struct {
   pagetable pt; /* 0 if unused */
   uint8_t refcount;
@@ -37,6 +44,8 @@ typedef struct {
   size_t text_length;
   enum fpu_state fpu_state;
   char (*fpu_buf)[512];
+  enum ipc_state ipc_state;
+  ipc_msg inbox;  /* Only valid if ipc_state is RECEIVED */
 } tcb;
 
 extern tcb *running_tcb;
@@ -46,6 +55,7 @@ int idle_thread_create (void);
 
 void schedule (void);
 void reschedule_thread (tcb *thread);
+void promote (tcb *thread);
 void yield (void);
 int fork (void);
 
@@ -57,6 +67,8 @@ void __attribute__((noreturn)) thread_exit_fault (void);
 void clone_thread (uint64_t fork_rsp);
 void spawn_within_vm_space (uint64_t rip, uint64_t rsp);
 void com_print_backtrace (void);
+
+tcb *get_tcb (uint64_t tid);
 
 #define wait_event(wq, cond)                       \
 do {                                               \

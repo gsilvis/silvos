@@ -77,4 +77,8 @@ static inline void spawn_thread (const void *code, void *stack) {
   __syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
 }
 
+static inline sendrecv_status sendrecv (sendrecv_op* op) {
+  return (int)__syscall1(SYSCALL_SENDRECV, (syscall_arg)op);
+}
+
 #endif

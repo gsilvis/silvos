@@ -3,6 +3,23 @@
 
 typedef unsigned long long syscall_arg;
 
+typedef struct {
+  unsigned long addr;
+  unsigned long r1;
+  unsigned long r2;
+} ipc_msg;
+
+typedef struct {
+  ipc_msg send; /* Filled in by the user */
+  ipc_msg recv; /* Filled in by the kernel on a receive */
+} sendrecv_op;
+
+typedef enum {
+  MESSAGE_RECEIVED = 0,
+  SEND_FAILED = 1,
+  RECEIVE_FAILED = 2,
+} sendrecv_status;
+
 #define SYSCALL_YIELD       0x00
 #define SYSCALL_PUTCH       0x01
 #define SYSCALL_EXIT        0x02
@@ -15,7 +32,8 @@ typedef unsigned long long syscall_arg;
 #define SYSCALL_NANOSLEEP   0x09
 #define SYSCALL_FORK        0x0A
 #define SYSCALL_SPAWN       0x0B
+#define SYSCALL_SENDRECV    0x0C
 
-#define NUM_SYSCALLS        0x0C
+#define NUM_SYSCALLS        0x0D
 
 #endif

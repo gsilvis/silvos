@@ -19,7 +19,6 @@ tcb *running_tcb = 0;
 
 static vmcb vmcbs[NUMVMSPACES];
 static tcb tcbs[NUMTHREADS];
-static int32_t total_threads = -1;  /* The idle thread doesn't count. */
 static tcb *idle_tcb = 0;
 
 /* Get a new VM space, and allocate a pagetable for it. */
@@ -51,7 +50,7 @@ static tcb *create_thread (void *text, size_t length, vmcb *vm_space) {
       tcbs[i].state = TS_EXIST;
       tcbs[i].stack_top = &kernel_stack[0];
       tcbs[i].fpu_state = THREAD_FPU_STATE_INACTIVE;
-      total_threads++;
+      tcbs[i].ipc_state = IPC_NOT_RECEIVING;
       return &tcbs[i];
     }
   }
@@ -124,8 +123,19 @@ LIST_HEAD(schedule_queue);
 
 /* Round-robin scheduling. */
 static tcb *choose_task (void) {
-  if (total_threads == 0) {
-    /* All threads have exited.  Power off. */
+  int num_threads = 0;
+  for (int i = 0; i < NUMTHREADS; ++i) {
+    tcb* thread = &tcbs[i];
+    if (thread == idle_tcb) continue;
+    if (thread->state == TS_NONEXIST) continue;
+    /* Threads that are in IPC_RECEIVING are considered dormant.
+     * If a thread is in sendrecv() but is about to wake up with a message,
+     * that's different and is indicated by IPC_RECEIVED */
+    if (thread->ipc_state == IPC_RECEIVING) continue;
+    ++num_threads;
+  }
+  if (num_threads == 0) {
+    /* All threads have exited, or are dormant daemons.  Power off. */
     qemu_debug_shutdown();
   }
   tcb *result = (tcb *)list_pop_front(&schedule_queue);
@@ -165,7 +175,6 @@ void thread_exit (void) {
     running_tcb->vm_control_block->pt = 0;
   }
   running_tcb->state = TS_NONEXIST;
-  total_threads--;
   schedule();
   panic("Rescheduled exited thread");
 }
@@ -180,6 +189,11 @@ void reschedule_thread (tcb *thread) {
 void yield (void) {
   reschedule_thread(running_tcb);
   schedule();
+}
+
+void promote (tcb *thread) {
+  list_remove(&thread->wait_queue);
+  list_push_front(&thread->wait_queue, &schedule_queue);
 }
 
 /* 'fork_pid' holds the return value of 'clone_thread', so that it makes it
@@ -233,4 +247,13 @@ void spawn_within_vm_space (uint64_t rip, uint64_t rsp) {
   /* 6 callee-save registers */
   new_tcb->rsp = &kernel_stack[-12];
   reschedule_thread(new_tcb);
+}
+
+tcb *get_tcb (uint64_t tid) {
+  for (int i = 0; i < NUMTHREADS; ++i) {
+    if (tcbs[i].state == TS_EXIST && tcbs[i].thread_id == tid) {
+      return &tcbs[i];
+    }
+  }
+  return 0;
 }
