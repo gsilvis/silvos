@@ -65,6 +65,7 @@ typedef struct {
   vmcb *vm_control_block;
   uint8_t thread_id;
   enum thread_state state;
+  uint64_t wakeup_deadline;  /* Only valid if sleeping in hpet.c */
   void *stack_top;  /* For TSS usage */
   void *text;
   size_t text_length;

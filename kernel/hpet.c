@@ -46,37 +46,29 @@ void hpet_reset_timeout (void) {
 
 /* Sleep, on timer 1 */
 
-struct sleeper {
-  struct list_head queue;
-  uint64_t deadline;
-  tcb *thread;
-};
-
 LIST_HEAD(sleep_queue);
 
-void hpet_nanosleep (uint64_t nanosecs) {
+void hpet_nanosleep (void) {
+  uint64_t nanosecs = running_tcb->saved_registers->rbx;
   uint64_t femtosecs = nanosecs * 1000000;
   uint64_t ticks = femtosecs / (hpet_reg->capabilities >> 32);
   uint64_t cur = hpet_reg->main_counter;
   uint64_t deadline = cur + ticks;
+  running_tcb->wakeup_deadline = deadline;
   if (deadline < cur) {
     return;
   }
 
   struct list_head *i = sleep_queue.next;
   while (i != &sleep_queue) {
-    struct sleeper *s = (struct sleeper *)i;
-    if (deadline < s->deadline) {
+    tcb *t = (tcb *)i;
+    if (deadline < t->wakeup_deadline) {
       break;
     }
     i = i->next;
   }
 
-  struct sleeper thread_sleeper = {
-    .deadline = deadline,
-    .thread = running_tcb,
-  };
-  list_push_back(&thread_sleeper.queue, i);
+  list_push_back(&running_tcb->wait_queue, i);
 
   /* I would love to just write to the register and call 'schedule()', but
    * there's an irritating race-condition: the main counter could pass our
@@ -97,19 +89,19 @@ void hpet_sleepers_awake() {
     struct list_head *i = sleep_queue.next;
     while (i != &sleep_queue) {
       uint64_t cur = hpet_reg->main_counter;
-      struct sleeper *s = (struct sleeper *)i;
-      if (s->deadline >= cur) {
+      tcb *t = (tcb *)i;
+      if (t->wakeup_deadline >= cur) {
         break;
       }
-      i = i->next;
-      list_remove(&s->queue);
-      reschedule_thread(s->thread);
+      i = i->next;  /* Increment through the queue BEFORE we unlink i */
+      list_remove(&t->wait_queue);
+      reschedule_thread(t);
     }
     if (list_empty(&sleep_queue)) {
       return;
     }
-    struct sleeper *s = (struct sleeper *)i;
-    uint64_t current_deadline = s->deadline;
+    tcb *t = (tcb *)i;
+    uint64_t current_deadline = t->wakeup_deadline;
     hpet_reg->timers[1].comparator = current_deadline;
     /* According to a very frustrated-sounding comment in the Linux kernel,
      * some HPET implementations lag a bit before actually setting the timer.

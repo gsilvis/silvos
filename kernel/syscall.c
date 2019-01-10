@@ -40,7 +40,6 @@ TRAMPOLINE2(write_sector)
 TRAMPOLINE1(palloc)
 TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
-TRAMPOLINE1_NORET(hpet_nanosleep)
 TRAMPOLINE2_NORET(spawn_within_vm_space)
 
 #pragma GCC diagnostic pop
@@ -57,7 +56,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(palloc),
   TRAMPOLINE_NAME(pfree),
   TRAMPOLINE_NAME(com_debug_thread),
-  TRAMPOLINE_NAME(hpet_nanosleep),
+  hpet_nanosleep,
   /* fork *can't* have any C in it's stack. */
   (syscall_func)fork,
   TRAMPOLINE_NAME(spawn_within_vm_space),
