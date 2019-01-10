@@ -6,33 +6,53 @@
 #include "util.h"
 #include "memory-map.h"
 
-sendrecv_status sendrecv (sendrecv_op* usr_op) {
+void sendrecv (void) {
+  sendrecv_op *usr_op = (sendrecv_op *)running_tcb->saved_registers->rbx;
   ipc_msg send;
-  if (copy_from_user(&send, &usr_op->send, sizeof(ipc_msg))) return SEND_FAILED;
-
   uint64_t sender = running_tcb->thread_id;
-  uint64_t addr = send.addr;
 
-  if (addr == sender) return SEND_FAILED;
+  if (copy_from_user(&send, &usr_op->send, sizeof(ipc_msg))) {
+    running_tcb->saved_registers->rax = SEND_FAILED;
+    return;
+  } else if (send.addr == sender) {
+    running_tcb->saved_registers->rax = SEND_FAILED;
+    return;
+  } else if (send.addr == 0) {
+    /* Message to kernel */
+    running_tcb->ipc_state = IPC_RECEIVING;
+    schedule();
+  } else {
+    tcb* recv_thread = get_tcb(send.addr);
 
-  if (addr != 0) {
-    tcb* recv_thread = get_tcb(addr);
-    if (!recv_thread) return SEND_FAILED;
-    if (recv_thread->ipc_state != IPC_RECEIVING) return SEND_FAILED;
-    recv_thread->ipc_state = IPC_RECEIVED;
-    recv_thread->inbox = send;
-    recv_thread->inbox.addr = sender;
-    /* Make sure we wake up the receiver immediately */
-    promote(recv_thread);
+    if (!recv_thread) {
+      running_tcb->saved_registers->rax = SEND_FAILED;
+      return;
+    } else if (recv_thread->ipc_state != IPC_RECEIVING) {
+      running_tcb->saved_registers->rax = SEND_FAILED;
+      return;
+    } else {
+      recv_thread->ipc_state = IPC_RECEIVED;
+      recv_thread->inbox = send;
+      recv_thread->inbox.addr = sender;
+      running_tcb->ipc_state = IPC_RECEIVING;
+      promote(recv_thread);
+      schedule();
+    }
   }
+}
 
-  running_tcb->ipc_state = IPC_RECEIVING;
-  schedule();
-  running_tcb->ipc_state = IPC_NOT_RECEIVING;
-
-  /* TODO: This is bad. Just put the messages in registers / use sysenter */
+/* We need to copy_to_user the message to the destination's vm space; the
+ * easiest way to do that is to add a hook to 'return_to_userspace' which
+ * checks for this case.  Long term, we should instead just pass messages in
+ * registers. */
+void sendrecv_finish (void) {
+  if (running_tcb->ipc_state != IPC_RECEIVED) {
+    return;
+  }
+  sendrecv_op *usr_op = (sendrecv_op *)running_tcb->saved_registers->rbx;
   if (copy_to_user(&usr_op->recv, &running_tcb->inbox, sizeof(ipc_msg))) {
-    return RECEIVE_FAILED;
+    running_tcb->saved_registers->rax = RECEIVE_FAILED;
+  } else {
+    running_tcb->saved_registers->rax = MESSAGE_RECEIVED;
   }
-  return MESSAGE_RECEIVED;
 }

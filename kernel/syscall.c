@@ -42,7 +42,6 @@ TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
 TRAMPOLINE1_NORET(hpet_nanosleep)
 TRAMPOLINE2_NORET(spawn_within_vm_space)
-TRAMPOLINE1(sendrecv)
 
 #pragma GCC diagnostic pop
 
@@ -62,7 +61,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   /* fork *can't* have any C in it's stack. */
   (syscall_func)fork,
   TRAMPOLINE_NAME(spawn_within_vm_space),
-  TRAMPOLINE_NAME(sendrecv),
+  sendrecv,
 };
 
 static void invalid_syscall_handler (void) {

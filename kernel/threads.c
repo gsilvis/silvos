@@ -166,6 +166,7 @@ void finish_context_switch (void) {
   fpu_switch_thread();
   set_new_rsp(running_tcb->stack_top);
   insert_pt(running_tcb->vm_control_block->pt);
+  sendrecv_finish();
 }
 
 void thread_exit_fault(void) {
