@@ -1,8 +1,9 @@
 #include "gdt.h"
 
-#include "util.h"
 #include "alloc.h"
 #include "page.h"
+#include "threads.h"
+#include "util.h"
 
 #include "memory-map.h"
 
@@ -71,17 +72,13 @@ void initialize_gdt (void) {
   gdt[11][2] = (uint8_t)(base >> 48);
   gdt[11][3] = (uint8_t)(base >> 56);
   memset(&tss, 0, sizeof(tss));
-  /* Set up TSS */
-  uint64_t *ist1_stack_bot = (uint64_t *)allocate_phys_page();
-  tss.ist[1] = (uint64_t)&ist1_stack_bot[512];
-  tss.iomapbase = sizeof(tss); /* Disable IO map */
+  /* Set up kernel stacks */
+  uint8_t *ist1_stack_bot = (uint8_t *)allocate_phys_page();
+  tss.rsp[0] = (uint64_t)make_kernel_stack();
+  tss.ist[1] = (uint64_t)&ist1_stack_bot[4096];
+  /* Disable IO map */
+  tss.iomapbase = sizeof(tss);
   /* Load TSS offset */
   uint16_t index = 0x50;
   __asm__("ltr %0" :: "r"(index));
-
 }
-
-void set_new_rsp (void *rsp) {
-  tss.rsp[0] = (uint64_t)rsp;
-}
-

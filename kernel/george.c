@@ -61,7 +61,7 @@ typedef struct {
 
 extern int _end;
 
-void kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
+void __attribute__((noreturn)) kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
   if (mboot_magic != 0x2BADB002) {
     panic("Bad multiboot magic!");
   }
@@ -89,7 +89,6 @@ void kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
   initialize_gdt();
   remap_pic();
 
-  idle_thread_create();
   for (uint32_t i = 0; i < mboot_struct[5]; i++) {
     user_thread_create((void *)phys_to_virt((uint64_t)mod_list[i].start),
                        mod_list[i].end - mod_list[i].start);

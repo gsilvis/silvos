@@ -49,7 +49,7 @@ uint64_t elf64_get_entry (uint8_t *elf) {
   return (uint64_t)(elf_header->e_entry);
 }
 
-void elf64_load (uint8_t *elf) {
+void elf64_load (uint8_t *elf, pagetable pt) {
   Elf64_Ehdr *elf_header = (Elf64_Ehdr *)elf;
   for (size_t i = 0; i < elf_header->e_phnum; i++) {
     Elf64_Phdr *seg = (Elf64_Phdr *)
@@ -74,7 +74,7 @@ void elf64_load (uint8_t *elf) {
         flags |= PAGE_MASK_WRITE;
       }
       /* I don't believe there's anything useful to do with the PF_R flag */
-      map_new_page(running_tcb->vm_control_block->pt, page, PAGE_MASK__USER);
+      map_new_page(pt, page, PAGE_MASK__USER);
     }
     memcpy((void *)seg->p_vaddr, (void *)&elf[seg->p_offset], seg->p_filesz);
     memset((void *)seg->p_vaddr + seg->p_filesz, 0, seg->p_memsz - seg->p_filesz);

@@ -12,9 +12,14 @@
 pagetable kernel_pdpt;
 
 void insert_pt (pagetable pt) {
-  __asm__("mov %0,%%cr3" : : "r"((pagetable)virt_to_phys((uint64_t)pt)) : );
+  __asm__("mov %0,%%cr3" : : "r"(virt_to_phys((uint64_t)pt)) : );
 }
 
+pagetable get_current_pt () {
+  uint64_t res;
+  __asm__("mov %%cr3,%0" : "=r"(res) : : );
+  return (pagetable)phys_to_virt(res);
+}
 
 extern int _end;
 

@@ -48,16 +48,16 @@ void hpet_reset_timeout (void) {
 
 LIST_HEAD(sleep_queue);
 
-void hpet_nanosleep (void) {
-  uint64_t nanosecs = running_tcb->saved_registers->rbx;
+void __attribute__((noreturn)) hpet_nanosleep (void) {
+  uint64_t nanosecs = running_tcb->saved_registers.rbx;
   uint64_t femtosecs = nanosecs * 1000000;
   uint64_t ticks = femtosecs / (hpet_reg->capabilities >> 32);
   uint64_t cur = hpet_reg->main_counter;
   uint64_t deadline = cur + ticks;
-  running_tcb->wakeup_deadline = deadline;
   if (deadline < cur) {
-    return;
+    return_to_current_thread();
   }
+  running_tcb->wakeup_deadline = deadline;
 
   struct list_head *i = sleep_queue.next;
   while (i != &sleep_queue) {

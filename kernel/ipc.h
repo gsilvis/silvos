@@ -3,7 +3,7 @@
 
 #include "syscall-defs.h"
 
-void sendrecv (void);
+void __attribute__((noreturn)) sendrecv (void);
 void sendrecv_finish (void);
 
 #endif

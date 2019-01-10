@@ -83,4 +83,6 @@ static inline uint32_t ind (uint16_t port) {
   return data;
 }
 
+void com_print_backtrace (void);
+
 #endif

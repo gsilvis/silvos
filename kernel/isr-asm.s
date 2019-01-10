@@ -1,6 +1,11 @@
-/* All interrupts push all registers, then save a pointer to them into
- * 'current_tcb->saved_registers', of type 'struct all_registers *' (defined in
- * thread.h) .
+/* All interrupts push all registers, then copy all of them into
+ * 'current_tcb->saved_registers', of type 'struct all_registers' (defined in
+ * thread.h) .  They then eventually call a method that does not return.
+ *
+ * With few exceptions, methods called from this file (and methods in general)
+ * should either /always/ return or /never/ return.  Functions that sometimes
+ * return may cause bugs where the code after their call is only sometimes
+ * called.
  */
 
 /* This must stay in sync with 'struct all_registers' in threads.h */
@@ -58,10 +63,7 @@ syscall_isr:
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
-	call get_syscall_handler
-	call *%rax
-	pop_general_purpose_reg
-	iretq
+	call syscall_handler  /* never returns */
 
 /* Interrupts */
 
@@ -72,8 +74,7 @@ kbd_isr:
 	call save_thread_registers
 	call master_eoi
 	call read_key
-	pop_general_purpose_reg
-	iretq
+	call return_to_current_thread  /* never returns */
 
 .GLOBAL timer_isr
 timer_isr:
@@ -81,9 +82,7 @@ timer_isr:
 	mov %rsp,%rdi
 	call save_thread_registers
 	call master_eoi
-	call yield
-	pop_general_purpose_reg
-	iretq
+	call yield  /* never returns */
 
 .GLOBAL rtc_isr
 rtc_isr:
@@ -92,8 +91,7 @@ rtc_isr:
 	call save_thread_registers
 	call slave_eoi
 	call hpet_sleepers_awake
-	pop_general_purpose_reg
-	iretq
+	call return_to_current_thread  /* never returns */
 
 /* Faults */
 
@@ -102,16 +100,14 @@ nm_isr:
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
-	call fpu_activate
-	pop_general_purpose_reg
-	iretq
+	call fpu_activate  /* never returns */
 
 .GLOBAL fault_isr
 fault_isr:
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
-	call thread_exit_fault
+	call thread_exit_fault  /* never returns */
 
 .GLOBAL df_isr
 df_isr:
@@ -121,14 +117,33 @@ df_isr:
 /* pf_isr is special because it can happen in two ways.  First we handle the
  * possibility that we crashed during 'copy_from_user' or 'copy_to_user'; if
  * that was the cause, then 'pagefault_handler_copy' will not return.  Under no
- * circumstances will 'pagefault_handler_copy' use the saved registers.
+ * circumstances will 'pagefault_handler_copy' use the saved registers or
+ * switch threads; that is why it safe to defer 'save_thread_registers' until
+ * after it.  Even more so, if this was a copy to/from user pagefault, we
+ * actively do not want to save the registers.
  */
-
 .GLOBAL pf_isr
 pf_isr:
 	push_general_purpose_reg
-	call pagefault_handler_copy
+	call pagefault_handler_copy  /* sometimes returns */
 	mov %rsp,%rdi
 	call save_thread_registers
 	mov %cr2,%rdi
-	call pagefault_handler_user
+	call pagefault_handler_user  /* never returns */
+
+
+/* One special method: enter_userspace is the only way to return from an ISR.
+ *
+ * The caller passes a pointer to a 'struct all_registers', which has exactly
+ * the structure we would like our stack to have as we "return" to userspace.
+ * So, move our stack there, pop our registers, and return!
+ *
+ * Frequently the 'struct all_registers' is actually located in the
+ * 'saved_register' field of a thread's TCB.  Moving our stack there is a
+ * little bit alarming, but all we do is pop and iretq, so it's fine.
+ */
+.GLOBAL enter_userspace
+enter_userspace:
+	mov %rdi,%rsp
+	pop_general_purpose_reg
+	iretq

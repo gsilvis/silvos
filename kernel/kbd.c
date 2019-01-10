@@ -62,7 +62,7 @@ void read_key (void) {
       panic("Logic error in kbd.c; both threads and characters waiting.");
     }
     list_remove(&t->wait_queue);
-    t->saved_registers->rax = r;
+    t->saved_registers.rax = r;
     reschedule_thread(t);
   } else {
     /* No threads waiting, buffer the character. */
@@ -80,8 +80,9 @@ void getch (void) {
     if (!list_empty(&kbd_wait)) {
       panic("Logic error in kbd.c; both threads and characters waiting.");
     }
-    running_tcb->saved_registers->rax = buf[buf_tail];
+    running_tcb->saved_registers.rax = buf[buf_tail];
     buf_tail = (buf_tail + 1) % 256;
+    return_to_current_thread();
   } else {
     list_push_back(&running_tcb->wait_queue, &kbd_wait);
     schedule();

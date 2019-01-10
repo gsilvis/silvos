@@ -48,7 +48,7 @@ volatile struct HPET_Registers *hpet_reg;
 int hpet_initialize (void);
 void hpet_reset_timeout (void);
 
-void hpet_nanosleep (void);
+void __attribute__((noreturn)) hpet_nanosleep (void);
 void hpet_sleepers_awake(void);
 
 #endif

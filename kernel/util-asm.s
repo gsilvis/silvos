@@ -26,3 +26,11 @@ longjmp:
 	mov %rax,(%rsp)
 	mov %rsi,%rax
 	ret
+
+.GLOBAL com_print_backtrace
+com_print_backtrace:
+	mov %rsp,%rdi
+	add $0x8,%rdi
+	mov (%rsp),%rsi
+	mov %rbp,%rdx
+	jmp gen_backtrace

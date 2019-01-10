@@ -3,6 +3,6 @@
 
 void init_kbd (void);
 void read_key (void);
-void getch (void);
+void __attribute__((noreturn)) getch (void);
 
 #endif

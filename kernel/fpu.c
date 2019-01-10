@@ -27,7 +27,6 @@ void switch_fp_buf (tcb *new_tcb) {
   if (previous_tcb) {
     __asm__("fxsave64 %0" : : "m"(*previous_tcb->fpu_buf) : );
   }
-   blab();
   __asm__("fxrstor64 %0" : : "m"(*new_tcb->fpu_buf) : );
   previous_tcb = new_tcb;
 }
@@ -71,7 +70,10 @@ void fpu_exit_thread (void) {
   }
 }
 
-void fpu_activate (void) {
+void __attribute__((noreturn)) fpu_activate (void) {
+  if (running_tcb == 0) {
+    panic("Idle thread somehow tried to use FPU");
+  }
   if (running_tcb->fpu_state == THREAD_FPU_STATE_FORBIDDEN) {
     thread_exit();
   }
@@ -83,4 +85,5 @@ void fpu_activate (void) {
   }
   enable_fpu();
   switch_fp_buf(running_tcb);
+  return_to_current_thread();
 }

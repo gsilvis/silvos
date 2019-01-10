@@ -8,7 +8,13 @@
 #include "threads.h"
 #include "vga.h"
 
-typedef void (*syscall_func) (void);
+typedef void __attribute__((noreturn)) (*syscall_func) (void);
+
+/* Syscall functions must never return.  Therefore, here are some helpers for
+ * wrapping methods that always return a value (without switching threads or
+ * anything), and making them instead write that value into the saved
+ * registers, and return to the current thread.
+ */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -17,10 +23,11 @@ typedef void (*syscall_func) (void);
 #define TRAMPOLINE_NAME(n) syscall_trampoline_ ## n
 
 #define TRAMPOLINE_HELPER(n, expr) \
-  static void TRAMPOLINE_NAME(n) (void) { \
-    uint64_t a = running_tcb->saved_registers->rbx; \
-    uint64_t b = running_tcb->saved_registers->rcx; \
-    running_tcb->saved_registers->rax = expr; \
+  static void __attribute__((noreturn)) TRAMPOLINE_NAME(n) (void) { \
+    uint64_t a = running_tcb->saved_registers.rbx; \
+    uint64_t b = running_tcb->saved_registers.rcx; \
+    running_tcb->saved_registers.rax = expr; \
+    return_to_current_thread(); \
   }
 
 #define TRAMPOLINE0(n) TRAMPOLINE_HELPER(n, n())
@@ -32,14 +39,13 @@ typedef void (*syscall_func) (void);
 
 /* Trampoline definitions */
 
-TRAMPOLINE0_NORET(yield)
 TRAMPOLINE1_NORET(putc)
-TRAMPOLINE0_NORET(thread_exit)
 TRAMPOLINE2(read_sector)
 TRAMPOLINE2(write_sector)
 TRAMPOLINE1(palloc)
 TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
+TRAMPOLINE0(fork)
 TRAMPOLINE2_NORET(spawn_within_vm_space)
 
 #pragma GCC diagnostic pop
@@ -47,9 +53,9 @@ TRAMPOLINE2_NORET(spawn_within_vm_space)
 /* Dispatch table definitions */
 
 syscall_func syscall_defns[NUM_SYSCALLS] = {
-  TRAMPOLINE_NAME(yield),
+  yield,
   TRAMPOLINE_NAME(putc),
-  TRAMPOLINE_NAME(thread_exit),
+  thread_exit,
   getch,
   TRAMPOLINE_NAME(read_sector),
   TRAMPOLINE_NAME(write_sector),
@@ -57,21 +63,17 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(pfree),
   TRAMPOLINE_NAME(com_debug_thread),
   hpet_nanosleep,
-  /* fork *can't* have any C in it's stack. */
-  (syscall_func)fork,
+  TRAMPOLINE_NAME(fork),
   TRAMPOLINE_NAME(spawn_within_vm_space),
   sendrecv,
 };
 
-static void invalid_syscall_handler (void) {
-  running_tcb->saved_registers->rax = -1;
-}
-
-syscall_func get_syscall_handler (void) {
-  uint64_t syscall_num = running_tcb->saved_registers->rax;
+void __attribute__((noreturn)) syscall_handler (void) {
+  uint64_t syscall_num = running_tcb->saved_registers.rax;
   if (syscall_num >= NUM_SYSCALLS) {
-    return &invalid_syscall_handler;
+    running_tcb->saved_registers.rax = -1;
+    return_to_current_thread();
   } else {
-    return syscall_defns[syscall_num];
+    syscall_defns[syscall_num]();
   }
 }
