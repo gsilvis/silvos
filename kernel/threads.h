@@ -100,25 +100,4 @@ void com_print_backtrace (void);
 
 tcb *get_tcb (uint64_t tid);
 
-#define wait_event(wq, cond)                       \
-do {                                               \
-  if (list_empty(&wq) && (cond))  break;           \
-  while (!cond) {                                  \
-    list_push_back(&running_tcb->wait_queue, &wq); \
-    schedule();                                    \
-  }                                                \
-} while (0)
-
-
-/* TODO: instead of casting buf_head to a TCB, implement offset_of */
-
-#define wake_up(wq)                    \
-do {                                   \
-  tcb *t = (tcb *)list_pop_front(&wq); \
-  if (!t)  break;                      \
-  list_remove(&t->wait_queue);         \
-  reschedule_thread(t);                \
-} while (0)
-
-
 #endif

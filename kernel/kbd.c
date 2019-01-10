@@ -14,7 +14,7 @@ char buf[256];
 int buf_head;
 int buf_tail;
 
-#define CIRC_CNT(head,tail,size) (((head) - (tail)) & ((size)-1))
+#define CIRC_CNT(head,tail,size) (((head) - (tail)) % (size))
 #define CIRC_SPACE(head,tail,size) CIRC_CNT((tail),((head)+1),(size))
 
 char lshift;
@@ -54,23 +54,36 @@ void read_key (void) {
     /* Don't */
     r = scancode[c];
   }
-  /* Put the character in the buffer */
-  buf[buf_head] = r;
-  buf_head = (buf_head + 1) & 255;
-  if (CIRC_SPACE(buf_head, buf_tail, 256) == 0) {
-    /* Buffer's full, so drop least-recent char. */
-    buf_tail = (buf_tail + 1) & 255;
+
+  tcb *t = (tcb *)list_pop_front(&kbd_wait);
+  if (t != 0) {
+    /* Threads are waiting; give the first one in line a character. */
+    if (CIRC_CNT(buf_head, buf_tail, 256) > 0) {
+      panic("Logic error in kbd.c; both threads and characters waiting.");
+    }
+    list_remove(&t->wait_queue);
+    t->saved_registers->rax = r;
+    reschedule_thread(t);
+  } else {
+    /* No threads waiting, buffer the character. */
+    buf[buf_head] = r;
+    buf_head = (buf_head + 1) % 256;
+    if (CIRC_SPACE(buf_head, buf_tail, 256) == 0) {
+      /* Buffer's full, so drop least-recent char. */
+      buf_tail = (buf_tail + 1) % 256;
+    }
   }
-  /* Wake a up a thread.  This causes a race condition, if there were two
-   * threads waiting, and two characters came in close to eachother.  This should
-   * be fixed at some point. */
-  wake_up(kbd_wait);
 }
 
-
-char getch (void) {
-  wait_event(kbd_wait, CIRC_CNT(buf_head, buf_tail, 256));
-  char r = buf[buf_tail];
-  buf_tail = (buf_tail + 1) % 256;
-  return r;
+void getch (void) {
+  if (CIRC_CNT(buf_head, buf_tail, 256) > 0) {
+    if (!list_empty(&kbd_wait)) {
+      panic("Logic error in kbd.c; both threads and characters waiting.");
+    }
+    running_tcb->saved_registers->rax = buf[buf_tail];
+    buf_tail = (buf_tail + 1) % 256;
+  } else {
+    list_push_back(&running_tcb->wait_queue, &kbd_wait);
+    schedule();
+  }
 }

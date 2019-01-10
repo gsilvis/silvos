@@ -35,7 +35,6 @@ typedef void (*syscall_func) (void);
 TRAMPOLINE0_NORET(yield)
 TRAMPOLINE1_NORET(putc)
 TRAMPOLINE0_NORET(thread_exit)
-TRAMPOLINE0(getch)
 TRAMPOLINE2(read_sector)
 TRAMPOLINE2(write_sector)
 TRAMPOLINE1(palloc)
@@ -53,7 +52,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(yield),
   TRAMPOLINE_NAME(putc),
   TRAMPOLINE_NAME(thread_exit),
-  TRAMPOLINE_NAME(getch),
+  getch,
   TRAMPOLINE_NAME(read_sector),
   TRAMPOLINE_NAME(write_sector),
   TRAMPOLINE_NAME(palloc),

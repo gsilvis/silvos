@@ -3,6 +3,6 @@
 
 void init_kbd (void);
 void read_key (void);
-char getch (void);
+void getch (void);
 
 #endif
