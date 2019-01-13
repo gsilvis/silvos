@@ -65,7 +65,8 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   hpet_nanosleep,
   TRAMPOLINE_NAME(fork),
   TRAMPOLINE_NAME(spawn_within_vm_space),
-  sendrecv,
+  call,
+  respond,
 };
 
 void __attribute__((noreturn)) syscall_handler (void) {

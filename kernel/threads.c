@@ -156,10 +156,7 @@ void __attribute__((noreturn)) schedule (void) {
   for (int i = 0; i < NUMTHREADS; ++i) {
     tcb* thread = &tcbs[i];
     if (thread->state == TS_NONEXIST) continue;
-    /* Threads that are in IPC_RECEIVING are considered dormant.
-     * If a thread is in sendrecv() but is about to wake up with a message,
-     * that's different and is indicated by IPC_RECEIVED */
-    if (thread->ipc_state == IPC_RECEIVING) continue;
+    if (thread->ipc_state == IPC_DAEMON) continue;
     ++num_threads;
   }
   if (num_threads == 0) {

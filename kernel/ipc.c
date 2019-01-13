@@ -11,40 +11,55 @@ typedef struct {
   unsigned long long r2;
 } ipc_msg;
 
-void __attribute__((noreturn)) sendrecv (void) {
-  ipc_msg send;
-  send.addr = running_tcb->saved_registers.rbx;
-  send.r1 = running_tcb->saved_registers.rcx;
-  send.r2 = running_tcb->saved_registers.rdx;
-  uint64_t sender = running_tcb->thread_id;
+static inline ipc_msg get_msg (void) {
+  ipc_msg send = {
+    .addr = running_tcb->saved_registers.rbx,
+    .r1 = running_tcb->saved_registers.rcx,
+    .r2 = running_tcb->saved_registers.rdx,
+  };
+  return send;
+}
 
-  /* Throughout this function, use chained if-else rather than guard clauses to
-   * statically verify that every branch ends in an __attribute__((noreturn))
-   * function */
-  if (send.addr == sender) {
+static void __attribute__((noreturn)) do_send (ipc_msg send, tcb *recv_tcb) {
+  recv_tcb->ipc_state = IPC_NOT_RECEIVING;
+  recv_tcb->saved_registers.rax = MESSAGE_RECEIVED;
+  recv_tcb->saved_registers.rbx = running_tcb->thread_id;
+  recv_tcb->saved_registers.rcx = send.r1;
+  recv_tcb->saved_registers.rdx = send.r2;
+  switch_thread_to(recv_tcb);
+}
+
+void __attribute__((noreturn)) call (void) {
+  ipc_msg send = get_msg();
+  tcb* recv_thread = get_tcb(send.addr);
+
+  if (recv_thread == 0 ||
+      recv_thread == running_tcb ||
+      recv_thread->ipc_state != IPC_DAEMON) {
     running_tcb->saved_registers.rax = SEND_FAILED;
     return_to_current_thread();
-  } else if (send.addr == 0) {
-    /* Message to kernel */
-    running_tcb->ipc_state = IPC_RECEIVING;
-    schedule();
-  } else {
-    tcb* recv_thread = get_tcb(send.addr);
-
-    if (!recv_thread) {
-      running_tcb->saved_registers.rax = SEND_FAILED;
-      return_to_current_thread();
-    } else if (recv_thread->ipc_state != IPC_RECEIVING) {
-      running_tcb->saved_registers.rax = SEND_FAILED;
-      return_to_current_thread();
-    } else {
-      recv_thread->ipc_state = IPC_NOT_RECEIVING;
-      recv_thread->saved_registers.rax = MESSAGE_RECEIVED;
-      recv_thread->saved_registers.rbx = sender;
-      recv_thread->saved_registers.rcx = send.r1;
-      recv_thread->saved_registers.rdx = send.r2;
-      running_tcb->ipc_state = IPC_RECEIVING;
-      switch_thread_to(recv_thread);
-    }
   }
+
+  running_tcb->ipc_state = IPC_CALLING;
+  running_tcb->callee = send.addr;
+  do_send(send, recv_thread);
+}
+
+void __attribute__((noreturn)) respond (void) {
+  ipc_msg resp = get_msg();
+  tcb* recv_thread = get_tcb(resp.addr);
+
+  if (resp.addr == 0) {
+    /* Request to daemonize. */
+    running_tcb->ipc_state = IPC_DAEMON;
+    schedule();
+  } else if (recv_thread == 0 ||
+             recv_thread->ipc_state != IPC_CALLING ||
+             recv_thread->callee != running_tcb->thread_id) {
+    running_tcb->saved_registers.rax = SEND_FAILED;
+    return_to_current_thread();
+  }
+
+  running_tcb->ipc_state = IPC_DAEMON;
+  do_send(resp, recv_thread);
 }

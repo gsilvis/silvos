@@ -24,7 +24,8 @@ enum fpu_state {
 
 enum ipc_state {
   IPC_NOT_RECEIVING,
-  IPC_RECEIVING,      /* currently waiting for an ipc message */
+  IPC_CALLING,        /* currently waiting for a response */
+  IPC_DAEMON,         /* currently waiting for a call */
 };
 
 typedef struct {
@@ -78,6 +79,7 @@ typedef struct {
   enum fpu_state fpu_state;
   char (*fpu_buf)[512];
   enum ipc_state ipc_state;
+  uint8_t callee;  /* Only valid if IPC_CALLING */
 } tcb;
 
 /* Pointer to the TCB of the running userspace thread, or NULL if currently

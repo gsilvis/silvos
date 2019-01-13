@@ -88,15 +88,23 @@ static inline void spawn_thread (const void *code, void *stack) {
   __syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
 }
 
-static inline sendrecv_status sendrecv (sendrecv_op *op) {
+static inline sendrecv_status __ipc (unsigned long syscallno, sendrecv_op *op) {
   sendrecv_status status;
   ipc_msg msg = op->send;
   __asm__ volatile("int $0x36"
                    : "=a" (status), "+b" (msg.addr), "+c" (msg.r1), "+d" (msg.r2)
-                   : "a" (SYSCALL_SENDRECV)
+                   : "a" (syscallno)
                    : "memory");
   op->recv = msg;
   return status;
+}
+
+static inline sendrecv_status call (sendrecv_op *op) {
+  return __ipc(SYSCALL_CALL, op);
+}
+
+static inline sendrecv_status respond (sendrecv_op *op) {
+  return __ipc(SYSCALL_RESPOND, op);
 }
 
 #endif

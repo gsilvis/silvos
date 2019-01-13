@@ -20,8 +20,9 @@ typedef enum {
 #define SYSCALL_NANOSLEEP   0x09
 #define SYSCALL_FORK        0x0A
 #define SYSCALL_SPAWN       0x0B
-#define SYSCALL_SENDRECV    0x0C
+#define SYSCALL_CALL        0x0C
+#define SYSCALL_RESPOND     0x0D
 
-#define NUM_SYSCALLS        0x0D
+#define NUM_SYSCALLS        0x0E
 
 #endif

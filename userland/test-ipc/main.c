@@ -8,7 +8,7 @@ void vasily() {
   op.send.r1 = 0;
   op.send.r2 = 0;
   while (1) {
-    if (sendrecv(&op)) {
+    if (respond(&op)) {
       DEBUG("SEND FAILED");
       return;
     }
@@ -27,7 +27,7 @@ void fedia(int addr) {
   for (unsigned long long i = 1; i <= 10; ++i) {
     op.send.r1 = i;
     op.send.r2 = 5;
-    if (sendrecv(&op)) {
+    if (call(&op)) {
       DEBUG("SEND FAILED");
       return;
     }
