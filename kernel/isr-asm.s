@@ -47,7 +47,7 @@
 
 /* Syscalls */
 
-/* The syscall ABI is:
+/* The syscall ABI for syscalls other than sendrecv() is:
  *
  *  REG | INPUT | OUTPUT
  *  --------------------
@@ -56,6 +56,19 @@
  *  RCX | ARG2  | PRESERVED
  *
  * All other registers are unused and preserved.
+ *
+ * For sendrecv() it is instead:
+ *
+ *  REG | INPUT | OUTPUT
+ *  --------------------
+ *  RAX | SYSNO | RETURN (status)
+ *  RBX | ADDR  | RETURN
+ *  RCX | ARG1  | RETURN
+ *  RDX | ARG2  | RETURN
+ *
+ * All other registers are still unused and preserved.
+ * The RETURN register meanings correspond to the inputs, eg
+ * RBX is the address that a message came from.
  */
 
 .GLOBAL syscall_isr

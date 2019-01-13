@@ -121,7 +121,6 @@ static void __attribute__((noreturn)) return_to_userspace (void) {
      * fault occurs, it will bring is back to the normal kernel stack location.
      */
     hpet_reset_timeout();
-    sendrecv_finish();
     enter_userspace(&running_tcb->saved_registers);
   } else {
     /* We have to be careful returning to the idle thread.  Because the idle

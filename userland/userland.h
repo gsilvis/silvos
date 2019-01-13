@@ -5,12 +5,23 @@
 
 #include "../kernel/syscall-defs.h"
 
+typedef struct {
+  unsigned long long addr;
+  unsigned long long r1;
+  unsigned long long r2;
+} ipc_msg;
+
+typedef struct {
+  ipc_msg send; /* Filled in by the user */
+  ipc_msg recv; /* Filled in by the sending process */
+} sendrecv_op;
+
 static inline syscall_arg __syscall(unsigned long syscallno, syscall_arg arg1, syscall_arg arg2) {
   syscall_arg out;
   __asm__ volatile("int $0x36"
                    : "=a" (out), "+c" (arg2)
                    : "a" (syscallno), "b" (arg1)
-                   : "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "memory");
+                   : "memory");
   return out;
 }
 
@@ -77,8 +88,15 @@ static inline void spawn_thread (const void *code, void *stack) {
   __syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
 }
 
-static inline sendrecv_status sendrecv (sendrecv_op* op) {
-  return (int)__syscall1(SYSCALL_SENDRECV, (syscall_arg)op);
+static inline sendrecv_status sendrecv (sendrecv_op *op) {
+  sendrecv_status status;
+  ipc_msg msg = op->send;
+  __asm__ volatile("int $0x36"
+                   : "=a" (status), "+b" (msg.addr), "+c" (msg.r1), "+d" (msg.r2)
+                   : "a" (SYSCALL_SENDRECV)
+                   : "memory");
+  op->recv = msg;
+  return status;
 }
 
 #endif

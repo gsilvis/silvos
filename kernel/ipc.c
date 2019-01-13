@@ -1,23 +1,27 @@
 #include "ipc.h"
 
 #include "com.h"
-#include "pagefault.h"
+#include "syscall-defs.h"
 #include "threads.h"
 #include "util.h"
-#include "memory-map.h"
+
+typedef struct {
+  unsigned long long addr;
+  unsigned long long r1;
+  unsigned long long r2;
+} ipc_msg;
 
 void __attribute__((noreturn)) sendrecv (void) {
-  sendrecv_op *usr_op = (sendrecv_op *)running_tcb->saved_registers.rbx;
   ipc_msg send;
+  send.addr = running_tcb->saved_registers.rbx;
+  send.r1 = running_tcb->saved_registers.rcx;
+  send.r2 = running_tcb->saved_registers.rdx;
   uint64_t sender = running_tcb->thread_id;
 
   /* Throughout this function, use chained if-else rather than guard clauses to
    * statically verify that every branch ends in an __attribute__((noreturn))
    * function */
-  if (copy_from_user(&send, &usr_op->send, sizeof(ipc_msg))) {
-    running_tcb->saved_registers.rax = SEND_FAILED;
-    return_to_current_thread();
-  } else if (send.addr == sender) {
+  if (send.addr == sender) {
     running_tcb->saved_registers.rax = SEND_FAILED;
     return_to_current_thread();
   } else if (send.addr == 0) {
@@ -34,27 +38,13 @@ void __attribute__((noreturn)) sendrecv (void) {
       running_tcb->saved_registers.rax = SEND_FAILED;
       return_to_current_thread();
     } else {
-      recv_thread->ipc_state = IPC_RECEIVED;
-      recv_thread->inbox = send;
-      recv_thread->inbox.addr = sender;
+      recv_thread->ipc_state = IPC_NOT_RECEIVING;
+      recv_thread->saved_registers.rax = MESSAGE_RECEIVED;
+      recv_thread->saved_registers.rbx = sender;
+      recv_thread->saved_registers.rcx = send.r1;
+      recv_thread->saved_registers.rdx = send.r2;
       running_tcb->ipc_state = IPC_RECEIVING;
       switch_thread_to(recv_thread);
     }
-  }
-}
-
-/* We need to copy_to_user the message to the destination's vm space; the
- * easiest way to do that is to add a hook to 'return_to_userspace' which
- * checks for this case.  Long term, we should instead just pass messages in
- * registers. */
-void sendrecv_finish (void) {
-  if (running_tcb->ipc_state != IPC_RECEIVED) {
-    return;
-  }
-  sendrecv_op *usr_op = (sendrecv_op *)running_tcb->saved_registers.rbx;
-  if (copy_to_user(&usr_op->recv, &running_tcb->inbox, sizeof(ipc_msg))) {
-    running_tcb->saved_registers.rax = RECEIVE_FAILED;
-  } else {
-    running_tcb->saved_registers.rax = MESSAGE_RECEIVED;
   }
 }
