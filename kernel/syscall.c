@@ -46,7 +46,7 @@ TRAMPOLINE1(palloc)
 TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
 TRAMPOLINE0(fork)
-TRAMPOLINE2_NORET(spawn_within_vm_space)
+TRAMPOLINE2(spawn_within_vm_space)
 
 #pragma GCC diagnostic pop
 

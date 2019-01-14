@@ -21,7 +21,13 @@ void main() {
     if (palloc((const void *)stac)) {
       DEBUG("ALLOC FAIL");
     }
-    spawn_thread(my_task, (void *)(stac + 0x1000));
+    int child_id = spawn_thread(my_task, (void *)(stac + 0x1000));
+    if (child_id < 0) {
+      DEBUG("SPAWN FAIL");
+    }
+    char msg[] = "Created child 0x0N";
+    msg[sizeof(msg) - 2] = '0' + (child_id % 10);
+    DEBUG(msg);
     stac += 0x4000;
   }
   bluh = 5;

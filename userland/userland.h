@@ -84,8 +84,8 @@ static inline int fork () {
   return (int)__syscall0(SYSCALL_FORK);
 }
 
-static inline void spawn_thread (const void *code, void *stack) {
-  __syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
+static inline int spawn_thread (const void *code, void *stack) {
+  return (int)__syscall2(SYSCALL_SPAWN, (syscall_arg)code, (syscall_arg)stack);
 }
 
 static inline sendrecv_status __ipc (unsigned long syscallno, sendrecv_op *op) {
