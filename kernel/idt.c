@@ -21,6 +21,14 @@ struct IDT_entry *idt;
 
 void create_idt () {
   idt = (struct IDT_entry *)allocate_phys_page();
+  const struct {
+    uint16_t size;
+    void *base;
+  } __attribute__ ((packed)) IDT_addr = {
+    0x1000,
+    idt,
+  };
+  __asm__("lidt %0" : : "m"(IDT_addr) : );
 }
 
 static void register_isr_internal (uint8_t num,
@@ -33,7 +41,6 @@ static void register_isr_internal (uint8_t num,
   idt[num].ist = ist; /* ist = 0 disables */
   idt[num].reserved = 0;
   idt[num].selector = 0x40;
-
 }
 
 void register_isr (uint8_t num,
@@ -50,15 +57,4 @@ void register_user_isr (uint8_t num,
   register_isr_internal(num, handler, ist);
   idt[num].type_attr = 0xEE;
   /* present 64-bit interrupt callable from ring 3. */
-}
-
-void insert_idt (void) {
-  const struct {
-    uint16_t size;
-    void *base;
-  } __attribute__ ((packed)) IDT_addr = {
-    0x1000,
-    idt,
-  };
-  __asm__("lidt %0" : : "m"(IDT_addr) : );
 }

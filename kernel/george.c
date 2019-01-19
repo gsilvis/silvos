@@ -17,7 +17,7 @@
 #include "unwind.h"
 #include "apic.h"
 
-void initialize_idt (void) {
+static void initialize_idt (void) {
   create_idt();
 
   /* Exceptions */
@@ -44,9 +44,9 @@ void initialize_idt (void) {
     /* 0x14  #VE: Virtualization Exception */
 
   /* IRQ */
-  register_isr(0x20, timer_isr, 0);
-  register_isr(0x21, kbd_isr, 0);
-  register_isr(0x28, rtc_isr, 0);
+  register_isa_isr(0x00, timer_isr);
+  register_isa_isr(0x01, kbd_isr);
+  register_isa_isr(0x08, rtc_isr);
 
   /* Syscalls */
   register_user_isr(0x36, syscall_isr, 0);
@@ -84,10 +84,7 @@ void __attribute__((noreturn)) kernel_main (uint32_t mboot_struct_addr, uint32_t
 
   initialize_allocator(lowest_safe_physical_address, memtop);
   insert_pt(initial_pt());
-  initialize_idt();
-  insert_idt();
   initialize_gdt();
-  remap_pic();
 
   for (uint32_t i = 0; i < mboot_struct[5]; i++) {
     user_thread_create((void *)phys_to_virt((uint64_t)mod_list[i].start),
@@ -100,7 +97,10 @@ void __attribute__((noreturn)) kernel_main (uint32_t mboot_struct_addr, uint32_t
   com_initialize();
   acpi_initialize();
   hpet_initialize();
+  remap_pic();
   apic_init();
+  initialize_idt();
+
   test_parse_eh_frame();
   puts("Launching userspace.\r\n");
   schedule(); /* Does not return */

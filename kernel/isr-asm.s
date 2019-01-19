@@ -85,7 +85,7 @@ kbd_isr:
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
-	call master_eoi
+	call apic_eoi
 	call read_key
 	call return_to_current_thread  /* never returns */
 
@@ -94,7 +94,7 @@ timer_isr:
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
-	call master_eoi
+	call apic_eoi
 	call yield  /* never returns */
 
 .GLOBAL rtc_isr
@@ -102,7 +102,7 @@ rtc_isr:
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
-	call slave_eoi
+	call apic_eoi
 	call hpet_sleepers_awake
 	call return_to_current_thread  /* never returns */
 
