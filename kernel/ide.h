@@ -22,7 +22,9 @@ typedef struct {
 
 void ide_device_register(uint8_t bus, uint8_t device, uint8_t function);
 
-int read_sector (uint64_t sector, void *to);
-int write_sector (uint64_t sector, const void *from);
+void __attribute__((noreturn)) read_sector (void);
+void __attribute__((noreturn)) write_sector (void);
+
+void ide_finish_operation (void);
 
 #endif

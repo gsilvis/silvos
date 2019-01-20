@@ -47,6 +47,7 @@ static void initialize_idt (void) {
   register_isa_isr(0x00, timer_isr);
   register_isa_isr(0x01, kbd_isr);
   register_isa_isr(0x08, rtc_isr);
+  register_isa_isr(0x0E, ide_isr);
 
   /* Syscalls */
   register_user_isr(0x36, syscall_isr, 0);

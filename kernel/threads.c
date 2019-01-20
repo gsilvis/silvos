@@ -1,16 +1,16 @@
 #include "threads.h"
 
-#include "memory-map.h"
-
-#include "util.h"
-#include "pit.h"
 #include "alloc.h"
-#include "gdt.h"
-#include "page.h"
-#include "fpu.h"
-#include "loader.h"
-#include "hpet.h"
 #include "com.h"
+#include "fpu.h"
+#include "gdt.h"
+#include "hpet.h"
+#include "ide.h"
+#include "loader.h"
+#include "memory-map.h"
+#include "page.h"
+#include "pit.h"
+#include "util.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -124,6 +124,7 @@ static void __attribute__((noreturn)) return_to_userspace (void) {
      * fault occurs, it will bring is back to the normal kernel stack location.
      */
     hpet_reset_timeout();
+    ide_finish_operation();
     enter_userspace(&running_tcb->saved_registers);
   } else {
     /* We have to be careful returning to the idle thread.  Because the idle

@@ -41,8 +41,6 @@ typedef void __attribute__((noreturn)) (*syscall_func) (void);
 /* Trampoline definitions */
 
 TRAMPOLINE1_NORET(putc)
-TRAMPOLINE2(read_sector)
-TRAMPOLINE2(write_sector)
 TRAMPOLINE1(palloc)
 TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
@@ -63,8 +61,8 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(putc),
   thread_exit,
   getch,
-  TRAMPOLINE_NAME(read_sector),
-  TRAMPOLINE_NAME(write_sector),
+  read_sector,
+  write_sector,
   TRAMPOLINE_NAME(palloc),
   TRAMPOLINE_NAME(pfree),
   TRAMPOLINE_NAME(com_debug_thread),

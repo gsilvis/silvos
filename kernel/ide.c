@@ -1,19 +1,23 @@
 #include "ide.h"
 
 #include "alloc.h"
-#include "pci.h"
-#include "vga.h"
 #include "ata.h"
 #include "memory-map.h"
 #include "pagefault.h"
+#include "pci.h"
+#include "threads.h"
+#include "vga.h"
 
 #include <stdint.h>
 
-uint16_t bar0, bar1, bar2, bar3, bar4;
+static uint16_t bar0, bar1, bar2, bar3, bar4;
 
-prdt_entry *prdt;
+static prdt_entry *prdt;
 
-uint8_t *ide_buf;
+static uint8_t *ide_buf;
+
+static tcb *operating_tcb;  /* NULL if no operation in progress. */
+static uint8_t is_read;
 
 void ide_device_register (uint8_t bus, uint8_t device, uint8_t function) {
   /* For now, assume that these are all ports.  If the low bit is not set, then
@@ -66,13 +70,23 @@ void ide_device_register (uint8_t bus, uint8_t device, uint8_t function) {
   tmp |= 0x04;
   pci_write(1, function, device, bus, tmp);
   outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS, 0x00);
+  operating_tcb = 0;
+
+  /* TODO: Find size of disk, and don't let users try and read/write off the
+   * end of it. */
 }
 
 uint8_t checkide (void) {
   return inb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS);
 }
 
-int read_sector (uint64_t sector, void *to) {
+void __attribute__((noreturn)) read_sector (void) {
+  if (operating_tcb != 0) {
+    panic("Concurrent IDE read...");
+  }
+  memset(ide_buf, '\0', 512);  /* In case we read off the end of the disk,
+                                  don't leak information to the end-user. */
+  uint64_t sector = running_tcb->saved_registers.rbx;
   prdt[0].prd_phys_addr = virt_to_phys((uint64_t)ide_buf);
   prdt[0].xr_bytes = 512;
   prdt[0].is_last = IDE_PRDT_ENTRY_IS_LAST;
@@ -97,30 +111,21 @@ int read_sector (uint64_t sector, void *to) {
 
   outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_COMMAND, ATA_BUSMASTER_CMD_RW | ATA_BUSMASTER_CMD_START);
 
-  uint8_t status;
-  while (1) {
-    status = inb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS);
-    if (ATA_BUSMASTER_SR_SENT_IRQ & status) {
-      outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS, ATA_BUSMASTER_SR_SENT_IRQ);
-      outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_COMMAND, 0x00);
-      break;
-    }
-  }
-  if (ATA_BUSMASTER_SR_FAIL & status) {
-    outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS, ATA_BUSMASTER_SR_FAIL);
-    goto err;
-  }
-  return copy_to_user(to, ide_buf, 512);
- err:
-  return -1;
+  operating_tcb = running_tcb;
+  is_read = 1;
+  schedule();
 }
 
-
-int write_sector (uint64_t sector, const void *from) {
-  int err = 0;
-  if ((err = copy_from_user(ide_buf, from, 512))) {
-    return err;
-  };
+void __attribute__((noreturn)) write_sector (void) {
+  if (operating_tcb != 0) {
+    panic("Concurrent IDE write...");
+  }
+  uint64_t sector = running_tcb->saved_registers.rbx;
+  uint8_t *user_addr = (uint8_t *)running_tcb->saved_registers.rcx;
+  if (copy_from_user(ide_buf, user_addr, 512)) {
+    running_tcb->saved_registers.rax = -1;
+    return_to_current_thread();
+  }
   prdt[0].prd_phys_addr = virt_to_phys((uint64_t)ide_buf);
   prdt[0].xr_bytes = 512;
   prdt[0].is_last = IDE_PRDT_ENTRY_IS_LAST;
@@ -148,21 +153,43 @@ int write_sector (uint64_t sector, const void *from) {
 
   outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_COMMAND, ATA_BUSMASTER_CMD_START);
 
-  uint8_t status;
-  while (1) {
-    status = inb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS);
-    if (ATA_BUSMASTER_SR_SENT_IRQ & status) {
-      outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS, ATA_BUSMASTER_SR_SENT_IRQ);
-      outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_COMMAND, 0x00);
-      break;
-    }
-  }
-  if (ATA_BUSMASTER_SR_FAIL & status) {
-    outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS, ATA_BUSMASTER_SR_FAIL);
-    goto err;
-  }
-  return 0;
- err:
-  return -1;
+  operating_tcb = running_tcb;
+  is_read = 0;
+  schedule();
 }
 
+void ide_handler (void) {
+  uint8_t status = inb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS);
+  if (!(ATA_BUSMASTER_SR_SENT_IRQ & status)) {
+    return;  /* Spurious IRQ. */
+  }
+  outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_STATUS, ATA_BUSMASTER_SR_SENT_IRQ);
+  outb(bar4 + ATA_BUSMASTER_REG_PRIMARY_COMMAND, 0x00);
+  if (operating_tcb == 0) {
+    panic("Unexpected IDE IRQ!");
+  }
+  reschedule_thread(operating_tcb);
+  if (ATA_BUSMASTER_SR_FAIL & status) {
+    /* Report failure to user. */
+    operating_tcb->saved_registers.rax = -1;
+    operating_tcb = 0;
+  } else if (!is_read) {
+    /* Successfully completed write. */
+    operating_tcb->saved_registers.rax = 0;
+    operating_tcb = 0;
+  } else {
+    /* Successfully completed read; will be finished in ide_finish_operation. */
+  }
+}
+
+void ide_finish_operation (void) {
+  if ((running_tcb == operating_tcb) && is_read) {
+    operating_tcb = 0;
+    uint8_t *user_addr = (uint8_t *)running_tcb->saved_registers.rcx;
+    if (copy_to_user(user_addr, ide_buf, 512)) {
+      running_tcb->saved_registers.rax = -1;
+    } else {
+      running_tcb->saved_registers.rax = 0;
+    }
+  }
+}

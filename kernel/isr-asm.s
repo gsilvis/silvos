@@ -106,6 +106,15 @@ rtc_isr:
 	call hpet_sleepers_awake
 	call return_to_current_thread  /* never returns */
 
+.GLOBAL ide_isr
+ide_isr:
+	push_general_purpose_reg
+	mov %rsp,%rdi
+	call save_thread_registers
+	call apic_eoi
+	call ide_handler
+	call return_to_current_thread  /* never returns */
+
 /* Faults */
 
 .GLOBAL nm_isr

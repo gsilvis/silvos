@@ -11,5 +11,6 @@ void pf_isr (void);
 void kbd_isr (void);
 void timer_isr (void);
 void rtc_isr (void);
+void ide_isr (void);
 
 #endif
