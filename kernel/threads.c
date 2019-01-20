@@ -61,6 +61,7 @@ static tcb *create_thread (uint64_t rip, uint64_t rsp, vmcb *vm_space) {
       tcbs[i].state = TS_EXIST;
       tcbs[i].fpu_state = THREAD_FPU_STATE_INACTIVE;
       tcbs[i].ipc_state = IPC_NOT_RECEIVING;
+      tcbs[i].sem_state = SEM_NOT_WAITING;
       struct all_registers scratch = {
         .rip    = rip,
         .cs     = 0x4B,
@@ -69,6 +70,8 @@ static tcb *create_thread (uint64_t rip, uint64_t rsp, vmcb *vm_space) {
         .ss     = 0x1B,
       };
       tcbs[i].saved_registers = scratch;
+      tcbs[i].ready_sems.next = &tcbs[i].ready_sems;
+      tcbs[i].ready_sems.prev = &tcbs[i].ready_sems;
       return &tcbs[i];
     }
   }

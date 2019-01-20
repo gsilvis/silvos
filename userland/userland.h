@@ -107,4 +107,28 @@ static inline sendrecv_status respond (sendrecv_op *op) {
   return __ipc(SYSCALL_RESPOND, op);
 }
 
+static inline semaphore_id sem_create() {
+  return __syscall0(SYSCALL_SEM_CREATE);
+}
+
+static inline int sem_delete(semaphore_id sem) {
+  return __syscall1(SYSCALL_SEM_DELETE, sem);
+}
+
+static inline int sem_watch(semaphore_id sem) {
+  return __syscall1(SYSCALL_SEM_WATCH, sem);
+}
+
+static inline int sem_unwatch(semaphore_id sem) {
+  return __syscall1(SYSCALL_SEM_UNWATCH, sem);
+}
+
+static inline semaphore_id sem_wait() {
+  return __syscall0(SYSCALL_SEM_WAIT);
+}
+
+static inline int sem_set(semaphore_id sem) {
+  return __syscall1(SYSCALL_SEM_SET, sem);
+}
+
 #endif

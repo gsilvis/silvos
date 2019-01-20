@@ -28,6 +28,11 @@ enum ipc_state {
   IPC_DAEMON,         /* currently waiting for a call */
 };
 
+enum sem_state {
+  SEM_NOT_WAITING,
+  SEM_WAITING,
+};
+
 typedef struct {
   pagetable pt; /* 0 if unused */
   uint8_t refcount;
@@ -80,6 +85,8 @@ typedef struct {
   char (*fpu_buf)[512];
   enum ipc_state ipc_state;
   uint8_t callee;  /* Only valid if IPC_CALLING */
+  enum sem_state sem_state;
+  struct list_head ready_sems;  /* All semaphores we're watching that are SET */
 } tcb;
 
 /* Pointer to the TCB of the running userspace thread, or NULL if currently

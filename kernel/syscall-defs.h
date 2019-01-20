@@ -8,6 +8,8 @@ typedef enum {
   SEND_FAILED = 1,
 } sendrecv_status;
 
+typedef unsigned long long semaphore_id;
+
 #define SYSCALL_YIELD       0x00
 #define SYSCALL_PUTCH       0x01
 #define SYSCALL_EXIT        0x02
@@ -22,7 +24,13 @@ typedef enum {
 #define SYSCALL_SPAWN       0x0B
 #define SYSCALL_CALL        0x0C
 #define SYSCALL_RESPOND     0x0D
+#define SYSCALL_SEM_CREATE  0x0E
+#define SYSCALL_SEM_DELETE  0x0F
+#define SYSCALL_SEM_WATCH   0x10
+#define SYSCALL_SEM_UNWATCH 0x11
+#define SYSCALL_SEM_WAIT    0x12
+#define SYSCALL_SEM_SET     0x13
 
-#define NUM_SYSCALLS        0x0E
+#define NUM_SYSCALLS        0x14
 
 #endif

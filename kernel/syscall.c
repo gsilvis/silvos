@@ -4,6 +4,7 @@
 #include "ipc.h"
 #include "kbd.h"
 #include "palloc.h"
+#include "semaphores.h"
 #include "syscall-defs.h"
 #include "threads.h"
 #include "vga.h"
@@ -47,6 +48,11 @@ TRAMPOLINE1(pfree)
 TRAMPOLINE2(com_debug_thread)
 TRAMPOLINE0(fork)
 TRAMPOLINE2(spawn_within_vm_space)
+TRAMPOLINE0(sem_create)
+TRAMPOLINE1(sem_delete)
+TRAMPOLINE1(sem_watch)
+TRAMPOLINE1(sem_unwatch)
+TRAMPOLINE1(sem_set)
 
 #pragma GCC diagnostic pop
 
@@ -67,6 +73,12 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(spawn_within_vm_space),
   call,
   respond,
+  TRAMPOLINE_NAME(sem_create),
+  TRAMPOLINE_NAME(sem_delete),
+  TRAMPOLINE_NAME(sem_watch),
+  TRAMPOLINE_NAME(sem_unwatch),
+  sem_wait,
+  TRAMPOLINE_NAME(sem_set),
 };
 
 void __attribute__((noreturn)) syscall_handler (void) {
