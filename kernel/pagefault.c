@@ -66,3 +66,17 @@ int copy_to_user(void *to, const void *from, size_t count) {
   is_copying = 0;
   return res;
 }
+
+int copy_string_from_user(void *to, const void *from, size_t max) {
+  const char *f = from;
+  if (check_addr(f, f+max)) {
+    return -1;
+  }
+  is_copying = 1;
+  int res = setjmp(for_copying);
+  if (res == 0) {
+    strncpy(to, from, max);
+  }
+  is_copying = 0;
+  return res;
+}

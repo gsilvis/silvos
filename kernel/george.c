@@ -1,21 +1,22 @@
-#include "vga.h"
-#include "threads.h"
-#include "idt.h"
-#include "gdt.h"
-#include "util.h"
-#include "isr.h"
-#include "pic.h"
-#include "page.h"
-#include "alloc.h"
-#include "kbd.h"
-#include "fpu.h"
-#include "pci.h"
-#include "memory-map.h"
-#include "com.h"
 #include "acpi.h"
-#include "hpet.h"
-#include "unwind.h"
+#include "alloc.h"
 #include "apic.h"
+#include "com.h"
+#include "fpu.h"
+#include "gdt.h"
+#include "hpet.h"
+#include "idt.h"
+#include "isr.h"
+#include "kbd.h"
+#include "memory-map.h"
+#include "multiboot.h"
+#include "page.h"
+#include "pci.h"
+#include "pic.h"
+#include "threads.h"
+#include "unwind.h"
+#include "util.h"
+#include "vga.h"
 
 static void initialize_idt (void) {
   create_idt();
@@ -53,13 +54,6 @@ static void initialize_idt (void) {
   register_user_isr(0x36, syscall_isr, 0);
 }
 
-typedef struct {
-  uint32_t start;
-  uint32_t end;
-  uint32_t string;
-  uint32_t unused;
-} multiboot_module;
-
 extern int _end;
 
 void __attribute__((noreturn)) kernel_main (uint32_t mboot_struct_addr, uint32_t mboot_magic) {
@@ -87,10 +81,7 @@ void __attribute__((noreturn)) kernel_main (uint32_t mboot_struct_addr, uint32_t
   insert_pt(initial_pt());
   initialize_gdt();
 
-  for (uint32_t i = 0; i < mboot_struct[5]; i++) {
-    user_thread_create((void *)phys_to_virt((uint64_t)mod_list[i].start),
-                       mod_list[i].end - mod_list[i].start);
-  }
+  spawn_multiboot_modules(mod_list, mboot_struct[5]);
 
   init_kbd();
   fpu_init();

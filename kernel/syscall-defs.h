@@ -30,7 +30,8 @@ typedef unsigned long long semaphore_id;
 #define SYSCALL_SEM_UNWATCH 0x11
 #define SYSCALL_SEM_WAIT    0x12
 #define SYSCALL_SEM_SET     0x13
+#define SYSCALL_FIND_PROC   0x14
 
-#define NUM_SYSCALLS        0x14
+#define NUM_SYSCALLS        0x15
 
 #endif

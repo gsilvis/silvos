@@ -3,6 +3,7 @@
 #include "ide.h"
 #include "ipc.h"
 #include "kbd.h"
+#include "multiboot.h"
 #include "palloc.h"
 #include "semaphores.h"
 #include "syscall-defs.h"
@@ -51,6 +52,7 @@ TRAMPOLINE1(sem_delete)
 TRAMPOLINE1(sem_watch)
 TRAMPOLINE1(sem_unwatch)
 TRAMPOLINE1(sem_set)
+TRAMPOLINE1(find_module)
 
 #pragma GCC diagnostic pop
 
@@ -77,6 +79,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(sem_unwatch),
   sem_wait,
   TRAMPOLINE_NAME(sem_set),
+  TRAMPOLINE_NAME(find_module),
 };
 
 void __attribute__((noreturn)) syscall_handler (void) {

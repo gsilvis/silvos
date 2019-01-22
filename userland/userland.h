@@ -131,4 +131,7 @@ static inline int sem_set(semaphore_id sem) {
   return __syscall1(SYSCALL_SEM_SET, sem);
 }
 
+static inline int find_proc (const char *name) {
+  return __syscall1(SYSCALL_FIND_PROC, (syscall_arg)name);
+}
 #endif

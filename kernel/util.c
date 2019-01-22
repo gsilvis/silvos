@@ -38,6 +38,18 @@ uint64_t strlen (const char *s) {
   return i;
 }
 
+char *strncpy (char *dest, const char *src, size_t n) {
+  size_t i;
+  for (i = 0; i < n && src[i] != '\0'; ++i) {
+    dest[i] = src[i];
+  }
+  for (; i < n; ++i) {
+    dest[i] = '\0';
+  }
+  /* No trailing null byte on truncation, as per <string.h> */
+  return dest;
+}
+
 void __attribute__ ((noreturn)) qemu_debug_shutdown (void) {
   /* This works, as long as you include the following argument to QEMU:
    *    -device isa-debug-exit,iobase=0xf4,iosize=0x04

@@ -100,7 +100,7 @@ int user_thread_create (void *text, size_t length) {
   map_new_page(pt, LOC_USER_STACK, PAGE_MASK__USER | PAGE_MASK_NX);
 
   reschedule_thread(new_tcb);
-  return 0;
+  return new_tcb->thread_id;
 }
 
 
