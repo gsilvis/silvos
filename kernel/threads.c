@@ -140,11 +140,10 @@ static void __attribute__((noreturn)) return_to_userspace (void) {
       .eflags = 0x200,  /* interrupts enabled */
       .rsp = (uint64_t)kernel_stack,
       .ss = 0x10,
-      /* I'm confused here.  I thought that, when iretq-ing from ring 0 to ring
-       * 0, the CPU does not pop %ss or %rsp.   If you remove those two fields,
-       * though, calc.bin breaks, even though none of the tests break.  What's
-       * going on there?
-       */
+      /* Note that in x86-64 mode, Intel pushes %rsp and %ss unconditionally on
+       * interrupts, and pops them unconditionally on IRET.  This is in
+       * contrast to 32-bit protected mode, where within-ring and inter-ring
+       * work differently. */
     };
     struct all_registers* stack_top = (struct all_registers*)kernel_stack;
     stack_top[-1] = scratch;
