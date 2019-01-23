@@ -66,6 +66,10 @@ struct all_registers {
   uint64_t rbx;
   uint64_t rax;
 
+  /* Some interrupts on Intel push a status code after %rip; for the rest, we
+   * push 0, to make the stack look the same. */
+  uint64_t status_code;
+
   /* Special registers */
   uint64_t rip;
   uint64_t cs;

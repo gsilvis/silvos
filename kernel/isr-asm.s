@@ -27,6 +27,13 @@
 	push %r15
 .endm
 
+/* Some Intel exceptions push status codes and some don't.  To make our 'all
+ * registers' structs have a consistent format, it's easiest to leave a space
+ * for the code either way. */
+.macro push_fake_status_code
+	pushq $0
+.endm
+
 .macro pop_general_purpose_reg
 	pop %r15
 	pop %r14
@@ -73,6 +80,7 @@
 
 .GLOBAL syscall_isr
 syscall_isr:
+	push_fake_status_code
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -82,6 +90,7 @@ syscall_isr:
 
 .GLOBAL kbd_isr
 kbd_isr:
+	push_fake_status_code
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -91,6 +100,7 @@ kbd_isr:
 
 .GLOBAL timer_isr
 timer_isr:
+	push_fake_status_code
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -99,6 +109,7 @@ timer_isr:
 
 .GLOBAL rtc_isr
 rtc_isr:
+	push_fake_status_code
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -108,6 +119,7 @@ rtc_isr:
 
 .GLOBAL ide_isr
 ide_isr:
+	push_fake_status_code
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -119,6 +131,7 @@ ide_isr:
 
 .GLOBAL nm_isr
 nm_isr:
+	push_fake_status_code
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -126,6 +139,7 @@ nm_isr:
 
 .GLOBAL fault_isr
 fault_isr:
+	/* faults push a status code (not that we use it) */
 	push_general_purpose_reg
 	mov %rsp,%rdi
 	call save_thread_registers
@@ -133,6 +147,7 @@ fault_isr:
 
 .GLOBAL df_isr
 df_isr:
+	/* #DF pushs a status code (even though it's always 0) */
 	hlt
 	jmp df_isr
 
@@ -146,6 +161,7 @@ df_isr:
  */
 .GLOBAL pf_isr
 pf_isr:
+	/* #PF pushes a status code */
 	push_general_purpose_reg
 	call pagefault_handler_copy  /* sometimes returns */
 	mov %rsp,%rdi
@@ -168,4 +184,5 @@ pf_isr:
 enter_userspace:
 	mov %rdi,%rsp
 	pop_general_purpose_reg
+	add $8,%rsp  /* Skip over the status code. */
 	iretq
