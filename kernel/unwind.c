@@ -246,6 +246,7 @@ static int read_cie_aug_data(head *in, eh_cie *out) {
   if (out->aug_str_meaning & AUG_FLAG_LSDA) {
     if (read_u8(&subhead, &out->lsda_encoding)) { return -1; }
     com_printf("BUG: specifying LSDA encoding not supported");
+    return -1;
   }
   if (out->aug_str_meaning & AUG_FLAG_FDE) {
     if (read_u8(&subhead, &out->fde_encoding)) { return -1; }
@@ -274,6 +275,7 @@ static int run_dwarf_op(head *in, const eh_cie *cie, cfa_row *row) {
   uint8_t c;
   uint64_t reg;
   uint64_t off;
+  int64_t soff;
   uint8_t delta;
   uint16_t delta2;
   if (read_u8(in, &c)) { return -1; }
@@ -290,7 +292,11 @@ static int run_dwarf_op(head *in, const eh_cie *cie, cfa_row *row) {
       /* offset */
       reg = c & 0x3f;
       if (read_uleb128(in, &off)) { return -1; }
-      if (reg > 16) { return -1; }
+      if (reg > 16) {
+        /* Ignoring register that isn't a general-purpose register; it's highly
+         * unlikely that we need the information anyways. */
+        return 0;
+      }
       row->registers[reg].rule = DW_OFFSET;
       row->registers[reg].offset = off * cie->data_af;
       return 0;
@@ -315,7 +321,7 @@ static int run_dwarf_op(head *in, const eh_cie *cie, cfa_row *row) {
       row->loc += delta2 * cie->code_af;
       return 0;
     case 10:
-      /* remember state */
+      /* remember_state */
       if (stack_used >= 32) {
         com_printf("ERROR: Max unwind-handler stack depth exceeded.\n");
         return -1;
@@ -323,7 +329,7 @@ static int run_dwarf_op(head *in, const eh_cie *cie, cfa_row *row) {
       stack[stack_used++] = *row;
       return 0;
     case 11:
-      /* restore state */
+      /* restore_state */
       if (stack_used == 0) {
         com_printf("BUG: Unwinder popped empty stack!\n");
         return -1;
@@ -333,7 +339,7 @@ static int run_dwarf_op(head *in, const eh_cie *cie, cfa_row *row) {
       *row = stack[--stack_used];
       return 0;
     case 12:
-      /* set cfa */
+      /* def_cfa */
       if (read_uleb128(in, &reg)) { return -1; }
       if (read_uleb128(in, &off)) { return -1; }
       row->cfa.rule = DW_CFA;
@@ -341,14 +347,26 @@ static int run_dwarf_op(head *in, const eh_cie *cie, cfa_row *row) {
       row->cfa.offset = off;
       return 0;
     case 13:
-      /* set cfa_register */
+      /* def_cfa_register */
       if (read_uleb128(in, &reg)) { return -1; }
       row->cfa.reg = reg;
       return 0;
     case 14:
-      /* set cfa_offset */
+      /* def_cfa_offset */
       if (read_uleb128(in, &off)) { return -1; }
       row->cfa.offset = off;
+      return 0;
+    case 17:
+      /* offset_extended_sf (signed factored) */
+      if (read_uleb128(in, &reg)) { return -1; }
+      if (read_sleb128(in, &soff)) { return -1; }
+      if (reg > 16) {
+        /* Ignoring register that isn't a general-purpose register; it's highly
+         * unlikely that we need the information anyways. */
+        return 0;
+      }
+      row->registers[reg].rule = DW_OFFSET;
+      row->registers[reg].offset = soff * cie->data_af;
       return 0;
     default:
       com_printf("BUG: unrecognized DWARF opcode %d\n", c);
