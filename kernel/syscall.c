@@ -53,6 +53,7 @@ TRAMPOLINE1(sem_watch)
 TRAMPOLINE1(sem_unwatch)
 TRAMPOLINE1(sem_set)
 TRAMPOLINE1(find_module)
+TRAMPOLINE1(set_handler)
 
 #pragma GCC diagnostic pop
 
@@ -81,6 +82,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(sem_set),
   TRAMPOLINE_NAME(find_module),
   spawn_daemon_within_vm_space,
+  TRAMPOLINE_NAME(set_handler),
 };
 
 void __attribute__((noreturn)) syscall_handler (void) {
