@@ -200,8 +200,9 @@ static int read_encoded_value(head *in, uint8_t ptr_encoding, int64_t *out) {
 #define AUG_FLAG_LSDA     0x01
 #define AUG_FLAG_FDE      0x02
 #define AUG_FLAG_PERS     0x04
-#define AUG_FLAG_AUG_DATA 0x40
-#define AUG_FLAG_EH_DATA  0x80
+#define AUG_FLAG_AUG_DATA 0x08
+#define AUG_FLAG_EH_DATA  0x10
+#define AUG_FLAG_SIGNAL   0x20
 
 static int read_aug_str(head *in, uint8_t *out) {
   char c;
@@ -228,6 +229,10 @@ static int read_aug_str(head *in, uint8_t *out) {
       *out = (*out) | AUG_FLAG_FDE;
     } else if (c == 'P') {
       *out = (*out) | AUG_FLAG_PERS;
+    } else if (c == 'S') {
+      *out = (*out) | AUG_FLAG_SIGNAL;
+    } else {
+      return -1;  /* Unknown augmentation. */
     }
   }
   return -1;
@@ -484,14 +489,16 @@ static int unwind_frame(stack_frame *base, const cfa_row *row, stack_frame *out)
     }
     bit_array_set(out->regs_defined, i, ret);
   }
-  out->registers[7] = base->cfa;
-  bit_array_set(out->regs_defined, 7, ret);
+  if (!bit_array_get(out->regs_defined, 7)) {
+    out->registers[7] = base->cfa;
+    bit_array_set(out->regs_defined, 7, 1);
+  }
   return 0;
 }
 
 /* Searches for the right FDE for a given program location and returns both that
  * and the CIE for that FDE while we're at it. */
-static int find_fde(uint64_t rip, eh_cie* cie_out, eh_fde* fde_out) {
+static int find_fde(uint64_t rip, uint8_t is_signal, eh_cie* cie_out, eh_fde* fde_out) {
   head read_head;
   read_head.data = _eh_frame_start;
   read_head.remaining = _eh_frame_end - _eh_frame_start;
@@ -523,7 +530,14 @@ static int find_fde(uint64_t rip, eh_cie* cie_out, eh_fde* fde_out) {
     memset(&fde, 0, sizeof(eh_fde));
     fde.cie = &current_cie;
     if (read_fde(&subhead, &fde)) { return -1; }
-    if (rip >= fde.pc_begin && rip - fde.pc_begin < fde.pc_len) {
+    /* Handle the edges of the FDE differently depending on whether not we are
+     * currently in a signal-handler-like frame.  If we are, we could be
+     * returning to the first instruction in the parent function, but can't be
+     * returning off the end; if we aren't we might be returning off the end
+     * (if we're noreturn), but can't be returning to the beginning. */
+    if ((rip > fde.pc_begin && rip < fde.pc_begin + fde.pc_len) ||
+        (is_signal && rip == fde.pc_begin) ||
+        (!is_signal && rip == fde.pc_begin + fde.pc_len)) {
       *cie_out = current_cie;
       fde.cie = cie_out;
       *fde_out = fde;
@@ -537,7 +551,7 @@ static int find_fde(uint64_t rip, eh_cie* cie_out, eh_fde* fde_out) {
 void test_parse_eh_frame() {
   eh_cie cie;
   eh_fde fde;
-  find_fde((uint64_t)-1, &cie, &fde);
+  find_fde((uint64_t)-1, /*is_signal=*/0, &cie, &fde);
 }
 
 void gen_backtrace(uint64_t rsp, uint64_t rip, uint64_t rbp) {
@@ -554,6 +568,10 @@ void gen_backtrace(uint64_t rsp, uint64_t rip, uint64_t rbp) {
   bit_array_set(bot_frame.regs_defined, 6, 1);
   bit_array_set(bot_frame.regs_defined, 7, 1);
 
+  /* 'com_print_backtrace' is called normally, and therefore is not
+   * signal-handler-like. */
+  uint8_t current_frame_is_signal = 0;
+
   int frame_no = 0;
   com_printf("Stack trace: \n");
   while (1) {
@@ -562,7 +580,7 @@ void gen_backtrace(uint64_t rsp, uint64_t rip, uint64_t rbp) {
     eh_cie cie;
     eh_fde fde;
 
-    int ret = find_fde(rip, &cie, &fde);
+    int ret = find_fde(rip, current_frame_is_signal, &cie, &fde);
     if (ret == 1) {
       com_printf("(Top of stack frame)\n");
       return;
@@ -570,6 +588,7 @@ void gen_backtrace(uint64_t rsp, uint64_t rip, uint64_t rbp) {
       com_printf("Error encountered! Sorry.\n");
       return;
     }
+    current_frame_is_signal = AUG_FLAG_SIGNAL & cie.aug_str_meaning;
 
     head in;
     in.data = fde.instrs;

@@ -104,15 +104,12 @@ int user_thread_create (void *text, size_t length) {
 }
 
 
-static void idle () {
-  while (1) {
-    hlt();
-  }
-}
-
 /* Move the stack to the given location, pop all registers, and iretq.  This
  * function is defined in 'isr-asm.s' */
 void __attribute__((noreturn)) enter_userspace (struct all_registers *all_registers);
+
+/* Idle is also defined in isr-asm.s */
+void idle ();
 
 /* Return to userspace in the current thread (either a userspace thread or the
  * idle pseudo-thread) */
