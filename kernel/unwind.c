@@ -10,9 +10,10 @@ extern const uint8_t _eh_frame_end[];
 enum dwarf_rule {
   DW_UNDEFINED,
   DW_SAME,
-  DW_OFFSET,
+  DW_OFFSET,  /* offset from CFA, then deref */
+  DW_VAL_OFFSET,  /* offset from CFA, then just use that address */
   DW_REG,
-  DW_CFA,  /* reg + offset */
+  DW_CFA,  /* reg + offset; used to compute CFA */
 };
 
 typedef struct {
@@ -385,6 +386,8 @@ static int read_dwarf_init(head *in, eh_cie *cie) {
   for (int i = 0; i < 17; ++i) {
     cie->init_row.registers[i].rule = DW_UNDEFINED;
   }
+  cie->init_row.registers[7].rule = DW_VAL_OFFSET;
+  cie->init_row.registers[7].offset = 0;
   while (!run_dwarf_op(in, cie, &cie->init_row)) {
     if (in->remaining == 0) {
       return 0;
@@ -464,10 +467,21 @@ static int get_def(const stack_frame *base, const cfa_row *row, int reg_or_cfa, 
       /* ! LEBENSGEFAHR ! */
       *out = *(uint64_t *)(base->cfa + loc.offset);
       break;
+    case DW_VAL_OFFSET:
+      *out = base->cfa + loc.offset;
+      break;
     case DW_REG:
+      if (!bit_array_get(base->regs_defined, loc.reg)) {
+        com_printf("ERROR: Can't base register %d on register %d that's not defined\n", reg_or_cfa, loc.reg);
+        return -1;
+      }
       *out = base->registers[loc.reg];
       break;
     case DW_CFA:
+      if (!bit_array_get(base->regs_defined, loc.reg)) {
+        com_printf("ERROR: Can't base CFA on register %d that's not defined\n", loc.reg);
+        return -1;
+      }
       *out = base->registers[loc.reg] + loc.offset;
       break;
   }
@@ -488,10 +502,6 @@ static int unwind_frame(stack_frame *base, const cfa_row *row, stack_frame *out)
       return -1;
     }
     bit_array_set(out->regs_defined, i, ret);
-  }
-  if (!bit_array_get(out->regs_defined, 7)) {
-    out->registers[7] = base->cfa;
-    bit_array_set(out->regs_defined, 7, 1);
   }
   return 0;
 }
@@ -575,12 +585,18 @@ void gen_backtrace(uint64_t rsp, uint64_t rip, uint64_t rbp) {
   int frame_no = 0;
   com_printf("Stack trace: \n");
   while (1) {
-    com_printf("%d: %p\n", frame_no, rip);
-    ++frame_no;
     eh_cie cie;
     eh_fde fde;
 
     int ret = find_fde(rip, current_frame_is_signal, &cie, &fde);
+    if (ret == 0) {
+      current_frame_is_signal = AUG_FLAG_SIGNAL & cie.aug_str_meaning;
+    }
+
+    const char *extra = ret == 0 && current_frame_is_signal ? "(signal handler)" : "";
+    com_printf("%d: %p %s\n", frame_no, rip, extra);
+    ++frame_no;
+
     if (ret == 1) {
       com_printf("(Top of stack frame)\n");
       return;
@@ -588,7 +604,6 @@ void gen_backtrace(uint64_t rsp, uint64_t rip, uint64_t rbp) {
       com_printf("Error encountered! Sorry.\n");
       return;
     }
-    current_frame_is_signal = AUG_FLAG_SIGNAL & cie.aug_str_meaning;
 
     head in;
     in.data = fde.instrs;
