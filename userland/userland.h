@@ -138,4 +138,9 @@ static inline int find_proc (const char *name) {
 static inline int spawn_daemon (const void *code, void *stack) {
   return (int)__syscall2(SYSCALL_SPAWN_DAEMON, (syscall_arg)code, (syscall_arg)stack);
 }
+
+static inline int set_handler (int handler_tid) {
+  return __syscall1(SYSCALL_SET_HANDLER, (syscall_arg)handler_tid);
+}
+
 #endif

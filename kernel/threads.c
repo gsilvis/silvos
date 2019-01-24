@@ -73,6 +73,8 @@ static tcb *create_thread (uint64_t rip, uint64_t rsp, vmcb *vm_space) {
       tcbs[i].ready_sems.next = &tcbs[i].ready_sems;
       tcbs[i].ready_sems.prev = &tcbs[i].ready_sems;
       tcbs[i].parent = 0;
+      tcbs[i].handler_thread_id = thread_id;  /* Convenient "impossible" value. */
+      tcbs[i].faulting = 0;
       return &tcbs[i];
     }
   }
@@ -275,4 +277,10 @@ tcb *get_tcb (uint64_t tid) {
     }
   }
   return 0;
+}
+
+int set_handler (int handler_thread_id) {
+  int result = running_tcb->handler_thread_id;
+  running_tcb->handler_thread_id = handler_thread_id;
+  return result;
 }

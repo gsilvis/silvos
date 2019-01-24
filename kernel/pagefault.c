@@ -1,6 +1,7 @@
 #include "pagefault.h"
 
 #include "com.h"
+#include "ipc.h"
 #include "memory-map.h"
 #include "threads.h"
 #include "util.h"
@@ -28,13 +29,19 @@ void pagefault_handler_copy (void) {
 }
 
 void __attribute__((noreturn)) pagefault_handler_user (uint64_t addr) {
-  if (running_tcb) {
-    com_printf("Kernel page fault at %p, running thread is 0x%02X.\n", (void *)addr, running_tcb->thread_id);
-    thread_exit();
-  } else {
+  if (!running_tcb) {
     com_printf("Kernel page fault at %p, no running thread! Panic!\n", (void *)addr);
     panic("Page fault with no running thread!");
   }
+  running_tcb->faulting = 1;
+  ipc_msg exception_message = {
+    .addr = running_tcb->handler_thread_id,
+    .r1 = addr,
+    .r2 = running_tcb->saved_registers.status_code,
+  };
+  call_if_possible(exception_message);
+  com_printf("Unhandled user page fault at %p, running thread is 0x%02X.\n", (void *)addr, running_tcb->thread_id);
+  thread_exit();
 }
 
 

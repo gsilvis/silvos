@@ -92,6 +92,8 @@ typedef struct _tcb {
   enum sem_state sem_state;
   struct list_head ready_sems;  /* All semaphores we're watching that are SET */
   struct _tcb *parent;  /* Set if the parent is waiting for us to daemonize. */
+  uint8_t handler_thread_id;
+  uint8_t faulting;
 } tcb;
 
 /* Pointer to the TCB of the running userspace thread, or NULL if currently
@@ -147,6 +149,10 @@ int spawn_within_vm_space (uint64_t rip, uint64_t rsp);
 
 /* As above, but wait for the thread to daemonize before being rescheduled. */
 void __attribute__((noreturn)) spawn_daemon_within_vm_space (void);
+
+/* Set the specified thread to be the exception handler thread for the active
+ * thread, and return the old value. */
+int set_handler (int);
 
 /* Get the TCB struct for the thread with the given thread ID;  returns NULL if
  * that thread does not exist. */

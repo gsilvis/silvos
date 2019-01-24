@@ -5,12 +5,6 @@
 #include "threads.h"
 #include "util.h"
 
-typedef struct {
-  unsigned long long addr;
-  unsigned long long r1;
-  unsigned long long r2;
-} ipc_msg;
-
 static inline ipc_msg get_msg (void) {
   ipc_msg send = {
     .addr = running_tcb->saved_registers.rbx,
@@ -29,20 +23,22 @@ static void __attribute__((noreturn)) do_send (ipc_msg send, tcb *recv_tcb) {
   switch_thread_to(recv_tcb);
 }
 
-void __attribute__((noreturn)) call (void) {
-  ipc_msg send = get_msg();
-  tcb* recv_thread = get_tcb(send.addr);
-
+void call_if_possible (ipc_msg msg) {
+  tcb* recv_thread = get_tcb(msg.addr);
   if (recv_thread == 0 ||
       recv_thread == running_tcb ||
       recv_thread->ipc_state != IPC_DAEMON) {
-    running_tcb->saved_registers.rax = SEND_FAILED;
-    return_to_current_thread();
+    return;
   }
-
   running_tcb->ipc_state = IPC_CALLING;
-  running_tcb->callee = send.addr;
-  do_send(send, recv_thread);
+  running_tcb->callee = msg.addr;
+  do_send(msg, recv_thread);
+}
+
+void __attribute__((noreturn)) call (void) {
+  call_if_possible(get_msg());
+  running_tcb->saved_registers.rax = SEND_FAILED;
+  return_to_current_thread();
 }
 
 void __attribute__((noreturn)) respond (void) {
@@ -61,8 +57,13 @@ void __attribute__((noreturn)) respond (void) {
              recv_thread->callee != running_tcb->thread_id) {
     running_tcb->saved_registers.rax = SEND_FAILED;
     return_to_current_thread();
+  } else if (recv_thread->faulting) {
+    running_tcb->ipc_state = IPC_DAEMON;
+    recv_thread->faulting = 0;
+    recv_thread->ipc_state = IPC_NOT_RECEIVING;
+    switch_thread_to(recv_thread);
+  } else {
+    running_tcb->ipc_state = IPC_DAEMON;
+    do_send(resp, recv_thread);
   }
-
-  running_tcb->ipc_state = IPC_DAEMON;
-  do_send(resp, recv_thread);
 }
