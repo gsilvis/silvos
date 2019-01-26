@@ -134,4 +134,8 @@ static inline int sem_set(semaphore_id sem) {
 static inline int find_proc (const char *name) {
   return __syscall1(SYSCALL_FIND_PROC, (syscall_arg)name);
 }
+
+static inline int spawn_daemon (const void *code, void *stack) {
+  return (int)__syscall2(SYSCALL_SPAWN_DAEMON, (syscall_arg)code, (syscall_arg)stack);
+}
 #endif
