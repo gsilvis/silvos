@@ -107,6 +107,10 @@ static inline sendrecv_status respond (sendrecv_op *op) {
   return __ipc(SYSCALL_RESPOND, op);
 }
 
+static inline sendrecv_status fork_daemon (sendrecv_op *op) {
+  return __ipc(SYSCALL_FORK_DAEMON, op);
+}
+
 static inline semaphore_id sem_create() {
   return __syscall0(SYSCALL_SEM_CREATE);
 }
@@ -141,6 +145,10 @@ static inline int spawn_daemon (const void *code, void *stack) {
 
 static inline int set_handler (int handler_tid) {
   return __syscall1(SYSCALL_SET_HANDLER, (syscall_arg)handler_tid);
+}
+
+static inline int get_tid (void) {
+  return (int)__syscall0(SYSCALL_GET_TID);
 }
 
 #endif

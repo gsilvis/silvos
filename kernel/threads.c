@@ -6,6 +6,7 @@
 #include "gdt.h"
 #include "hpet.h"
 #include "ide.h"
+#include "ipc.h"
 #include "loader.h"
 #include "memory-map.h"
 #include "page.h"
@@ -226,24 +227,44 @@ void __attribute__((noreturn)) yield (void) {
   schedule();
 }
 
-int fork (void) {
+/* Make a new TCB forked from the current TCB; returns nullptr if that fails */
+static tcb *fork_internal (void) {
   vmcb *new_vmcb = get_new_vm_space(
       duplicate_pagetable(running_tcb->vm_control_block->pt));
   if (!new_vmcb) {
-    return -1;
+    return 0;
   }
   tcb *new_tcb = create_thread(
       running_tcb->saved_registers.rip,
       running_tcb->saved_registers.rsp,
       new_vmcb);
   if (!new_tcb) {
-    return -1;
+    return 0;
   }
   copy_fp_buf(new_tcb, running_tcb);
   new_tcb->saved_registers = running_tcb->saved_registers;
+  return new_tcb;
+}
+
+int fork (void) {
+  tcb *new_tcb = fork_internal();
+  if (!new_tcb) {
+    return -1;
+  }
   new_tcb->saved_registers.rax = 0; /* Set fork return value in child. */
   reschedule_thread(new_tcb);
   return new_tcb->thread_id;
+}
+
+void __attribute__((noreturn)) fork_daemon (void) {
+  tcb *new_tcb = fork_internal();
+  if (!new_tcb) {
+    running_tcb->saved_registers.rax = SEND_FAILED;
+    return_to_current_thread();
+  }
+  new_tcb->ipc_state = IPC_DAEMON;
+  running_tcb->saved_registers.rbx = new_tcb->thread_id;
+  call();  /* Should not fail. */
 }
 
 int spawn_within_vm_space (uint64_t rip, uint64_t rsp) {
@@ -277,6 +298,10 @@ tcb *get_tcb (uint64_t tid) {
     }
   }
   return 0;
+}
+
+int get_tid (void) {
+  return running_tcb->thread_id;
 }
 
 int set_handler (int handler_thread_id) {
