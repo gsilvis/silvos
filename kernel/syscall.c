@@ -80,6 +80,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   sem_wait,
   TRAMPOLINE_NAME(sem_set),
   TRAMPOLINE_NAME(find_module),
+  spawn_daemon_within_vm_space,
 };
 
 void __attribute__((noreturn)) syscall_handler (void) {

@@ -50,9 +50,12 @@ void __attribute__((noreturn)) respond (void) {
   tcb* recv_thread = get_tcb(resp.addr);
 
   if (resp.addr == 0) {
-    /* Request to daemonize. */
+    /* Request to daemonize.  If our parent is waiting, switch back to them;
+     * otherwise, invoke the scheduler. */
     running_tcb->ipc_state = IPC_DAEMON;
-    schedule();
+    tcb *maybe_parent = running_tcb->parent;
+    running_tcb->parent = 0;
+    switch_thread_to(maybe_parent);
   } else if (recv_thread == 0 ||
              recv_thread->ipc_state != IPC_CALLING ||
              recv_thread->callee != running_tcb->thread_id) {

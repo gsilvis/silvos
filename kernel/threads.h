@@ -78,7 +78,7 @@ struct all_registers {
   uint64_t ss;
 };
 
-typedef struct {
+typedef struct _tcb {
   struct list_head wait_queue;
   struct all_registers saved_registers;
   vmcb *vm_control_block;
@@ -91,6 +91,7 @@ typedef struct {
   uint8_t callee;  /* Only valid if IPC_CALLING */
   enum sem_state sem_state;
   struct list_head ready_sems;  /* All semaphores we're watching that are SET */
+  struct _tcb *parent;  /* Set if the parent is waiting for us to daemonize. */
 } tcb;
 
 /* Pointer to the TCB of the running userspace thread, or NULL if currently
@@ -143,6 +144,9 @@ int fork (void);
 /* Make a new thread in the current VM space, starting at the given %rip with
  * the given %rsp.  All other registers are zero. */
 int spawn_within_vm_space (uint64_t rip, uint64_t rsp);
+
+/* As above, but wait for the thread to daemonize before being rescheduled. */
+void __attribute__((noreturn)) spawn_daemon_within_vm_space (void);
 
 /* Get the TCB struct for the thread with the given thread ID;  returns NULL if
  * that thread does not exist. */

@@ -72,6 +72,7 @@ static tcb *create_thread (uint64_t rip, uint64_t rsp, vmcb *vm_space) {
       tcbs[i].saved_registers = scratch;
       tcbs[i].ready_sems.next = &tcbs[i].ready_sems;
       tcbs[i].ready_sems.prev = &tcbs[i].ready_sems;
+      tcbs[i].parent = 0;
       return &tcbs[i];
     }
   }
@@ -251,6 +252,20 @@ int spawn_within_vm_space (uint64_t rip, uint64_t rsp) {
   }
   reschedule_thread(new_tcb);
   return new_tcb->thread_id;
+}
+
+void __attribute__((noreturn)) spawn_daemon_within_vm_space (void) {
+  uint64_t rip = running_tcb->saved_registers.rbx;
+  uint64_t rsp = running_tcb->saved_registers.rcx;
+  tcb *new_tcb = create_thread(
+      rip, rsp, running_tcb->vm_control_block);
+  if (!new_tcb) {
+    running_tcb->saved_registers.rax = -1;
+    return_to_current_thread();
+  }
+  running_tcb->saved_registers.rax = new_tcb->thread_id;
+  new_tcb->parent = running_tcb;
+  switch_thread_to(new_tcb);
 }
 
 tcb *get_tcb (uint64_t tid) {
