@@ -82,4 +82,8 @@ int main() {
   test_vprintf("|%-015d|\n", -42);
   test_vprintf("|%- 015d|\n", 10);
   test_vprintf("|%-15p|\n", 0xdeadbeef);
+
+  /* Old bug: Check format string ending in format specifier. */
+  test_vprintf("5 4 3 2 %d", 1);  /* no newline */
+  test_vprintf(" 0\n");
 }

@@ -7,8 +7,7 @@
 #include <stdint.h>
 
 #define emit(c) do { my_putch(c); ++ret; } while(0)
-#define emits(s) do { const char *_c = (s); \
-                      while (*_c) { emit(*(_c++)); } } while(0)
+#define emits(s) do { for (const char *_c = (s); *_c; _c++) { emit(*_c); } } while(0)
 
 #define FLAGS_LEFT_JUST 0x01
 #define FLAGS_USE_PLUS  0x02
@@ -39,12 +38,10 @@ typedef struct {
   const char* prefix;
 } format;
 
-/* Returns number of consumed characters. If this function reaches a null byte,
- * str[return_value] will be zero. Otherwise, str[return_value] is the first
- * character after the format string blob. */
-static int parse_fmt_string(const char *fmt, format *fspec) {
-  int i = 0;
-  char c = fmt[i];
+/* Update offset to point to just after the format string specifier.
+ * If this function reaches a null byte, it will return -1. */
+static int parse_fmt_string(const char *fmt, format *fspec, int *offset) {
+  char c = fmt[*offset];
   fspec->flags = 0;
   while (c) {
     if (c == '-') {
@@ -58,34 +55,34 @@ static int parse_fmt_string(const char *fmt, format *fspec) {
     } else {
       break;
     }
-    c = fmt[++i];
+    c = fmt[++(*offset)];
   }
-  if (c == 0)  return i;
+  if (c == 0)  return -1;
 
   fspec->min_width = 0;
   while (c) {
     if ('0' <= c && c <= '9') {
       fspec->min_width = fspec->min_width * 10 + (c - '0');
-      c = fmt[++i];
+      c = fmt[++(*offset)];
     } else {
       break;
     }
   }
-  if (c == 0)  return i;
+  if (c == 0)  return -1;
 
   fspec->size = SIZE_DEFAULT;
   if (c == 'h') {
     fspec->size = SIZE_SHORT;
-    c = fmt[++i];
+    c = fmt[++(*offset)];
   } else if (c == 'l') {
     fspec->size = SIZE_LONG;
-    c = fmt[++i];
+    c = fmt[++(*offset)];
   }
-  if (c == 0)  return i;
+  if (c == 0)  return -1;
 
   fspec->fmt = c;
-  ++i;
-  return i;
+  ++(*offset);
+  return 0;
 }
 
 /* Consumes the approprite amount from argp to read the argument specified by
@@ -225,12 +222,10 @@ int kvprintf (void (*my_putch)(char), const char *fmt, va_list argp) {
     }
 
     format fspec;
-    i += parse_fmt_string(fmt + i, &fspec);
-    if (!fmt[i])  return ret;
+    if (parse_fmt_string(fmt, &fspec, &i)) return ret;
 
     if (fspec.fmt == '%') {
-      my_putch(c);
-      ret++;
+      emit(c);
       continue;
     }
 
@@ -268,4 +263,3 @@ int kvprintf (void (*my_putch)(char), const char *fmt, va_list argp) {
   }
   return ret;
 }
-

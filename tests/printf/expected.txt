@@ -30,3 +30,4 @@ Number of times I've printfed a short: 1
 |-42            |
 | 10            |
 |0xdeadbeef     |
+5 4 3 2 1 0
