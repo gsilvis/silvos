@@ -1,4 +1,5 @@
 #include "userland.h"
+#include "userland-lib.h"
 
 int depth = 0;
 
@@ -11,13 +12,9 @@ int test_fork() {
     /* Temporary fix to flakiness in this test */
     nanosleep(1000000);
     ++depth;
-    char child_msg[] = "Child, depth 0";
-    child_msg[sizeof(child_msg)-2] = '0' + depth;
-    debug(child_msg);
+    debug_printf("Child, depth %d", depth);
   } else if (ret > 0) {
-    char parent_msg[] = "Parent, depth 0";
-    parent_msg[sizeof(parent_msg)-2] = '0' + depth;
-    debug(parent_msg);
+    debug_printf("Parent, depth %d", depth);
   }
   return ret;
 }

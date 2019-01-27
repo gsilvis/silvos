@@ -1,4 +1,5 @@
 #include "userland.h"
+#include "userland-lib.h"
 
 void handler_task (void) {
   sendrecv_op op;
@@ -17,9 +18,7 @@ void handler_task (void) {
       return;
     }
     char my_char = (char)((0xFF000 & op.recv.r1) >> 12);
-    char msg[] = "Write character: _";
-    msg[sizeof(msg) - 2] = my_char;
-    debug(msg);
+    debug_printf("Write character: %c", my_char);
     char *addr = (char *)op.recv.r1;
     *addr = my_char;
   }
@@ -38,14 +37,10 @@ void main (void) {
   set_handler(handler_id);
   for (int k = 0; k < 6; k++) {
     char *addr = (char *)(0x41000L + k * 0x4000L);
-    char msg[] = "Read character: _";
-    msg[sizeof(msg) - 2] = *addr;
-    debug(msg);
+    debug_printf("Read character: %c", *addr);
   }
   for (int k = 0; k < 6; k++) {
     char *addr = (char *)(0x41000L + k * 0x4000L);
-    char msg[] = "Read character: _";
-    msg[sizeof(msg) - 2] = *addr;
-    debug(msg);
+    debug_printf("Read character: %c", *addr);
   }
 }

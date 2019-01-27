@@ -1,4 +1,5 @@
 #include "userland.h"
+#include "userland-lib.h"
 
 int depth = 0;
 
@@ -24,9 +25,7 @@ void main() {
     if (child_id < 0) {
       debug("SPAWN FAIL");
     }
-    char msg[] = "Created child 0x0N";
-    msg[sizeof(msg) - 2] = '0' + (child_id % 10);
-    debug(msg);
+    debug_printf("Created child 0x%02X", child_id);
     stac += 0x4000;
   }
   bluh = 5;

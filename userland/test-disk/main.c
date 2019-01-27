@@ -1,3 +1,4 @@
+#include "prelude.h"
 #include "userland.h"
 
 void main (void) {
@@ -5,22 +6,8 @@ void main (void) {
   palloc(my_page);
   char *j = &my_page[0];
   char *k = &my_page[512];
-  j[0] = 'H';
-  j[1] = 'e';
-  j[2] = 'l';
-  j[3] = 'l';
-  j[4] = 'o';
-  j[5] = '!';
-  j[6] = '!';
-  j[7] = 0;
-  k[0] = 'G';
-  k[1] = 'o';
-  k[2] = 'o';
-  k[3] = 'd';
-  k[4] = 'b';
-  k[5] = 'y';
-  k[6] = 'e';
-  k[7] = 0;
+  strncpy(j, "Hello!!", sizeof("Hello!!"));
+  strncpy(k, "Goodbye", sizeof("Goodbye"));
   debug(j);
   debug(k);
   if (write(0, &j[0]))  return;
@@ -29,20 +16,8 @@ void main (void) {
   if (read(1, &j[0]))  return;
   debug(j);
   debug(k);
-  if (k[0] != 'H')  return;
-  if (k[1] != 'e')  return;
-  if (k[2] != 'l')  return;
-  if (k[3] != 'l')  return;
-  if (k[4] != 'o')  return;
-  if (k[5] != '!')  return;
-  if (k[6] != '!')  return;
-  if (j[0] != 'G')  return;
-  if (j[1] != 'o')  return;
-  if (j[2] != 'o')  return;
-  if (j[3] != 'd')  return;
-  if (j[4] != 'b')  return;
-  if (j[5] != 'y')  return;
-  if (j[6] != 'e')  return;
+  if (strncmp(k, "Hello!!", strlen("Hello!!"))) return;
+  if (strncmp(j, "Goodbye", strlen("Goodbye"))) return;
   debug("OK");
 
   char *not_my_page = (char *)0xE0000000;

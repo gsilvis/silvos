@@ -1,7 +1,6 @@
 #ifndef __SILVOS_USERLAND_LIB_H
 #define __SILVOS_USERLAND_LIB_H
 
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,5 +18,7 @@ static inline void lock(uint8_t *l) {
 static inline uint8_t unlock(uint8_t *l) {
   return __xchg(l, 0);
 }
+
+int debug_printf (const char *fmt, ...);
 
 #endif

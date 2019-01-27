@@ -1,6 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "prelude.h"
+#include "userland-lib.h"
+
 void memset (void *ptr, char byte, size_t count) {
   char *p = ptr;
   for (unsigned int i = 0; i < count; i++) {
@@ -43,4 +46,22 @@ char *strncpy (char *dest, const char *src, size_t n) {
   }
   /* No trailing null byte on truncation, as per <string.h> */
   return dest;
+}
+
+int debug_printf (const char *fmt, ...) {
+  va_list argp_count;
+  va_start(argp_count, fmt);
+  va_list argp_print;
+  va_copy(argp_print, argp_count);
+
+  int n = vsprintf(0, fmt, argp_count);
+  va_end(argp_count);
+
+  if (n >= 0) {
+    char *buf = __builtin_alloca(n);
+    vsprintf(buf, fmt, argp_print);
+    _debug(buf, n);
+  }
+  va_end(argp_print);
+  return n;
 }

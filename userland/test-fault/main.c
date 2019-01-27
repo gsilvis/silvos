@@ -1,4 +1,5 @@
 #include "userland.h"
+#include "userland-lib.h"
 
 #include <stdint.h>
 
@@ -15,10 +16,7 @@ void main (void) {
     }
   }
 
-  char h[] = "FAULTING X...";
-  h[9] = '0' + id;
-
-  debug(h);
+  debug_printf("FAULTING %d...", id);
 
   switch(id) {
   case 0:

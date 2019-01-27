@@ -1,0 +1,32 @@
+THREAD 0x01: Hello, World!
+THREAD 0x01: Ed balls
+THREAD 0x01: The magic number is 42
+THREAD 0x01: 100% chance of failure
+THREAD 0x01: Some longs: 1099511627776 -1099511627776
+THREAD 0x01: I speak hex: 0x42 0x1234567890abcdef
+THREAD 0x01: I CAN SHOUT: 0xAAAA 0xA1AEA1AEA1AE
+THREAD 0x01: 0777 is the best permission
+THREAD 0x01: Number of times I've printfed a short: 1
+THREAD 0x01: |          short|
+THREAD 0x01: |loooooooooooooooooooooooooooooong|
+THREAD 0x01: |              1|
+THREAD 0x01: |              0|
+THREAD 0x01: |             10|
+THREAD 0x01: |            +10|
+THREAD 0x01: |             -1|
+THREAD 0x01: |000000000000010|
+THREAD 0x01: |+00000000000010|
+THREAD 0x01: |-00000000000042|
+THREAD 0x01: | 00000000000010|
+THREAD 0x01: |     0xdeadbeef|
+THREAD 0x01: |short          |
+THREAD 0x01: |1              |
+THREAD 0x01: |0              |
+THREAD 0x01: |10             |
+THREAD 0x01: |+10            |
+THREAD 0x01: |-1             |
+THREAD 0x01: |10             |
+THREAD 0x01: |+10            |
+THREAD 0x01: |-42            |
+THREAD 0x01: | 10            |
+THREAD 0x01: |0xdeadbeef     |
