@@ -143,6 +143,13 @@ void __attribute__((noreturn)) thread_exit_fault (void);
  * new thread ID in the parent, and to 0 in the child. */
 int fork (void);
 
+/* Combination of 'fork' and 'call/respond'.  Takes in a message (similar to
+ * call/respond, but with no dest addr.)  Puts the parent in a CALLing state,
+ * and returns that message in the child.  (Because it was the message just
+ * sent, the child can figure out that they are the child.)  When the child
+ * responds, the parent will wake up again with the child's message. */
+void __attribute__((noreturn)) fork_daemon (void);
+
 /* Make a new thread in the current VM space, starting at the given %rip with
  * the given %rsp.  All other registers are zero. */
 int spawn_within_vm_space (uint64_t rip, uint64_t rsp);
@@ -157,5 +164,8 @@ int set_handler (int);
 /* Get the TCB struct for the thread with the given thread ID;  returns NULL if
  * that thread does not exist. */
 tcb *get_tcb (uint64_t tid);
+
+/* Get thread ID of running thread. */
+int get_tid (void);
 
 #endif

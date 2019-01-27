@@ -2,9 +2,9 @@
 
 #define DEBUG(str) debug(str, sizeof(str))
 
-void vasily() {
+void vasily(int addr) {
   sendrecv_op op;
-  op.send.addr = 0;
+  op.send.addr = addr;
   op.send.r1 = 0;
   op.send.r2 = 0;
   while (1) {
@@ -40,14 +40,24 @@ void fedia(int addr) {
 }
 
 void main() {
-  int child_pid = fork();
-  if (child_pid == 0) {
-    vasily();
-    /* This should not execute */
+  int parent_tid = get_tid();
+  sendrecv_op fork_msgs = {
+    .send = {
+      .addr = 0,  /* unused */
+      .r1 = 0,
+      .r2 = 0,
+    },
+  };
+  if (fork_daemon(&fork_msgs)) {
+    DEBUG("FORK FAILED");
+  }
+  if ((int)fork_msgs.recv.addr == parent_tid) {
+    /* Received message immediately, so in child. */
+    vasily(fork_msgs.recv.addr);
     DEBUG("VASILY EXITS");
   } else {
-    yield();
-    fedia(child_pid);
+    /* Didn't, so in parent. */
+    fedia(fork_msgs.recv.addr);
     DEBUG("FEDIA EXITS");
   }
 }

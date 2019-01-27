@@ -118,7 +118,7 @@
  *
  * All other registers are unused and preserved.
  *
- * For sendrecv() it is instead:
+ * For call(), respond(), and fork_daemon() it is instead:
  *
  *  REG | INPUT | OUTPUT
  *  --------------------
@@ -127,9 +127,12 @@
  *  RCX | ARG1  | RETURN
  *  RDX | ARG2  | RETURN
  *
- * All other registers are still unused and preserved.
- * The RETURN register meanings correspond to the inputs, eg
- * RBX is the address that a message came from.
+ * (For fork_daemon in particular, 'ADDR' is ignored.  The same return ABI is
+ * used in the old thread and in the new thread.)
+ *
+ * All other registers are still unused and preserved.  The RETURN register
+ * meanings correspond to the inputs, eg RBX is the address that a message came
+ * from.
  */
 
 .GLOBAL syscall_isr
