@@ -2,6 +2,10 @@ KERNEL_OBJS := \
 	$(patsubst kernel/%.c, kernel/%.o, $(wildcard kernel/*.c)) \
 	$(patsubst kernel/%.s, kernel/%.o, $(wildcard kernel/*.s))
 
+USERLAND_LIBS := \
+	$(patsubst userland/lib/%.c, userland/lib/%.o, $(wildcard userland/lib/*.c)) \
+	$(patsubst userland/lib/%.s, userland/lib/%.o, $(wildcard userland/lib/*.s))
+
 TEST_PROGS := $(patsubst userland/%/expected.txt, %, $(wildcard userland/*/expected.txt))
 UNIT_TESTS := $(patsubst tests/%/expected.txt, %, $(wildcard tests/*/expected.txt))
 
@@ -19,7 +23,8 @@ KERNEL_OPT += -g
 endif
 
 ifeq ($(origin USER_OPT), undefined)
-USER_OPT := -O2
+USER_OPT := -O0
+USER_OPT += -g
 endif
 
 KERN_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -Wno-unused-const-variable -std=c99 -mno-mmx -mno-sse -mno-sse2 -mcmodel=kernel $(KERNEL_OPT)
@@ -28,10 +33,10 @@ KERN_LDFLAGS := -nostdlib -lgcc -Wl,-z,max-page-size=0x1000 -mcmodel=kernel -mno
 BOOTLOADER_CFLAGS := -ffreestanding -mno-red-zone -Wall -Wextra -std=c99 -O2 -g
 BOOTLOADER_LDFLAGS := -nostdlib -Wl,--no-warn-mismatch -Wl,-z,max-page-size=0x1000
 
-USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 $(USER_OPT)
-USER_LDFLAGS := -nostdlib -lgcc $(USER_OPT)
+USER_CFLAGS := -ffreestanding -Wall -Wextra -Wno-main -std=c99 -Iuserland/include $(USER_OPT)
+USER_LDFLAGS := -nostdlib -lgcc -Luserland/lib $(USER_OPT)
 
-TEST_CFLAGS := -std=c99 -Wall -Wextra -DUNIT_TEST -Ikernel
+TEST_CFLAGS := -std=c99 -Wall -Wextra -DUNIT_TEST -Ikernel -g
 
 TEST_CC := $(CC)
 CC := x86_64-elf-gcc
@@ -64,9 +69,9 @@ kernel/%-asm.o: kernel/%-asm.s
 # User Objects
 
 userland/%/main.o: userland/%/main.c
-	$(CC) -c $^ -o $@ $(USER_CFLAGS) -Iuserland
+	$(CC) -c $^ -o $@ $(USER_CFLAGS)
 
-userland/%.bin: userland/%/main.o userland/startup.o
+userland/%.bin: userland/%/main.o $(USERLAND_LIBS)
 	$(CC) $^ -o $@ $(USER_LDFLAGS)
 
 # Standalone tests, link against one kernel .c file.
@@ -81,8 +86,8 @@ tests/%.bin: tests/%/main.o tests/%/%.o
 
 ## Special User Objects
 
-userland/startup.o: userland/startup.s
-	$(AS) $^ -o $@
+userland/lib/%.o: userland/lib/%.c
+	$(CC) -c $^ -o $@ $(USER_CFLAGS) -Iuserland/include
 
 # Convenience
 

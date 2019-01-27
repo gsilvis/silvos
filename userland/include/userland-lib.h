@@ -1,6 +1,8 @@
 #ifndef __SILVOS_USERLAND_LIB_H
 #define __SILVOS_USERLAND_LIB_H
 
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "userland.h"

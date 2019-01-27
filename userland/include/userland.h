@@ -6,13 +6,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../kernel/syscall-defs.h"
-
-static size_t strlen (const char *s) {
-  uint64_t i = 0;
-  while (s[i]) i++;
-  return i;
-}
+#include "../../kernel/syscall-defs.h"
+#include "prelude.h"
 
 typedef struct {
   unsigned long long addr;
