@@ -141,7 +141,7 @@ static uint8_t analyze_madt_entry (uint8_t *entry) {
       uint32_t remapped_apic_line = entry_32[1];
       uint16_t flags = entry_16[4];
       uint8_t polarity_is_low = ((flags & 0x03) == 0x01);
-      uint8_t trigger_is_level = ((flags & 0x0C) == 0x11);
+      uint8_t trigger_is_level = ((flags & 0x0C) == 0x0C);
       vga_printf("ISA IRQ Override from %hd to %d with flags 0x%hX (low=%d level=%d)\r\n", isa_line, remapped_apic_line, flags, polarity_is_low, trigger_is_level);
       ioapic_remap_irq(isa_line, remapped_apic_line, polarity_is_low, trigger_is_level);
       break;
