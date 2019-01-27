@@ -6,7 +6,7 @@
 
 void memset (void *ptr, char byte, size_t count) {
   char *p = ptr;
-  for (unsigned int i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     p[i] = byte;
   }
 }
@@ -14,13 +14,13 @@ void memset (void *ptr, char byte, size_t count) {
 void memcpy (void *dest, const void *src, size_t count) {
   char *d = dest;
   const char *s = src;
-  for (unsigned int i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     d[i] = s[i];
   }
 }
 
 int strncmp (const char *a, const char *b, size_t n) {
-  for (unsigned int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     if (a[i] < b[i]) {
       return -1;
     } else if (a[i] > b[i]) {
@@ -28,6 +28,18 @@ int strncmp (const char *a, const char *b, size_t n) {
     }
   }
   return 0;
+}
+
+int strcmp (const char *a, const char *b) {
+  for (size_t i = 0; ; i++) {
+    if (a[i] < b[i]) {
+      return -1;
+    } else if (a[i] > b[i]) {
+      return 1;
+    } else if (a[i] == '\0') {
+      return 0;
+    }
+  }
 }
 
 uint64_t strlen (const char *s) {
@@ -45,6 +57,17 @@ char *strncpy (char *dest, const char *src, size_t n) {
     dest[i] = '\0';
   }
   /* No trailing null byte on truncation, as per <string.h> */
+  return dest;
+}
+
+char *strcpy (char *dest, const char *src) {
+  char c;
+  size_t i = 0;
+  do {
+    c = src[i];
+    dest[i] = c;
+    i++;
+  } while (c != '\0');
   return dest;
 }
 

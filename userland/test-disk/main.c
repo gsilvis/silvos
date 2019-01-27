@@ -6,8 +6,8 @@ void main (void) {
   palloc(my_page);
   char *j = &my_page[0];
   char *k = &my_page[512];
-  strncpy(j, "Hello!!", sizeof("Hello!!"));
-  strncpy(k, "Goodbye", sizeof("Goodbye"));
+  strcpy(j, "Hello!!");
+  strcpy(k, "Goodbye");
   debug(j);
   debug(k);
   if (write(0, &j[0]))  return;
@@ -16,8 +16,8 @@ void main (void) {
   if (read(1, &j[0]))  return;
   debug(j);
   debug(k);
-  if (strncmp(k, "Hello!!", strlen("Hello!!"))) return;
-  if (strncmp(j, "Goodbye", strlen("Goodbye"))) return;
+  if (strcmp(k, "Hello!!")) return;
+  if (strcmp(j, "Goodbye")) return;
   debug("OK");
 
   char *not_my_page = (char *)0xE0000000;
