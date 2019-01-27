@@ -3,7 +3,16 @@
 
 /* Abstract Syscall Interface */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "../kernel/syscall-defs.h"
+
+static size_t strlen (const char *s) {
+  uint64_t i = 0;
+  while (s[i]) i++;
+  return i;
+}
 
 typedef struct {
   unsigned long long addr;
@@ -72,8 +81,12 @@ static inline int pfree (const void *virt_addr) {
   return (int)__syscall1(SYSCALL_PFREE, (syscall_arg)virt_addr);
 }
 
-static inline int debug (const char *string, int len) {
-  return (int)__syscall2(SYSCALL_DEBUG, (syscall_arg)string, len);
+static inline int _debug (const char *string, unsigned long long size) {
+  return (int)__syscall2(SYSCALL_DEBUG, (syscall_arg)string, size);
+}
+
+static inline int debug (const char *string) {
+  return _debug(string, strlen(string));
 }
 
 static inline void nanosleep (long long nanosecs) {

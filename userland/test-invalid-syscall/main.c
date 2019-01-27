@@ -1,13 +1,11 @@
 #include "userland.h"
 
-#define DEBUG(str) debug(str, sizeof(str))
-
 void main (void) {
-  DEBUG("Start");
+  debug("Start");
   __syscall0(NUM_SYSCALLS*2);
-  DEBUG("Very High Passed");
+  debug("Very High Passed");
   __syscall0(NUM_SYSCALLS);
-  DEBUG("MAX Passed");
+  debug("MAX Passed");
   __syscall0(-1);
-  DEBUG("-1 passed");
+  debug("-1 passed");
 }

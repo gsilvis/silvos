@@ -2,8 +2,6 @@
 
 #include "userland-lib.h"
 
-#define DEBUG(str) debug(str, sizeof(str))
-
 static const long long NEW_STACK = 0x10000000;
 static const long long NEW_STACK2 = 0x10004000;
 
@@ -12,7 +10,7 @@ static volatile int done = 0;
 static uint8_t mylock = 0;
 
 void __attribute__ ((noreturn)) my_task() {
-  DEBUG("START THREAD");
+  debug("START THREAD");
   for (int i = 0; i < 100; i++) {
     lock(&mylock);
     bluh++;
@@ -22,16 +20,16 @@ void __attribute__ ((noreturn)) my_task() {
   lock(&mylock);
   done++;
   unlock(&mylock);
-  DEBUG("THREAD DONE");
+  debug("THREAD DONE");
   exit();
 }
 
 void main() {
   if (palloc((const void *)NEW_STACK)) {
-    DEBUG("ALLOC FAIL");
+    debug("ALLOC FAIL");
   }
   if (palloc((const void *)NEW_STACK2)) {
-    DEBUG("ALLOC FAIL");
+    debug("ALLOC FAIL");
   }
 
   spawn_thread(my_task, (void *)(NEW_STACK + 0x1000));
@@ -45,9 +43,9 @@ void main() {
       continue;
     }
     if (bluh == 200) {
-      DEBUG("LOOKS GOOD");
+      debug("LOOKS GOOD");
     } else {
-      DEBUG("FAIL");
+      debug("FAIL");
     }
 
     unlock(&mylock);

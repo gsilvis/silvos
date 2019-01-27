@@ -1,7 +1,5 @@
 #include "userland.h"
 
-#define DEBUG(str) debug(str, sizeof(str))
-
 void echo (void) {
   sendrecv_op msgs = {
     .send = {
@@ -12,7 +10,7 @@ void echo (void) {
   };
   while (1) {
     respond(&msgs);
-    DEBUG("echoing back message");
+    debug("echoing back message");
     msgs.send = msgs.recv;
   }
 }
@@ -20,12 +18,12 @@ void echo (void) {
 void main (void) {
   const unsigned long long NEW_STACK = 0x785000;
   if (palloc((const void *)NEW_STACK)) {
-    DEBUG("palloc failed");
+    debug("palloc failed");
     return;
   }
   int child = spawn_daemon(echo, (void *)(NEW_STACK+0x1000));
   if (child < 0) {
-    DEBUG("spawn_daemon failed");
+    debug("spawn_daemon failed");
     return;
   }
   /* Don't yield here! */
@@ -37,16 +35,16 @@ void main (void) {
     },
   };
   if (call(&msgs)) {
-    DEBUG("call failed");
+    debug("call failed");
     return;
   }
   if (msgs.send.addr != msgs.recv.addr) {
-    DEBUG("message addr changed");
+    debug("message addr changed");
   }
   if (msgs.send.r1 != msgs.recv.r1) {
-    DEBUG("message r1 changed");
+    debug("message r1 changed");
   }
   if (msgs.send.r2 != msgs.recv.r2) {
-    DEBUG("message r2 changed");
+    debug("message r2 changed");
   }
 }

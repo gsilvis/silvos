@@ -1,7 +1,5 @@
 #include "userland.h"
 
-#define DEBUG(str) debug(str, sizeof(str))
-
 void vasily(int addr) {
   sendrecv_op op;
   op.send.addr = addr;
@@ -9,10 +7,10 @@ void vasily(int addr) {
   op.send.r2 = 0;
   while (1) {
     if (respond(&op)) {
-      DEBUG("SEND FAILED");
+      debug("SEND FAILED");
       return;
     }
-    DEBUG("RECEIVED");
+    debug("RECEIVED");
     op.send.addr = op.recv.addr;
     op.send.r1 = op.recv.r1 + op.recv.r2;
     op.send.r2 = op.recv.r1 - op.recv.r2;
@@ -28,13 +26,13 @@ void fedia(int addr) {
     op.send.r1 = i;
     op.send.r2 = 5;
     if (call(&op)) {
-      DEBUG("SEND FAILED");
+      debug("SEND FAILED");
       return;
     }
     if (op.recv.r1 + op.recv.r2 == i * 2 && op.recv.r1 - op.recv.r2 == 10) {
-      DEBUG("GOT RIGHT ANSWER");
+      debug("GOT RIGHT ANSWER");
     } else {
-      DEBUG("GOT WRONG ANSWER!!");
+      debug("GOT WRONG ANSWER!!");
     }
   }
 }
@@ -49,15 +47,15 @@ void main() {
     },
   };
   if (fork_daemon(&fork_msgs)) {
-    DEBUG("FORK FAILED");
+    debug("FORK FAILED");
   }
   if ((int)fork_msgs.recv.addr == parent_tid) {
     /* Received message immediately, so in child. */
     vasily(fork_msgs.recv.addr);
-    DEBUG("VASILY EXITS");
+    debug("VASILY EXITS");
   } else {
     /* Didn't, so in parent. */
     fedia(fork_msgs.recv.addr);
-    DEBUG("FEDIA EXITS");
+    debug("FEDIA EXITS");
   }
 }

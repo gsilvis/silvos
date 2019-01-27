@@ -1,13 +1,11 @@
 #include "userland.h"
 
-#define DEBUG(str) debug(str, sizeof(str))
-
 void main (void) {
-  DEBUG("Abracadabra");
-  DEBUG("川端康成");
-  if (60 != DEBUG("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!???")) {
-    DEBUG("bad");
+  debug("Abracadabra");
+  debug("川端康成");
+  if (60 != debug("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!???")) {
+    debug("bad");
   }
-  if (debug((char *)0xFFFFFFFF80000000, 128))  DEBUG("bad-kernel");
-  if (debug((char *)0xC0000000, 10))  DEBUG("bad-pagefault");
+  if (_debug((char *)0xFFFFFFFF80000000, 10))  debug("bad-kernel");
+  if (_debug((char *)0xC0000000, 10))  debug("bad-pagefault");
 }

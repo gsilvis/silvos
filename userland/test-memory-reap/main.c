@@ -1,5 +1,4 @@
 #include "userland.h"
-#define DEBUG(str) debug(str, sizeof(str))
 
 /* 256 MB */
 #define TOTAL_MEM_SIZE (256 * 1024 * 1024)
@@ -17,15 +16,15 @@ void main() {
        nanosleep(1000);
        continue;
     }
-    DEBUG("Thread Start");
+    debug("Thread Start");
     for (int j = 0; j < (MEM_PER_THREAD / PAGE_SIZE); j++) {
       if (palloc((char *)(MEMORY_BASE + j * PAGE_SIZE))) {
-        DEBUG("ALLOC FAIL");
+        debug("ALLOC FAIL");
         exit();
       }
     }
-    DEBUG("Alloc Done");
+    debug("Alloc Done");
     exit();
   }
-  DEBUG("Master DONE");
+  debug("Master DONE");
 }

@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-#define DEBUG(str) debug(str, sizeof(str))
-
 /* the number of possible faults */
 static int max_faults = 5;
 
@@ -20,7 +18,7 @@ void main (void) {
   char h[] = "FAULTING X...";
   h[9] = '0' + id;
 
-  DEBUG(h);
+  debug(h);
 
   switch(id) {
   case 0:
@@ -39,9 +37,9 @@ void main (void) {
     __asm__ volatile ("hlt");
     break;
   default:
-    DEBUG("unused branch");
+    debug("unused branch");
     return;
   }
 
-  DEBUG("FAILED TO FAULT!!!");
+  debug("FAILED TO FAULT!!!");
 }

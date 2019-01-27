@@ -1,5 +1,4 @@
 #include "userland.h"
-#define DEBUG(str) debug(str, sizeof(str))
 
 static inline unsigned char* getpage(unsigned int i) {
   return (unsigned char*) ((1 << i) * 4096L);
@@ -10,31 +9,31 @@ static inline unsigned char getent(unsigned int i, unsigned int j, int pid) {
 }
 
 void main() {
-  DEBUG("Allocating");
+  debug("Allocating");
   const unsigned int num_pages = 7;
   for (unsigned int i = 0; i < num_pages; ++i) {
     unsigned char* my_page = getpage(i);
     int ret = palloc(my_page);
     if (ret) {
-      DEBUG("Failed to allocate page!");
+      debug("Failed to allocate page!");
       exit();
     }
   }
 
-  DEBUG("Forking");
+  debug("Forking");
   int pid = fork();
   if (pid < 0) {
-    DEBUG("Failed to fork!");
+    debug("Failed to fork!");
     exit();
   }
   if (pid == 0) {
-    DEBUG("Child");
+    debug("Child");
   } else {
-    DEBUG("Parent");
+    debug("Parent");
   }
   yield();
 
-  DEBUG("Writing");
+  debug("Writing");
   for (unsigned int i = 0; i < num_pages; ++i) {
     unsigned char* my_page = getpage(i);
     for (unsigned int j = 0; j < 4096; ++j) {
@@ -43,27 +42,27 @@ void main() {
   }
   yield();
 
-  DEBUG("Reading");
+  debug("Reading");
   for (unsigned int i = 0; i < num_pages; ++i) {
     unsigned char* my_page = getpage(i);
     for (unsigned int j = 0; j < 4096; ++j) {
       unsigned char ent = my_page[j];
       if (ent != getent(i, j, pid)) {
-        DEBUG("Values differed (before freeing a page)");
+        debug("Values differed (before freeing a page)");
       }
     }
   }
   yield();
 
-  DEBUG("Freeing");
+  debug("Freeing");
   unsigned char* freed_page = getpage(2);
   if (pfree(freed_page)) {
-    DEBUG("Failed to free a page");
+    debug("Failed to free a page");
     exit();
   }
   yield();
 
-  DEBUG("Reading");
+  debug("Reading");
   for (unsigned int i = 0; i < num_pages; ++i) {
     // Skip the third page because it is freed.
     if (i == 2) {
@@ -73,13 +72,13 @@ void main() {
     for (unsigned int j = 0; j < 4096; ++j) {
       unsigned char ent = my_page[j];
       if (ent != getent(i, j, pid)) {
-        DEBUG("Values differed (after freeing a page)");
+        debug("Values differed (after freeing a page)");
       }
     }
   }
   yield();
 
-  DEBUG("Page faulting");
+  debug("Page faulting");
   getpage(2)[0] = 42;
-  DEBUG("We should not get here after triggering a page fault.");
+  debug("We should not get here after triggering a page fault.");
 }

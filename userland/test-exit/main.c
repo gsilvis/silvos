@@ -1,7 +1,7 @@
 #include "userland.h"
 
 void main (void) {
-  debug("A", 1);
+  debug("A");
   exit();
-  debug("B", 1);
+  debug("B");
 }

@@ -43,7 +43,7 @@ void main (void) {
    "movl $0x0, (%1)\n"
    "int $0x36\n"
    "fsts (%1)\n" : "=a"(pid) : "b"(&x), "a"(SYSCALL_FORK): "memory");
-  debug(x == EXPECTED ? "Y" : "F", 1);
+  debug(x == EXPECTED ? "Y" : "F");
   if (!pid) { exit(); }
   yield();
 
@@ -53,7 +53,7 @@ void main (void) {
    "movq $0x0, (%1)\n"
    "int $0x36\n"
    "fstl (%1)\n" : "=a"(pid) : "b"(&y), "a"(SYSCALL_FORK): "memory");
-  debug(y == EXPECTED ? "Y" : "F", 1);
+  debug(y == EXPECTED ? "Y" : "F");
   if (!pid) { exit(); }
   yield();
 
@@ -63,7 +63,7 @@ void main (void) {
    "movl $0x0, (%1)\n"
    "int $0x36\n"
    "movss %%xmm0, (%1)\n" : "=a"(pid) : "b"(&x), "a"(SYSCALL_FORK): "memory");
-  debug(x == EXPECTED ? "Y" : "F", 1);
+  debug(x == EXPECTED ? "Y" : "F");
   if (!pid) { exit(); }
   yield();
 
@@ -73,24 +73,24 @@ void main (void) {
    "movq $0x0, (%1)\n"
    "int $0x36\n"
    "movsd %%xmm0, (%1)\n" : "=a"(pid) : "b"(&y), "a"(SYSCALL_FORK): "memory");
-  debug(y == EXPECTED ? "Y" : "F", 1);
+  debug(y == EXPECTED ? "Y" : "F");
   if (!pid) { exit(); }
   yield();
 
   /* Test doing some simple math */
-  debug(fibs(NUM_ITERS) == EXPECTED ? "Y" : "F", 1);
+  debug(fibs(NUM_ITERS) == EXPECTED ? "Y" : "F");
   yield();
-  debug(fibl(NUM_ITERS) == EXPECTED ? "Y" : "F", 1);
+  debug(fibl(NUM_ITERS) == EXPECTED ? "Y" : "F");
   yield();
-  debug(fibs(NUM_ITERS) != EXPECTED / 2 ? "Y" : "F", 1);
+  debug(fibs(NUM_ITERS) != EXPECTED / 2 ? "Y" : "F");
   yield();
-  debug(fibl(NUM_ITERS) != EXPECTED / 2 ? "Y" : "F", 1);
+  debug(fibl(NUM_ITERS) != EXPECTED / 2 ? "Y" : "F");
   yield();
-  debug(fibs(NUM_ITERS) == fibs_387(NUM_ITERS) ? "Y" : "F", 1);
+  debug(fibs(NUM_ITERS) == fibs_387(NUM_ITERS) ? "Y" : "F");
   yield();
-  debug(fibl(NUM_ITERS) == fibl_387(NUM_ITERS) ? "Y" : "F", 1);
+  debug(fibl(NUM_ITERS) == fibl_387(NUM_ITERS) ? "Y" : "F");
   yield();
-  debug(fibs(NUM_ITERS) == fibs_sse(NUM_ITERS) ? "Y" : "F", 1);
+  debug(fibs(NUM_ITERS) == fibs_sse(NUM_ITERS) ? "Y" : "F");
   yield();
-  debug(fibl(NUM_ITERS) == fibl_sse(NUM_ITERS) ? "Y" : "F", 1);
+  debug(fibl(NUM_ITERS) == fibl_sse(NUM_ITERS) ? "Y" : "F");
 }

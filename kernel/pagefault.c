@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-int check_addr (const void *low, const void *high) {
+static int check_addr (const void *low, const void *high) {
   if ((uint64_t)low > (uint64_t)high) {
     return -1;
   }
@@ -45,7 +45,7 @@ void __attribute__((noreturn)) pagefault_handler_user (uint64_t addr) {
 }
 
 
-int copy_from_user(void *to, const void *from, size_t count) {
+int copy_from_user (void *to, const void *from, size_t count) {
   const char *f = from;
   if (check_addr(f, f+count)) {
     return -1;
@@ -60,7 +60,7 @@ int copy_from_user(void *to, const void *from, size_t count) {
 }
 
 
-int copy_to_user(void *to, const void *from, size_t count) {
+int copy_to_user (void *to, const void *from, size_t count) {
   char *t = to;
   if (check_addr(t, t+count)) {
     return -1;
@@ -74,8 +74,11 @@ int copy_to_user(void *to, const void *from, size_t count) {
   return res;
 }
 
-int copy_string_from_user(void *to, const void *from, size_t max) {
+int copy_string_from_user (void *to, const void *from, size_t max) {
   const char *f = from;
+  if ((uint64_t)(f + max) > LOC_USERZONE_TOP) {
+    max = LOC_USERZONE_TOP - (uint64_t)f;
+  }
   if (check_addr(f, f+max)) {
     return -1;
   }
