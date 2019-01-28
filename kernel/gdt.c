@@ -16,6 +16,7 @@ struct {
   uint64_t ist[8]; /* ist[0] is reserved */
   uint16_t reserved3[5];
   uint16_t iomapbase;
+  uint8_t iomap[8193];  /* 2**16 / 8 + 1; 1 extra byte is required by Intel. */
 } __attribute__((packed)) tss;
 
 /* Useful stack segment selectors:
@@ -76,9 +77,20 @@ void initialize_gdt (void) {
   uint8_t *ist1_stack_bot = (uint8_t *)allocate_phys_page();
   tss.rsp[0] = (uint64_t)make_kernel_stack();
   tss.ist[1] = (uint64_t)&ist1_stack_bot[4096];
-  /* Disable IO map */
-  tss.iomapbase = sizeof(tss);
+  /* Initialize IO map to 'all ports disallowed' */
+  tss.iomapbase = (uint16_t)((char *)(&tss.iomap) - (char *)(&tss));
+  memset(&tss.iomap, 0xFF, sizeof(tss.iomap));
   /* Load TSS offset */
   uint16_t index = 0x50;
   __asm__("ltr %0" :: "r"(index));
+}
+
+void update_iomap (void) {
+  if (running_tcb == 0) {
+    return;
+  }
+  memset(&tss.iomap, 0xFF, sizeof(tss.iomap));
+  for (int i = 0; i < running_tcb->num_io_ports; ++i) {
+    bit_array_set(&tss.iomap[0], running_tcb->io_ports[i], 0);
+  }
 }

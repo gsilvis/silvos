@@ -35,7 +35,8 @@ typedef unsigned long long semaphore_id;
 #define SYSCALL_SET_HANDLER 0x16
 #define SYSCALL_GET_TID     0x17
 #define SYSCALL_FORK_DAEMON 0x18
+#define SYSCALL_GET_IOPORT  0x19
 
-#define NUM_SYSCALLS        0x19
+#define NUM_SYSCALLS        0x20
 
 #endif

@@ -76,6 +76,7 @@ static tcb *create_thread (uint64_t rip, uint64_t rsp, vmcb *vm_space) {
       tcbs[i].parent = 0;
       tcbs[i].handler_thread_id = thread_id;  /* Convenient "impossible" value. */
       tcbs[i].faulting = 0;
+      tcbs[i].num_io_ports = 0;
       return &tcbs[i];
     }
   }
@@ -185,6 +186,7 @@ void __attribute__((noreturn)) return_to_current_thread (void) {
 void __attribute__((noreturn)) switch_thread_to (tcb *new_tcb) {
   if (new_tcb != running_tcb) {
     fpu_switch_thread();
+    update_iomap();
   }
   if (new_tcb != 0) {
     insert_pt(new_tcb->vm_control_block->pt);
@@ -308,4 +310,18 @@ int set_handler (int handler_thread_id) {
   int result = running_tcb->handler_thread_id;
   running_tcb->handler_thread_id = handler_thread_id;
   return result;
+}
+
+int request_io_port (uint64_t port_num) {
+  /* TODO: we should really perform some sanity checks here.  Currently this
+   * can give out the PIC port and various other nasty things. */
+  if (port_num > 0xFFFF) {
+    return -1;
+  }
+  if (running_tcb->num_io_ports == MAX_PORTS_PER_THREAD) {
+    return -2;
+  }
+  running_tcb->io_ports[running_tcb->num_io_ports++] = port_num;
+  update_iomap();
+  return 0;
 }

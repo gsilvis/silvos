@@ -159,4 +159,8 @@ static inline int get_tid (void) {
   return (int)__syscall0(SYSCALL_GET_TID);
 }
 
+static inline int get_ioport (unsigned short port_id) {
+  return __syscall1(SYSCALL_GET_IOPORT, (syscall_arg)port_id);
+}
+
 #endif

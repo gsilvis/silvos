@@ -55,6 +55,7 @@ TRAMPOLINE1(sem_set)
 TRAMPOLINE1(find_module)
 TRAMPOLINE1(set_handler)
 TRAMPOLINE0(get_tid)
+TRAMPOLINE1(request_io_port)
 
 #pragma GCC diagnostic pop
 
@@ -86,6 +87,7 @@ syscall_func syscall_defns[NUM_SYSCALLS] = {
   TRAMPOLINE_NAME(set_handler),
   TRAMPOLINE_NAME(get_tid),
   fork_daemon,
+  TRAMPOLINE_NAME(request_io_port),
 };
 
 void __attribute__((noreturn)) syscall_handler (void) {

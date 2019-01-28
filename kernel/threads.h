@@ -10,6 +10,7 @@
 
 #define NUMTHREADS 64
 #define NUMVMSPACES 16
+#define MAX_PORTS_PER_THREAD 4
 
 enum thread_state {
   TS_NONEXIST, /* Nothing here */
@@ -94,6 +95,8 @@ typedef struct _tcb {
   struct _tcb *parent;  /* Set if the parent is waiting for us to daemonize. */
   uint8_t handler_thread_id;
   uint8_t faulting;
+  uint8_t num_io_ports;
+  uint16_t io_ports[MAX_PORTS_PER_THREAD];
 } tcb;
 
 /* Pointer to the TCB of the running userspace thread, or NULL if currently
@@ -167,5 +170,8 @@ tcb *get_tcb (uint64_t tid);
 
 /* Get thread ID of running thread. */
 int get_tid (void);
+
+/* Give the running thread access to the named io port */
+int request_io_port (uint64_t port);
 
 #endif
